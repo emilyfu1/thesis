@@ -1,0 +1,24 @@
+---
+title: "idk"
+format: html
+editor: visual
+---
+
+```{r echo=FALSE}
+# import packages
+library(ipumsr)
+library(tidyverse)
+```
+
+## loading ATUS data
+```{r}
+# package download message
+if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
+
+
+# define data extract DDI to use 
+ATUS_ddi = 'atus_00001.xml'
+ddi = read_ipums_ddi(ATUS_ddi)
+# import data
+data = read_ipums_micro(ddi)
+```
