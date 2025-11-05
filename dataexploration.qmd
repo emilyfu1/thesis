@@ -1,5 +1,5 @@
 ---
-title: "idk"
+title: "Showing data work (for supervisory purposes"
 format: html
 editor: visual
 ---
@@ -10,7 +10,7 @@ library(ipumsr)
 library(tidyverse)
 ```
 
-## loading ATUS data
+## Loading ATUS data
 ```{r}
 # package download message
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
@@ -22,3 +22,24 @@ ddi = read_ipums_ddi(ATUS_ddi)
 # import data
 data = read_ipums_micro(ddi)
 ```
+Take a look at a cross section for data exploration purposes
+```{r}
+data_2016 = data |> filter(YEAR == 2016)
+
+```
+
+## First, work with household data
+get multiple datasets? this way information collected at the household level can be used to populate the individual level data i guess (and vice versa, like i think i'll have to construct my own data out of each type of observation)
+```{r}
+# household level
+data_2016_hh = data_2016 |>
+  filter(RECTYPE == '1', # indicates a household observation
+         HH_CHILD == 1 # with children
+         )
+
+# this will show all data collected at household level
+# it drops empty columns (i.e. data only collected for activities/individuals)
+data_2016_hh = data_2016_hh[!map_lgl(data_2016_hh, ~ all(is.na(.)))]
+```
+
+## Now, look at individuals
