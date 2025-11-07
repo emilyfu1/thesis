@@ -1,5 +1,5 @@
 ---
-title: "Showing data work (for supervisory purposes"
+title: "Showing data work (for supervisory purposes)"
 format: html
 editor: visual
 ---
@@ -11,6 +11,7 @@ library(tidyverse)
 ```
 
 ## Loading ATUS data
+
 ```{r}
 # package download message
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
@@ -22,24 +23,143 @@ ddi = read_ipums_ddi(ATUS_ddi)
 # import data
 data = read_ipums_micro(ddi)
 ```
-Take a look at a cross section for data exploration purposes
+
+There is data available from 2003 to 2024. Here, I take a look at a cross section for data exploration purposes.
+
 ```{r}
 data_2016 = data |> filter(YEAR == 2016)
 
 ```
 
 ## First, work with household data
-get multiple datasets? this way information collected at the household level can be used to populate the individual level data i guess (and vice versa, like i think i'll have to construct my own data out of each type of observation)
+
+By splitting up the dataset by types of observations and then doing an inner merge myself, information collected at the household level can be used to populate the individual level data and vice versa. I think I'll have to construct my own data out of each type of observation because right now they all show up on separate lines. If I separate each type and merge them back together, I can fix this.
+
 ```{r}
 # household level
 data_2016_hh = data_2016 |>
-  filter(RECTYPE == '1', # indicates a household observation
-         HH_CHILD == 1 # with children
-         )
-
-# this will show all data collected at household level
-# it drops empty columns (i.e. data only collected for activities/individuals)
-data_2016_hh = data_2016_hh[!map_lgl(data_2016_hh, ~ all(is.na(.)))]
+  filter(RECTYPE == '1') |> # indicates a household observation) 
+  
+  # this will show all relevant varables collected at household level
+  # it drops empty columns (i.e. data only collected for activities/individuals)
+  select(where(~ !all(is.na(.)))) |>
+  
+  # drop rectype now in preparation for merge
+  select(-RECTYPE)
 ```
 
 ## Now, look at individuals
+
+This creates a dataset with observations for each person. Each household has a distinct household serial number, and all members of the household have the same serial number. I have ages for all household members. For the purpose of this exercise, I'm not too sure what I want to focus on yet. A good place to start could be nuclear heterosexual households (i.e. two parents, a male partner, a female partner, and children) since I want to look at inequality within the heteronormative household.
+
+Literature on household inequality generally tends to and focuses on working couples *without* children, or models them as public goods. \[Arduini (2024)\]\[https://ifs.org.uk/sites/default/files/2025-05/WP202517-Estimating-intra-household-sharing-from-time-use-data.pdf\] uses the concept of private leisure time (time spent on leisure activities without other members of the household present) to estimate intra-household sharing. She defines the "assignable good", which is a private good
+
+Since I wanted to study family-related stuff in the first place, to that end, I think it's worth taking a different look at the role children play in their households. What I originally thought to study were income effects on fertility, and some literature in that subject finds evidence for children being "normal goods" in the sense that fertility increases with income. Would it be reasonable to take the public goods approach, that both parents could allocate resources (time) to "producing the public good" (parenting their children so that they grow up to have characteristics that the family wants as a whole)? btw time spent caring for household children can be for non-own children too?
+
+The question of how to deal with children is a big issue. Time spent parenting (maybe focus on solo parenting, i.e. without spouse present, could also do money spent on kids) has some of the same characteristics as private leisure time. Parenting is also an unpaid activity, but its value isn't really known (even for those who work) since children aren't true goods---they are autonomous people and have their own preferences/choices, especially in adulthood. Treating children as a private good, where each parent can spend more time and/or own resources on raising their shared children for some private benefit, not necessarily something that the other spouse can benefit from (like teaching your child traits that are socially undesirable but personally useful), is complicated and I'm not sure if it's defensible. However, it is essentially the other side of the same coin as private leisure time. The more parenting you do, the less private leisure time you usually get. I just think parenting would be an interesting angle to take if I want to focus on families. Even if I can't use solo parenting time as a way to measure household sharing, it could be interesting to try and use it to answer my original question about the normal-ness or inferior-ness of children. 
+
+\[Andrew et al (2021)\]\[https://ifs.org.uk/inequality/wp-content/uploads/2021/03/BN-The-careers-and-time-use-of-mothers-and-fathers.pdf\] show that heteronormative households, mothers are more likely to leave the labour force after having children regardless of the relative wages between mother and father before childbirth. (Much of the recent literature in this area focuses on COVID-19, maybe look into this.) It's difficult to really prove who in a relationship is doing the colloquially-named "mental load" of parenting (stuff like keeping appointments, planning meals, remembering when the laundry was last done), although anecdotally this is usually the wife or mother's job in this kind of household. (There may be a time use paper somewhere that tries to deal with this, maybe look into this). The ATUS records time spent doing activities, but not the thoughts that go on in someone's head. It also records the people present during an activity, but not, as far as I've seen, who is a active participant, or if someone needs to be actively prompted to do the groceries or pick up after a child.
+
+\[Dunbar et al (2013)\]\[https://www.sfu.ca/\~pendakur/CollectiveChildren30-with-appendices.pdf\]: Geoff is looking at parents' and childrens' resource shares, I think I'd want to stick to the inequality of the couple. These parts are useful:
+
+*"In models where goods are purely private or purely public, what we call private, assignable goods are known as exclusive goods. See, e.g. Bourguignon, Browning, and Chiappori (2009). Chiappori and Ekeland (2008) and Cherchye, De Rock and Vermeulen (2008) among others show how assignable goods can aid in the identification of resource shares. Our strategy follows this line in assuming the presence, and observability, of a small number of private assignable goods, and uses these to identify childrens’ resource shares. The end result is that we identify how total household expenditures on all goods are divided up among household members, just by observing how family expenditures on each member’s single private good (like clothing) vary with total expenditures."*
+
+_"We find that children command a reasonably large share of resources – roughly 20 percent for the first child – and that this share rises with the number of children – 5-10 percentage points per additional child. Moreover, fathers command a larger share of resources than mothers, and mothers seem to sacrifice more resources than fathers to their children."_
+
+_"A good is defined to be private if it cannot be shared or consumed jointly by more than one person, and is defined to be assignable if it is consumed by one individual household member that is known to the researcher. Examples could include toys and diapers which are private goods assignable to children, or alcohol and tobacco which are private goods assignable to adults. In our empirical application we use clothing"_
+
+In an ideal world I'd take Geoff's use of children to measure intra-household inequality but use the time-use identification from Arduini. Something like taking time spent on phone calls about childrens' appointments, helping children with homework, stuff like that? From the documentation:
+```
+030101	Physical care for household children
+030102	Reading to or with household children
+030103	Playing with household children, not sports
+030104	Arts and crafts with household children
+030105	Playing sports with household children
+030106	Talking with or listening to household children
+030107	Helping or teaching household children (not related to education) (2003)
+030108	Organization and planning for household children
+030109	Looking after household children (as a primary activity)
+030110	Attending household children's events
+030111	Waiting for or with household children
+030112	Picking up or dropping off household children
+030199	Caring for and helping household children, n.e.c.
+030201	Homework (household children)	
+030202	Meetings and school conferences (household children)	
+030203	Home schooling of household children	
+030204	Waiting associated with household children's education
+030299	Activities related to household child's education, n.e.c.
+```
+
+```{r}
+# btw its kinda redundant to use both SERIAL and CASEID but im scared to delete
+
+data_2016_individual = data_2016 |>
+  filter(RECTYPE == '2') |> # indicates a person
+  # this will show all relevant varables collected at individual level
+  select(where(~ !all(is.na(.)))) |>
+  
+  # there isn't a straightforward way to find parents/couples...
+  # but this can help identify kids and adults
+  mutate(is_adult = AGE >= 18) |>
+  select(where(~ !all(is.na(.)))) |>
+  
+  # drop rectype now in preparation for merge
+  select(-RECTYPE) |>
+  
+  # do an actual merge of household data and individual data together 
+  # merge on YEAR, CASEID, SERIAL
+  inner_join(
+    data_2016_hh, 
+    by = c("YEAR", "CASEID", "SERIAL")
+  )
+  
+```
+
+How many children? I might want to look at a setup similar to DLP where there are father, mother, and child-type 
+```{r}
+# make a childrens' dataset and a parents' dataset separately
+
+# adults (parents)
+data_2016_parents = data_2016_individual |>
+  filter(is_adult) |>
+  select(where(~ !all(is.na(.)))) |>
+  
+  # people with children in household
+  # not super important if own children or not i guess?
+  filter(HH_CHILD == 1) |>
+  
+  group_by(SERIAL) |>
+  
+  # keep if spouse present
+  filter(any(SPOUSEPRES == 1, na.rm = TRUE)) |>
+  
+  # how many adults does this household have? 
+  mutate(num_adults_in_HH = n()) |> 
+  
+  # find heterosexual pairs of parents (i.e. spouses or partners) with under-18s
+  filter(sum(SEX == 1, na.rm = TRUE) == 1 & 
+         sum(SEX == 2, na.rm = TRUE) == 1) |>
+  
+  ungroup()
+
+# kids
+data_2016_kids = data_2016_individual |>
+  filter(!is_adult) |>
+  select(where(~ !all(is.na(.)))) |>
+  
+  # how many kids does this household have?
+  group_by(SERIAL) |>  
+  mutate(num_kids_in_HH = n()) |> 
+  ungroup()
+
+```
+
+The ATUS has information about detailed activities and the people present during those activities. It also includes information on time spent taking care of children during those activities
+```{r}
+data_2016_activities = data_2016 |>
+  filter(RECTYPE == '3') |>
+  select(where(~ !all(is.na(.))))
+data_2016_who = data_2016 |>
+  filter(RECTYPE == '4') |>
+  select(where(~ !all(is.na(.))))
+```
