@@ -8,7 +8,41 @@ editor: visual
 # import packages
 library(ipumsr)
 library(tidyverse)
+
+topcode_earnweek = 2884.61
+NIU_earnweek = 99999.99
+NIU_workhours = 999
+varying_workhours = 995
+lookat = 2019
 ```
+
+```
+030101	Physical care for household children
+030102	Reading to or with household children
+030103	Playing with household children, not sports
+030104	Arts and crafts with household children
+030105	Playing sports with household children
+030106	Talking with or listening to household children
+030107	Helping or teaching household children (not related to education) (2003)
+030108	Organization and planning for household children
+030109	Looking after household children (as a primary activity)
+030110	Attending household children's events
+030111	Waiting for or with household children
+030112	Picking up or dropping off household children
+030199	Caring for and helping household children, n.e.c.
+030201	Homework (household children)	
+030202	Meetings and school conferences (household children)	
+030203	Home schooling of household children	
+030204	Waiting associated with household children's education
+030299	Activities related to household child's education, n.e.c.
+160103	Telephone calls to or from education services providers
+160107	Telephone calls to or from paid child or adult care providers
+180301	Travel related to caring for and helping household children, inclusive (2003, 2004)
+180302	Travel related to caring for and helping household children (2005+)
+180303	Travel related to household children's education (2005+)
+180304	Travel related to household children's health (2005+)
+```
+
 
 ## Loading ATUS data
 
@@ -27,7 +61,7 @@ data = read_ipums_micro(ddi)
 There is data available from 2003 to 2024. Here, I take a look at a cross section for data exploration purposes.
 
 ```{r}
-data_2016 = data |> filter(YEAR == 2016) |>
+data = data |> filter(YEAR == lookat) |>
   # strata isn't right after 2016 but it was preselected so im removing it
   # SERIAL makes CASEID redundant
   select(-STRATA, -CASEID)
@@ -39,7 +73,7 @@ By splitting up the dataset by types of observations and then doing an inner mer
 
 ```{r}
 # household level
-data_2016_hh = data_2016 |>
+data_hh = data |>
   filter(RECTYPE == '1') |> # indicates a household observation) 
   
   # this will show all relevant varables collected at household level
@@ -101,7 +135,7 @@ In an ideal world I'd take Geoff's use of children to measure intra-household in
 
 Data cleaning for individual-level data:
 ```{r}
-data_2016_individual = data_2016 |>
+data_individual = data |>
   filter(RECTYPE == '2') |> # indicates a person
   # this will show all relevant varables collected at individual level
   select(where(~ !all(is.na(.)))) |>
@@ -115,7 +149,7 @@ data_2016_individual = data_2016 |>
   
   # do an actual merge of household data and individual data together 
   # merge on YEAR, SERIAL
-  inner_join(data_2016_hh, by = c("YEAR", "SERIAL")) |>
+  inner_join(data_hh, by = c("YEAR", "SERIAL")) |>
   
   # how many adults/kids does each household have? 
   group_by(SERIAL) |>
@@ -126,8 +160,15 @@ data_2016_individual = data_2016 |>
            sum(SEX[is_adult] == 2, na.rm = TRUE) == 1) |> 
     # keep everyone in hh where both the respondent and spouse 
     # make positive income
-    filter(any(EARNWEEK != 99999.99 & SPEARNWEEK != 99999.99 &
-                 EARNWEEK > 0 & SPEARNWEEK > 0, na.rm = TRUE)) |>
+    filter(any(SPEARNWEEK <= topcode_earnweek 
+               & EARNWEEK <= topcode_earnweek 
+               & SPEARNWEEK > 0 
+               & EARNWEEK > 0, na.rm = TRUE)) |>
+    # think i will need people with regular working hours
+    filter(any(UHRSWORKT < varying_workhours 
+               & SPUSUALHRS < varying_workhours
+               & UHRSWORKT > 0 
+               & SPUSUALHRS > 0, na.rm = TRUE)) |>
   ungroup() |>
 
   # keep if heterosexual couple and children present in household
@@ -135,14 +176,36 @@ data_2016_individual = data_2016 |>
          HH_CHILD == 1) |>
   
   # should probably generate an individual person identifier
-  mutate(person_id = row_number())
+  mutate(person_id = row_number()) |>
+
+  # construct hourly earnings using weekly hrs worked and weekly earnings
+  # respondent hourly wage and # spouse hourly wage
+  mutate(
+    respondent_hrly_wage = case_when(
+      EARNWEEK < 99999.99 & UHRSWORKT < 995 ~ EARNWEEK / UHRSWORKT,
+      TRUE ~ NA_real_),
+    spouse_hrly_wage = case_when(
+      SPEARNWEEK < 99999.99 & SPUSUALHRS < 995 ~ SPEARNWEEK / SPUSUALHRS,
+      TRUE ~ NA_real_
+    )) |>
+  
+  # construct income contributions of spouse and respondent to hh
+  mutate(
+    respondent_income_contrib = case_when(
+      EARNWEEK < 99999.99 & UHRSWORKT < 995 ~ EARNWEEK / (EARNWEEK+SPEARNWEEK),
+      TRUE ~ NA_real_),
+    spouse_income_contrib = case_when(
+      SPEARNWEEK < 99999.99 & SPUSUALHRS < 995 ~ SPEARNWEEK / (EARNWEEK+SPEARNWEEK),
+      TRUE ~ NA_real_
+    ))
+
 ```
 
 ## Activities and accompaniment
 
 The ATUS has information about detailed activities and the people present during those activities. It also includes information on time spent taking care of children during those activities
 ```{r}
-data_2016_who = data_2016 |>
+data_who = data |>
   filter(RECTYPE == '4') |>
   select(where(~ !all(is.na(.)))) |>
   
@@ -152,7 +215,7 @@ data_2016_who = data_2016 |>
   # to merge them together need to rename activity line number so its the same
   rename(ACTLINE = ACTLINEW)
 
-data_2016_activities = data_2016 |>
+data_activities = data |>
   filter(RECTYPE == '3') |>
   select(where(~ !all(is.na(.)))) |>
   # drop rectype now in preparation for merge
@@ -160,7 +223,7 @@ data_2016_activities = data_2016 |>
   
   # merging activities with information about who does them
   # merge on YEAR, SERIAL, ACTLINE for the who data
-  inner_join(data_2016_who, by = c("YEAR", "SERIAL", "ACTLINE")) |>
+  inner_join(data_who, by = c("YEAR", "SERIAL", "ACTLINE")) |>
   
   # looks like WHOLINE in the who data aligns with LINENO in the individual data
   # and LINENOW in the who data is the person the activity was performed with 
@@ -171,9 +234,9 @@ data_2016_activities = data_2016 |>
 
 Now, it's possible to do this merge to the individual level data
 ```{r}
-data_2016_merged = data_2016_individual |>
+data_merged = data_individual |>
   # merge on YEAR, SERIAL, LINENO for the who data
-  inner_join(data_2016_activities, by = c("YEAR", "SERIAL", "LINENO"))
+  inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO"))
 ```
 
 Variables I will need:
@@ -185,12 +248,12 @@ Children and parents: I might want to look at a setup similar to DLP where there
 # make a childrens' dataset and a parents' dataset separately
 
 # parents
-data_2016_adults = data_2016_merged |>
+data_adults = data_merged |>
   filter(is_adult) |>
   select(where(~ !all(is.na(.))))
   
 # kids
-data_2016_kids = data_2016_merged |>
+data_kids = data_merged |>
   filter(!is_adult) |>
   select(where(~ !all(is.na(.))))
 
@@ -199,7 +262,11 @@ data_2016_kids = data_2016_merged |>
 ## random summary statistics
 
 ```{r}
-data_2016_individual |>
+data_individual |>
+  # individual respondents
+  # group_by(person_id) |>
+  # income levels? i guess
+  # group_by()
   summarise(
     min_kids   = min(HH_NUMKIDS, na.rm = TRUE),
     max_kids   = max(HH_NUMKIDS, na.rm = TRUE),
@@ -209,8 +276,51 @@ data_2016_individual |>
   )
 ```
 
+Weekly earnings of respondents and their spouses
 ```{r}
-data_2016_adults %>%
-  group_by(SEX) %>%
-  summarise(mean_weekly_earnings = mean(EARNWEEK), n = n())
+data_adults |>
+  # individual respondents
+  group_by(person_id) |>
+  # by gender
+  group_by(SEX) |>
+  # this takes out all the spouses who aren't asked SPEARNWEEK or EARNWEEK
+  # only keep the respondents bc they answer on spouse's behalf
+  filter(EARNWEEK <= topcode_earnweek & SPEARNWEEK <= topcode_earnweek) |>
+  summarise(mean_earnweek_resp = mean(EARNWEEK), 
+            mean_earnweek_spouse = mean(SPEARNWEEK), 
+            n = n())
 ```
+
+Working hours of respondents and their spouses
+```{r}
+data_adults |>
+  # individual respondents
+  group_by(person_id) |>
+  # by gender
+  group_by(SEX) |>
+  # this also takes out all the spouses and keeps respondent answers only
+  filter(UHRSWORKT < varying_workhours & SPUSUALHRS < varying_workhours) |>
+  summarise(mean_workhours_resp = mean(UHRSWORKT), 
+            mean_workhours_spouse = mean(SPUSUALHRS))
+```
+
+Income contribution of respondent to household by gender of respondent
+```{r}
+data_adults |>
+  # individual respondents
+  group_by(person_id) |>
+  # by gender
+  group_by(SEX) |>
+  # this also takes out all the spouses and keeps respondent answers only
+  filter(UHRSWORKT < varying_workhours & SPUSUALHRS < varying_workhours) |>
+  summarise(mean_contrib_resp = mean(respondent_income_contrib),
+            min_contrib_resp = min(respondent_income_contrib),
+            max_contrib_resp = max(respondent_income_contrib),
+            med_contrib_resp = median(respondent_income_contrib))
+```
+
+Hours spent on private leisure
+
+Hours spent on childcare
+
+
