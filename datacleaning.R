@@ -109,32 +109,27 @@ data_activities = data |>
   # rename variables to make merging with individual level data possible
   rename(LINENO = WHOLINE, activity_done_with = LINENOW)
 
-# a properly merged dataset
-data_merged = data_individual |>
-  # merge on YEAR, SERIAL, LINENO for the who data
-  inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO"))
-
 # separating types of hh members
 
 # all adults 
-data_adults = data_merged |>
+data_adults = data_individual |>
   filter(is_adult) |>
   select(where(~ !all(is.na(.)))) |>
   
   # how many adults in each household?
   mutate(num_adults_in_HH = HH_SIZE - HH_NUMKIDS) |>
   
+  # how many males and female adults in each household
   group_by(YEAR, SERIAL) |>
-  mutate(num_male_adults = count(SEX == 1),
-         num_female_adults = count(SEX == 2)) |>
+  mutate(num_male_adults = sum(SEX == 1 & AGE >= 18, na.rm=TRUE),
+         num_female_adults = sum(SEX == 2 & AGE >= 18, na.rm=TRUE)) |>
   ungroup()
 
 # all kids
-data_kids = data_merged |>
+data_kids = data_individual |>
   filter(!is_adult) |>
   select(where(~ !all(is.na(.))))
 
-# parents
 # this is the main dataset that i'll be using
 data_working_parents = data_adults |>
   # keep two heterosexual parent households with children
@@ -142,7 +137,9 @@ data_working_parents = data_adults |>
          SPOUSEPRES == 1, 
          num_adults_in_HH == 2,
          num_male_adults == 1,
-         num_female_adults == 1)
+         num_female_adults == 1) |>
+  # merge on YEAR, SERIAL, LINENO for the who data
+  inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO"))
 
 # generate is_partner variable to link partners (or use the same hh id)
 # populate incomes/working hours for spouses
