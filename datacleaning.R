@@ -29,23 +29,28 @@ childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107,
                        180303, 180304, 180801)
 
 leisure_actlines = c(010101, 010102, 010199, 010301, 010399, 010401, 010499, 
-                     019999, 020603, 120201, 120202, 120299, 120301, 120302, 
-                     120303, 120304, 120305, 120306, 120307, 120308, 120309, 
-                     120310, 120311, 120312, 120313, 120399, 120401, 120402, 
-                     120403, 120404, 120405, 120499, 120501, 120502, 120503, 
-                     120504, 120599, 129999, 130101, 130102, 130103, 130104, 
-                     130105, 130106, 130107, 130108, 130109, 130110, 130111, 
-                     130112, 130113, 130114, 130115, 130116, 130117, 130118, 
-                     130119, 130120, 130121, 130122, 130123, 130124, 130125, 
-                     130126, 130127, 130128, 130129, 130130, 130131, 130132, 
-                     130133, 130134, 130135, 130136, 130199, 130201, 130202, 
-                     130203, 130204, 130205, 130206, 130207, 130208, 130209, 
-                     130210, 130211, 130212, 130213, 130214, 130215, 130216, 
-                     130217, 130218, 130219, 130220, 130221, 130222, 130223, 
-                     130224, 130225, 130226, 130227, 130228, 130229, 130230, 
-                     130231, 130232, 130299, 130301, 130302, 130399, 050201,
-                     181201, 181202, 181203, 181204, 181205, 181206, 181299, 
-                     181300, 181301, 181302)
+                     019999, 050201, 020603, 120201, 120202, 120299, 120301,
+                     120302, 120303, 120304, 120305, 120306, 120307, 120308,
+                     120309, 120310, 120311, 120312, 120313, 120399, 120401, 
+                     120402, 120403, 120404, 120405, 120499, 120501, 120502,
+                     120503, 120504, 120599, 129999, 130101, 130102, 130103,
+                     130104, 130105, 130106, 130107, 130108, 130109, 130110,
+                     130111, 130112, 130113, 130114, 130115, 130116, 130117,
+                     130118, 130119, 130120, 130121, 130122, 130123, 130124,
+                     130125, 130126, 130127, 130128, 130129, 130130, 130131,
+                     130132, 130133, 130134, 130135, 130136, 130199, 130201,
+                     130202, 130203, 130204, 130205, 130206, 130207, 130208, 
+                     130209, 130210, 130211, 130212, 130213, 130214, 130215,
+                     130216, 130217, 130218, 130219, 130220, 130221, 130222,
+                     130223, 130224, 130225, 130226, 130227, 130228, 130229,
+                     130230, 130231, 130232, 130299, 130301, 130302, 130399,
+                     140101, 140102, 140103, 140104, 140105, 149999, 150101,
+                     150102, 150103, 150104, 150105, 150106, 150199, 150201,
+                     150202, 150203, 150204, 150299, 150301, 150302, 150399,
+                     150402, 150499, 150500, 150501, 150599, 150601, 150602,
+                     150699, 150701, 150799, 150801, 150899, 159999, 180805,
+                     181201, 181202, 181203, 181204, 181205, 181206, 181299,
+                     181300, 181301, 181302, 181401, 181499, 181501, 181599)
 
 # package download message
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
@@ -57,6 +62,9 @@ ddi = read_ipums_ddi(ATUS_ddi)
 
 # import data
 data = read_ipums_micro(ddi) |>
+  # this is so that i can consider using the variable SCC_OWNHH_LN
+  # for childcare instead of filtering ACTLINEs
+  filter(YEAR >= 2004) |>
   # strata isn't right after 2016 but it was preselected so im removing it
   # SERIAL makes CASEID redundant
   select(-STRATA, -CASEID)
@@ -214,34 +222,33 @@ data_working_parents = data_adults |>
 
 # individual level time use for tasks of interest
 activity_summaries = data_working_parents |>
+  filter(YEAR >= 2004) |>
   inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO")) |>
   # identify categories
   mutate(activity_is_leisure = ACTIVITY %in% leisure_actlines,
-         activity_childcare = ACTIVITY %in% childcare_actlines,
          activity_private = !(RELATEWU %in% who_private_exclude) &
            !(RELATEWU %in% who_invalid),
-         private_leisure = activity_is_leisure & activity_private,
-         nospouse_childcare = activity_childcare & activity_private) |>
+         activity_excludesspouse = !(RELATEWU %in% who_partner),
+         private_leisure = activity_is_leisure & activity_private) |>
   
   # collapse to person-level time allocations
   group_by(YEAR, SERIAL, person_id) |>
   summarise(total_leisure = sum(DURATION_EXT[activity_is_leisure], na.rm=TRUE),
             total_private_leisure = sum(DURATION_EXT[private_leisure], na.rm=TRUE),
-            total_childcare = sum(DURATION_EXT[activity_childcare], na.rm=TRUE),
-            total_childcare_nospouse = sum(DURATION_EXT[nospouse_childcare], na.rm=TRUE),
+            total_childcare = sum(SCC_OWNHH_LN, na.rm=TRUE),
+            total_childcare_nospouse = sum(SCC_OWNHH_LN[activity_excludesspouse], na.rm=TRUE),
             .groups="drop")
 
 # keep only households where parents have non-zero private leisure
-# also at least one parent does some childcare
 valid_households = activity_summaries |>
   group_by(YEAR, SERIAL) |>
   summarise(filtered_household_size = n(),
             both_private_leisure = all(total_private_leisure > 0),
+            # maybe need that one parent does some childcare
             any_childcare = any(total_childcare > 0),
             .groups="drop") |>
   filter(filtered_household_size == 2,
-         both_private_leisure,
-         any_childcare)
+         both_private_leisure)
 
 # get back to individual-level data
 final_individual_data = data_working_parents |>
