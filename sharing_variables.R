@@ -34,10 +34,15 @@ final_individual_data = final_individual_data |>
   # deviations from mean
   mutate(dev_hrly_wage = hrly_wage - mean(hrly_wage, na.rm=TRUE),
          dev_avg_age = avg_age - mean(avg_age, na.rm=TRUE),
-         dev_age_gap = age_gap- mean(age_gap, na.rm=TRUE),) |> 
+         dev_age_gap = age_gap- mean(age_gap, na.rm=TRUE),
+         dev_educ = educ_cat- mean(educ_cat, na.rm=TRUE)) |> 
   ungroup() |>
   # interaction terms
   mutate(Bx_dev_wage = hh_leisure_budget * dev_hrly_wage,
          Bx_dev_educ = hh_leisure_budget * dev_educ,
          Bx_dev_avgage = hh_leisure_budget * dev_avg_age,
          Bx_dev_agegap = hh_leisure_budget * dev_age_gap)
+
+# save
+write.csv(final_individual_data,"atus_working_parents_act.csv", 
+          row.names = FALSE)
