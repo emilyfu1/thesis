@@ -15,7 +15,12 @@ who_partner = c(200, 201)
 who_private_exclude = c(200, 201, 202, 207, 300)
 who_invalid = c(996, 997, 998)
 
-
+variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE", 
+              "SEX", "RACE", "EDUCYRS", "UHRSWORKT", "EARNWEEK", 
+              "hh_total_earn", "earn_share", "HH_NUMKIDS", "total_leisure", 
+              "total_private_leisure", "total_childcare", 
+              "total_childcare_nospouse", "KID1TO2", "KID3TO5", "KID6TO12", 
+              "KID13TO17")
 
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
                        030108, 030109, 030110, 030111, 030112, 030199, 030201, 
@@ -207,49 +212,42 @@ data_working_parents = data_adults |>
 
   ungroup()
 
-# merge individuals and their activities from the who/activity data
-working_parents_act_who = data_working_parents |>
+# individual level time use for tasks of interest
+activity_summaries = data_working_parents |>
   inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO")) |>
-  # make a variable to indicate if an activity is leisure
-  mutate(activity_is_leisure = ACTIVITY %in% leisure_actlines) |>
-  # make a variable to indicate if an activity is childcare
-  mutate(activity_childcare = ACTIVITY %in% childcare_actlines) |>
+  # identify categories
+  mutate(activity_is_leisure = ACTIVITY %in% leisure_actlines,
+         activity_childcare = ACTIVITY %in% childcare_actlines,
+         activity_private = !(RELATEWU %in% who_private_exclude) &
+           !(RELATEWU %in% who_invalid),
+         private_leisure = activity_is_leisure & activity_private,
+         nospouse_childcare = activity_childcare & activity_private) |>
   
-  # make a variable to indicate if an activity is "private"
-  mutate(activity_private = !(RELATEWU %in% who_private_exclude) & 
-           !(RELATEWU %in% who_invalid)) |>
-  # make a variable to indicate if an activity is done with a spouse/partner
-  mutate(activity_withspouse = RELATEWU %in% who_partner) |>
-  
-  # private leisure
-  mutate(private_leisure = activity_is_leisure & activity_private) |>
-  # childcare without partner
-  mutate(nospouse_childcare = activity_childcare & activity_private) |> 
-
-  # individual-level variables for activity durations
+  # collapse to person-level time allocations
   group_by(YEAR, SERIAL, person_id) |>
-  summarise(total_leisure = sum(DURATION_EXT[activity_is_leisure], 
-                                na.rm = TRUE),
-            total_private_leisure = sum(DURATION_EXT[private_leisure], 
-                                        na.rm = TRUE),
-            total_childcare = sum(DURATION_EXT[activity_childcare], 
-                                  na.rm = TRUE),
-            total_childcare_nospouse = sum(DURATION_EXT[nospouse_childcare], 
-                                           na.rm = TRUE),
-            .groups = "drop") |>
-  ungroup() |>
-  
-  # remove households if either spouse or respondent don't have private leisure
-  group_by(YEAR, SERIAL) |>
-  filter(all(total_private_leisure > 0),
-         all(total_childcare > 0),
-         all(total_childcare_private > 0)) |>
-  ungroup() |>
-  
-  # somehow get back to individual level data? 
+  summarise(total_leisure = sum(DURATION_EXT[activity_is_leisure], na.rm=TRUE),
+            total_private_leisure = sum(DURATION_EXT[private_leisure], na.rm=TRUE),
+            total_childcare = sum(DURATION_EXT[activity_childcare], na.rm=TRUE),
+            total_childcare_nospouse = sum(DURATION_EXT[nospouse_childcare], na.rm=TRUE),
+            .groups="drop")
 
-# only need YEAR, SERIAL, person_id, AGE, SEX, RACE, EDUCYRS, UHRSWORKT, EARNWEEK, hh_total_earn
-# HH_NUMKIDS, total_leisure, total_private_leisure, total_childcare, total_childcare_nospouse
+# keep only households where parents have non-zero private leisure
+# also at least one parent does some childcare
+valid_households = activity_summaries |>
+  group_by(YEAR, SERIAL) |>
+  summarise(filtered_household_size = n(),
+            both_private_leisure = all(total_private_leisure > 0),
+            any_childcare = any(total_childcare > 0),
+            .groups="drop") |>
+  filter(filtered_household_size == 2,
+         both_private_leisure,
+         any_childcare)
+
+# get back to individual-level data
+final_individual_data = data_working_parents |>
+  inner_join(valid_households, by=c("YEAR","SERIAL")) |>
+  inner_join(activity_summaries, by=c("YEAR","SERIAL","person_id")) |>
+  select(all_of(variables))
 
 # save all the stuff
 write.csv(data_hh,"atus_hh.csv", row.names = FALSE)
@@ -259,5 +257,5 @@ write.csv(data_kids,"atus_kids.csv", row.names = FALSE)
 write.csv(data_adults,"atus_adults.csv", row.names = FALSE)
 write.csv(data_working_parents,"atus_working_parents_individual.csv", 
           row.names = FALSE)
-write.csv(working_parents_act_who,"atus_working_parents_act.csv", 
+write.csv(final_individual_data,"atus_working_parents_act.csv", 
           row.names = FALSE)
