@@ -10,6 +10,7 @@ invalid_earnweek = 99999.98
 invalid_workhours = 995
 invalid_race = 998
 invalid_educ = 998
+invalid_age = 996
 invalid_kid_dummy = 99
 who_partner = c(200, 201)
 who_private_exclude = c(200, 201, 202, 207, 300)
@@ -20,8 +21,10 @@ variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE",
               "hh_total_earn", "earn_share", "HH_NUMKIDS", "total_leisure", 
               "total_private_leisure", "total_childcare", 
               "total_childcare_nospouse", "KID1TO2", "KID3TO5", "KID6TO12", 
-              "KID13TO17")
+              "KID13TO17", "spouse_earnweek", "spouse_usualhours", 
+              "spouse_educ")
 
+# childcare activities (currently not used)
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
                        030108, 030109, 030110, 030111, 030112, 030199, 030201, 
                        030202, 030203, 030204, 030299, 030301, 030302, 030303, 
@@ -51,6 +54,28 @@ leisure_actlines = c(010101, 010102, 010199, 010301, 010399, 010401, 010499,
                      150699, 150701, 150799, 150801, 150899, 159999, 180805,
                      181201, 181202, 181203, 181204, 181205, 181206, 181299,
                      181300, 181301, 181302, 181401, 181499, 181501, 181599)
+
+# not including religious and volunteering activities
+leisure_restricted = c(010101, 010102, 010199, 010301, 010399, 010401, 010499, 
+                     019999, 050201, 020603, 120201, 120202, 120299, 120301,
+                     120302, 120303, 120304, 120305, 120306, 120307, 120308,
+                     120309, 120310, 120311, 120312, 120313, 120399, 120401, 
+                     120402, 120403, 120404, 120405, 120499, 120501, 120502,
+                     120503, 120504, 120599, 129999, 130101, 130102, 130103,
+                     130104, 130105, 130106, 130107, 130108, 130109, 130110,
+                     130111, 130112, 130113, 130114, 130115, 130116, 130117,
+                     130118, 130119, 130120, 130121, 130122, 130123, 130124,
+                     130125, 130126, 130127, 130128, 130129, 130130, 130131,
+                     130132, 130133, 130134, 130135, 130136, 130199, 130201,
+                     130202, 130203, 130204, 130205, 130206, 130207, 130208, 
+                     130209, 130210, 130211, 130212, 130213, 130214, 130215,
+                     130216, 130217, 130218, 130219, 130220, 130221, 130222,
+                     130223, 130224, 130225, 130226, 130227, 130228, 130229,
+                     130230, 130231, 130232, 130299, 130301, 130302, 130399,
+                     140101, 140102, 140103, 140104, 140105, 149999,180805,
+                     181201, 181202, 181203, 181204, 181205, 181206, 181299,
+                     181300, 181301, 181302)
+
 
 # package download message
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
@@ -180,6 +205,11 @@ data_working_parents = data_adults |>
     # respondent-reported spouse usual hours, fill to household level
     spouse_usualhours = if (any(SPUSUALHRS < invalid_workhours, na.rm = TRUE)) {
       max(SPUSUALHRS[SPUSUALHRS < invalid_workhours], na.rm = TRUE)
+    } else NA_real_,
+    
+    # respondent-reported spouse education, fill to household level
+    spouse_educ = if (any(SPEDUC < invalid_educ, na.rm = TRUE)) {
+      max(SPEDUC[SPEDUC < invalid_educ], na.rm = TRUE)
     } else NA_real_,
 
     # fill in respondent-reported kid dummy variables to household level
