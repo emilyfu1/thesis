@@ -4,6 +4,11 @@ format: html
 editor: visual
 ---
 
+```{r echo=FALSE}
+library(tidyverse)
+library(systemfit)
+```
+
 # Thought jail
 
 My project (roughly): What is the impact of women’s control over their earnings (their bargaining power in the home) on their "child-rearing" supply? Using method as in Arduini to find the sharing rule, say who has more bargaining power based on private leisure, and then see if the person with more power spends more or less time on childcare. Developed from literature on the income effects of household fertility choice and intra-household bargaining, I use the American Time Use Survey (ATUS) to extend existing collective household models estimating intra-household inequality. In line with existing methodology, my Identification relies on private assignable goods, goods that cannot be shared between more than one person and are observed to be consumed by only one person in the household. This information is typically found in household expenditure surveys, but such goods are typically durable in the sense that they appear sparingly in expenditure data. To address the resulting power limitations with this approach, I adapt the approach of Arduini (2025) to a setting with parents and children, using private leisure in time use data to estimate bargaining power in the household. I then take this sharing rule to further discussions of childcare provision based on the bargaining power of individual parents. I both estimate and test for heterogeneity of childcare provision. I want to see the differences between male- or female-"dominated" households? Some existing papers use earnings/education differentials as a measure of bargaining power or fertility rates as a way to talk about family planning, but culture and gender roles may play a role in within-household childcare decisions and time spent on childcare is very tractable considering the breadth of time use data available for many countries.
@@ -12,15 +17,15 @@ For the purpose of this exercise, I'm not too sure what I want to focus on yet. 
 
 Literature on household inequality generally tends to and focuses on working couples *without* children, or models them as public goods. \[Arduini (2024)\]\[https://ifs.org.uk/sites/default/files/2025-05/WP202517-Estimating-intra-household-sharing-from-time-use-data.pdf\] uses the concept of private leisure time (time spent on leisure activities without other members of the household present) to estimate intra-household sharing. She defines the "assignable good", which is a private good. These parts are useful:
 
-_"The main limitation of private leisure is that its price is only known for those who work, for whom it coincides with the observed wage. For non-participants, the price of time is higher than their (unobserved) wage and we would have to estimate that in order to use time-use data to identify sharing. That extension is left for future work: in my application to UK data, I focus on working couples."_
+*"The main limitation of private leisure is that its price is only known for those who work, for whom it coincides with the observed wage. For non-participants, the price of time is higher than their (unobserved) wage and we would have to estimate that in order to use time-use data to identify sharing. That extension is left for future work: in my application to UK data, I focus on working couples."*
 
 Since I wanted to study family-related stuff in the first place, to that end, I think it's worth taking a different look at the role children play in their households. What I originally thought to study were income effects on fertility, and some literature in that subject finds evidence for children being "normal goods" in the sense that fertility increases with income. Would it be reasonable to take the public goods approach, that both parents could allocate resources (time) to "producing the public good" (parenting their children so that they grow up to have characteristics that the family wants as a whole)? btw time spent caring for household children can be for non-own children too?
 
-The question of how to deal with children is a big issue. Time spent parenting (maybe focus on solo parenting, i.e. without spouse present, could also do money spent on kids) has some of the same characteristics as private leisure time. Parenting is also an unpaid activity, but its value isn't really known (even for those who work) since children aren't true goods---they are autonomous people and have their own preferences/choices, especially in adulthood. Treating children as a private good, where each parent can spend more time and/or own resources on raising their shared children for some private benefit, not necessarily something that the other spouse can benefit from (like teaching your child traits that are socially undesirable but personally useful), is complicated and I'm not sure if it's defensible. However, it is essentially the other side of the same coin as private leisure time. The more parenting you do, the less private leisure time you usually get. I just think parenting would be an interesting angle to take if I want to focus on families. Even if I can't use solo parenting time as a way to measure household sharing, it could be interesting to try and use it to answer my original question about the normal-ness or inferior-ness of children. 
+The question of how to deal with children is a big issue. Time spent parenting (maybe focus on solo parenting, i.e. without spouse present, could also do money spent on kids) has some of the same characteristics as private leisure time. Parenting is also an unpaid activity, but its value isn't really known (even for those who work) since children aren't true goods---they are autonomous people and have their own preferences/choices, especially in adulthood. Treating children as a private good, where each parent can spend more time and/or own resources on raising their shared children for some private benefit, not necessarily something that the other spouse can benefit from (like teaching your child traits that are socially undesirable but personally useful), is complicated and I'm not sure if it's defensible. However, it is essentially the other side of the same coin as private leisure time. The more parenting you do, the less private leisure time you usually get. I just think parenting would be an interesting angle to take if I want to focus on families. Even if I can't use solo parenting time as a way to measure household sharing, it could be interesting to try and use it to answer my original question about the normal-ness or inferior-ness of children.
 
-[Blundell et al (2019)][https://www.sfu.ca/~pendakur/papers/BKLP16_longtitle.pdf] still need to read this lol
+\[Blundell et al (2019)\]\[https://www.sfu.ca/\~pendakur/papers/BKLP16_longtitle.pdf\] still need to read this lol
 
-[Hyee and Robledo (2010)][https://www.nottingham.ac.uk/economics/documents/discussion-papers/10-06.pdf]
+\[Hyee and Robledo (2010)\]\[https://www.nottingham.ac.uk/economics/documents/discussion-papers/10-06.pdf\]
 
 \[Andrew et al (2021)\]\[https://ifs.org.uk/inequality/wp-content/uploads/2021/03/BN-The-careers-and-time-use-of-mothers-and-fathers.pdf\] show that heteronormative households, mothers are more likely to leave the labour force after having children regardless of the relative wages between mother and father before childbirth. (Much of the recent literature in this area focuses on COVID-19, maybe look into this.) It's difficult to really prove who in a relationship is doing the colloquially-named "mental load" of parenting (stuff like keeping appointments, planning meals, remembering when the laundry was last done), although anecdotally this is usually the wife or mother's job in this kind of household. (There may be a time use paper somewhere that tries to deal with this, maybe look into this). The ATUS records time spent doing activities, but not the thoughts that go on in someone's head. It also records the people present during an activity, but not, as far as I've seen, who is a active participant, or if someone needs to be actively prompted to do the groceries or pick up after a child.
 
@@ -28,298 +33,297 @@ The question of how to deal with children is a big issue. Time spent parenting (
 
 *"In models where goods are purely private or purely public, what we call private, assignable goods are known as exclusive goods. See, e.g. Bourguignon, Browning, and Chiappori (2009). Chiappori and Ekeland (2008) and Cherchye, De Rock and Vermeulen (2008) among others show how assignable goods can aid in the identification of resource shares. Our strategy follows this line in assuming the presence, and observability, of a small number of private assignable goods, and uses these to identify childrens’ resource shares. The end result is that we identify how total household expenditures on all goods are divided up among household members, just by observing how family expenditures on each member’s single private good (like clothing) vary with total expenditures."*
 
-_"We find that children command a reasonably large share of resources – roughly 20 percent for the first child – and that this share rises with the number of children – 5-10 percentage points per additional child. Moreover, fathers command a larger share of resources than mothers, and mothers seem to sacrifice more resources than fathers to their children."_
+*"We find that children command a reasonably large share of resources – roughly 20 percent for the first child – and that this share rises with the number of children – 5-10 percentage points per additional child. Moreover, fathers command a larger share of resources than mothers, and mothers seem to sacrifice more resources than fathers to their children."*
 
-_"A good is defined to be private if it cannot be shared or consumed jointly by more than one person, and is defined to be assignable if it is consumed by one individual household member that is known to the researcher. Examples could include toys and diapers which are private goods assignable to children, or alcohol and tobacco which are private goods assignable to adults. In our empirical application we use clothing"_
+*"A good is defined to be private if it cannot be shared or consumed jointly by more than one person, and is defined to be assignable if it is consumed by one individual household member that is known to the researcher. Examples could include toys and diapers which are private goods assignable to children, or alcohol and tobacco which are private goods assignable to adults. In our empirical application we use clothing"*
 
 # What I'm doing with data
 
-Household data: By splitting up the dataset by types of observations and then doing an inner merge myself, information collected at the household level can be used to populate the individual level data and vice versa. I think I'll have to construct my own data out of each type of observation because right now they all show up on separate lines. If I separate each type and merge them back together, I can fix this.
-Individual-level data: I create a dataset with observations for each person. Each household has a distinct household serial number, and all members of the household have the same serial number. I have ages for all household members. 
-Activity and Who data: The ATUS has information about detailed activities and the people present during those activities. It also includes information on time spent taking care of children during those activities (secondary childcare)
+Household data: By splitting up the dataset by types of observations and then doing an inner merge myself, information collected at the household level can be used to populate the individual level data and vice versa. I think I'll have to construct my own data out of each type of observation because right now they all show up on separate lines. If I separate each type and merge them back together, I can fix this. Individual-level data: I create a dataset with observations for each person. Each household has a distinct household serial number, and all members of the household have the same serial number. I have ages for all household members. Activity and Who data: The ATUS has information about detailed activities and the people present during those activities. It also includes information on time spent taking care of children during those activities (secondary childcare)
 
-Children and parents: I might want to look at a setup similar to DLP where there are father, mother, and child-type. The following activities are of interest: 
+Children and parents: I might want to look at a setup similar to DLP where there are father, mother, and child-type. The following activities are of interest:
 
 Childcare-related activities from the ATUS documentation:
 
-```
-030101	Physical care for household children
-030102	Reading to or with household children
-030103	Playing with household children, not sports
-030104	Arts and crafts with household children
-030105	Playing sports with household children
-030106	Talking with or listening to household children
-030107	Helping or teaching household children (not related to education) (2003)
-030108	Organization and planning for household children
-030109	Looking after household children (as a primary activity)
-030110	Attending household children's events
-030111	Waiting for or with household children
-030112	Picking up or dropping off household children
-030199	Caring for and helping household children, n.e.c.
-030201	Homework (household children)
-030202	Meetings and school conferences (household children)
-030203	Home schooling of household children
-030204	Waiting associated with household children's education
-030299	Activities related to household child's education, n.e.c.
-030301	Providing medical care to household children
-030302	Obtaining medical care for household children
-030303	Waiting associated with household children's health
-030399	Activities related to household child's health, n.e.c.
-080101	Using paid childcare services
-080102	Waiting associated with purchasing childcare services
-080199	Using paid childcare services, n.e.c.
-160107	Telephone calls to or from paid child or adult care providers
-180301	Travel related to caring for and helping household children, inclusive (2003, 2004)
-180302	Travel related to caring for and helping household children (2005+)
-180303	Travel related to household children's education (2005+)
-180304	Travel related to household children's health (2005+)
-180801	Travel related to using childcare services
-```
-
-Private leisure activities  from the ATUS documentation:
-```
-120201	Attending or hosting parties, receptions, or ceremonies
-120202	Attending meetings for personal interest (not volunteering)
-120299	Attending or hosting social events, n.e.c.
-120301	Relaxing, thinking
-120302	Tobacco and drug use
-120303	Television and movies (not religious)
-120304	Television (religious)
-120305	Listening to the radio
-120306	Listening to or playing music (not radio)
-120307	Playing games
-120308	Computer use for leisure (excluding games)
-120309	Arts and crafts as a hobby
-120310	Collecting as a hobby
-120311	Hobbies, except arts and crafts and collecting
-120312	Reading for personal interest
-120313	Writing for personal interest
-120399	Relaxing and leisure, n.e.c.
-120401	Attending performing arts
-120402	Attending museums
-120403	Attending movies or film
-120404	Attending gambling establishments
-120405	Security procedures related to arts and entertainment
-120499	Arts and entertainment, n.e.c.
-120501	Waiting associated with socializing and communicating
-120502	Waiting associated with attending or hosting social events
-120503	Waiting associated with relaxing or leisure
-120504	Waiting associated with arts and entertainment
-120599	Waiting associated with socializing, n.e.c.
-129999	Socializing, relaxing, and leisure, n.e.c.
-130101	Doing aerobics
-130102	Playing baseball
-130103	Playing basketball
-130104	Biking
-130105	Playing billiards
-130106	Boating
-130107	Bowling
-130108	Climbing, spelunking, caving
-130109	Dancing
-130110	Participating in equestrian sports
-130111	Fencing
-130112	Fishing
-130113	Playing football
-130114	Golfing
-130115	Doing gymnastics
-130116	Hiking
-130117	Playing hockey
-130118	Hunting
-130119	Participating in martial arts
-130120	Playing racquet sports
-130121	Participating in rodeo competitions
-130122	Rollerblading
-130123	Playing rugby
-130124	Running
-130125	Skiing, ice skating, snowboarding
-130126	Playing soccer
-130127	Playing softball
-130128	Using cardiovascular equipment
-130129	Vehicle touring or racing
-130130	Playing volleyball
-130131	Walking
-130132	Participating in water sports
-130133	Weightlifting or strength training
-130134	Working out, unspecified
-130135	Wrestling
-130136	Doing yoga
-130199	Playing sports, n.e.c.
-130201	Watching aerobics
-130202	Watching baseball
-130203	Watching basketball
-130204	Watching biking
-130205	Watching billiards
-130206	Watching boating
-130207	Watching bowling
-130208	Watching climbing, spelunking, caving
-130209	Watching dancing
-130210	Watching equestrian sports
-130211	Watching fencing
-130212	Watching fishing
-130213	Watching football
-130214	Watching golfing
-130215	Watching gymnastics
-130216	Watching hockey
-130217	Watching martial arts
-130218	Watching racquet sports
-130219	Watching rodeo competitions
-130220	Watching rollerblading
-130221	Watching rugby
-130222	Watching running
-130223	Watching skiing, ice skating, snowboarding
-130224	Watching soccer
-130225	Watching softball
-130226	Watching vehicle touring or racing
-130227	Watching volleyball
-130228	Watching walking
-130229	Watching water sports
-130230	Watching weightlifting or strength training
-130231	Watching people working out, unspecified
-130232	Watching wrestling
-130299	Attending sporting events, n.e.c.
-130301	Waiting related to playing sports or exercising
-130302	Waiting related to attending sporting events
-130399	Waiting associated with sports, exercise, and recreation, n.e.c.
+```         
+030101  Physical care for household children
+030102  Reading to or with household children
+030103  Playing with household children, not sports
+030104  Arts and crafts with household children
+030105  Playing sports with household children
+030106  Talking with or listening to household children
+030107  Helping or teaching household children (not related to education) (2003)
+030108  Organization and planning for household children
+030109  Looking after household children (as a primary activity)
+030110  Attending household children's events
+030111  Waiting for or with household children
+030112  Picking up or dropping off household children
+030199  Caring for and helping household children, n.e.c.
+030201  Homework (household children)
+030202  Meetings and school conferences (household children)
+030203  Home schooling of household children
+030204  Waiting associated with household children's education
+030299  Activities related to household child's education, n.e.c.
+030301  Providing medical care to household children
+030302  Obtaining medical care for household children
+030303  Waiting associated with household children's health
+030399  Activities related to household child's health, n.e.c.
+080101  Using paid childcare services
+080102  Waiting associated with purchasing childcare services
+080199  Using paid childcare services, n.e.c.
+160107  Telephone calls to or from paid child or adult care providers
+180301  Travel related to caring for and helping household children, inclusive (2003, 2004)
+180302  Travel related to caring for and helping household children (2005+)
+180303  Travel related to household children's education (2005+)
+180304  Travel related to household children's health (2005+)
+180801  Travel related to using childcare services
 ```
 
-Some random stuff
+Private leisure activities from the ATUS documentation: needs to be done without the spouse or other household members present
+
 ```
-  
-  group_by(YEAR, SERIAL) |>
-  
-  # households that have valid earnings+hours for respondent and spouse
-  mutate(
-    # respondent and their spouse have valid (regular) working hours, earnings
-    resp_hrs_valid = any(EARNWEEK < NIU_earnweek & 
-                           EARNWEEK > 0 & UHRSWORKT < varying_workhours),
-    spouse_hrs_valid =any(SPEARNWEEK < NIU_earnweek & 
-                            SPEARNWEEK > 0 & SPUSUALHRS < varying_workhours),
-    resp_earn_valid = any(UHRSWORKT > 0 & UHRSWORKT < varying_workhours),
-    spouse_earn_valid = any(SPUSUALHRS > 0 & SPUSUALHRS < varying_workhours)) |>
+General
+010101	Sleeping	
+010102	Sleeplessness	
+010199	Sleeping, n.e.c.
+010301	Health-related self care	
+010399	Self care, n.e.c.
+010401	Personal or private activities	
+010499	Personal activities, n.e.c.
+019999	Personal care, n.e.c.
+050201	Socializing, relaxing, and leisure as part of job
+020603	Walking, exercising, playing with animals (2008+)
+120201  Attending or hosting parties, receptions, or ceremonies
+120202  Attending meetings for personal interest (not volunteering)
+120299  Attending or hosting social events, n.e.c.
+120301  Relaxing, thinking
+120302  Tobacco and drug use
+120303  Television and movies (not religious)
+120304  Television (religious)
+120305  Listening to the radio
+120306  Listening to or playing music (not radio)
+120307  Playing games
+120308  Computer use for leisure (excluding games)
+120309  Arts and crafts as a hobby
+120310  Collecting as a hobby
+120311  Hobbies, except arts and crafts and collecting
+120312  Reading for personal interest
+120313  Writing for personal interest
+120399  Relaxing and leisure, n.e.c.
+120401  Attending performing arts
+120402  Attending museums
+120403  Attending movies or film
+120404  Attending gambling establishments
+120405  Security procedures related to arts and entertainment
+120499  Arts and entertainment, n.e.c.
+120501  Waiting associated with socializing and communicating
+120502  Waiting associated with attending or hosting social events
+120503  Waiting associated with relaxing or leisure
+120504  Waiting associated with arts and entertainment
+120599  Waiting associated with socializing, n.e.c.
+129999  Socializing, relaxing, and leisure, n.e.c.
 
-  ungroup() |>
+Sport
+130101  Doing aerobics
+130102  Playing baseball
+130103  Playing basketball
+130104  Biking
+130105  Playing billiards
+130106  Boating
+130107  Bowling
+130108  Climbing, spelunking, caving
+130109  Dancing
+130110  Participating in equestrian sports
+130111  Fencing
+130112  Fishing
+130113  Playing football
+130114  Golfing
+130115  Doing gymnastics
+130116  Hiking
+130117  Playing hockey
+130118  Hunting
+130119  Participating in martial arts
+130120  Playing racquet sports
+130121  Participating in rodeo competitions
+130122  Rollerblading
+130123  Playing rugby
+130124  Running
+130125  Skiing, ice skating, snowboarding
+130126  Playing soccer
+130127  Playing softball
+130128  Using cardiovascular equipment
+130129  Vehicle touring or racing
+130130  Playing volleyball
+130131  Walking
+130132  Participating in water sports
+130133  Weightlifting or strength training
+130134  Working out, unspecified
+130135  Wrestling
+130136  Doing yoga
+130199  Playing sports, n.e.c.
+130201  Watching aerobics
+130202  Watching baseball
+130203  Watching basketball
+130204  Watching biking
+130205  Watching billiards
+130206  Watching boating
+130207  Watching bowling
+130208  Watching climbing, spelunking, caving
+130209  Watching dancing
+130210  Watching equestrian sports
+130211  Watching fencing
+130212  Watching fishing
+130213  Watching football
+130214  Watching golfing
+130215  Watching gymnastics
+130216  Watching hockey
+130217  Watching martial arts
+130218  Watching racquet sports
+130219  Watching rodeo competitions
+130220  Watching rollerblading
+130221  Watching rugby
+130222  Watching running
+130223  Watching skiing, ice skating, snowboarding
+130224  Watching soccer
+130225  Watching softball
+130226  Watching vehicle touring or racing
+130227  Watching volleyball
+130228  Watching walking
+130229  Watching water sports
+130230  Watching weightlifting or strength training
+130231  Watching people working out, unspecified
+130232  Watching wrestling
+130299  Attending sporting events, n.e.c.
+130301  Waiting related to playing sports or exercising
+130302  Waiting related to attending sporting events
+130399  Waiting associated with sports, exercise, and recreation, n.e.c.
 
-  # respondent and spouse hourly wages
-  mutate(
-    respondent_hrly_wage = case_when(
-      EARNWEEK < NIU_earnweek & UHRSWORKT < varying_workhours 
-      & UHRSWORKT > 0 ~ EARNWEEK / UHRSWORKT,
-      TRUE ~ NA_real_),
-    spouse_hrly_wage = case_when(
-      SPEARNWEEK < NIU_earnweek & SPUSUALHRS < varying_workhours 
-      & SPUSUALHRS > 0 ~ SPEARNWEEK / SPUSUALHRS,
-      TRUE ~ NA_real_),
+Religion
+140101	Attending religious services	
+140102	Participation in religious practices	
+140103	Waiting associated with religious and spiritual activities	
+140104	Security procedures related to religious and spiritual activities
+140105	Religious education activities (2007+)
+149999	Religious and spiritual activities, n.e.c.
 
-    # household total weekly earnings (only respondent has both)
-    hh_total_earnings = case_when(
-      EARNWEEK < NIU_earnweek 
-      & SPEARNWEEK < NIU_earnweek ~ EARNWEEK + SPEARNWEEK,
-      TRUE ~ NA_real_),
+Volunteering
+150101	Computer use	
+150102	Organizing and preparing	
+150103	Reading	
+150104	Telephone calls (except hotline counseling)	
+150105	Writing	
+150106	Fundraising	
+150199	Administrative and support activities, n.e.c.
+150201	Food preparation, presentation, clean-up
+150202	Collecting and delivering clothing and other goods
+150203	Providing care	
+150204	Teaching, leading, counseling, mentoring	
+150299	Social service and care activities, n.e.c.
+150301	Building houses, wildlife sites, and other structures
+150302	Indoor and outdoor maintenance, repair, and clean-up
+150399	Indoor and outdoor maintenance, building, and clean-up activities, n.e.c.
+150402	Serving at volunteer events and cultural activities
+150499	Participating in performance and cultural activities, n.e.c.
+150500	Attending Meetings, Conferences, and Training
+150501	Attending meetings, conferences, and training	
+150599	Attending meetings, conferences, and training, n.e.c.
+150601	Public health activities
+150602	Public safety activities	
+150699	Public health and safety activities, n.e.c.	
+150701	Waiting associated with volunteer activities (2004+)
+150799	Waiting associated with volunteer activities, n.e.c. (2004+)
+150801	Security procedures related to volunteer activities (2007+)
+150899	Security proecdures related to voluteer activities, n.e.c. (2007+)
+159999	Volunteer activities, n.e.c.
 
-    # respondent & spouse income contribution shares
-    respondent_income_contrib = case_when(
-      !is.na(hh_total_earnings) 
-      & hh_total_earnings > 0 ~ EARNWEEK / hh_total_earnings,
-      TRUE ~ NA_real_),
-    spouse_income_contrib = case_when(
-      !is.na(hh_total_earnings) 
-      & hh_total_earnings > 0 ~ SPEARNWEEK / hh_total_earnings,
-      TRUE ~ NA_real_),
-
-    # woman's share of household income
-    woman_income_contrib = case_when(
-      SEX == 2 & !is.na(hh_total_earnings) 
-      & hh_total_earnings > 0 ~ EARNWEEK / hh_total_earnings,
-      SEX == 1 & !is.na(hh_total_earnings) 
-      & hh_total_earnings > 0 ~ SPEARNWEEK / hh_total_earnings,
-      TRUE ~ NA_real_)) |>
-    
-    # fill to household level
-    group_by(YEAR, SERIAL) |>
-      mutate(
-        respondent_hrly_wage = max(respondent_hrly_wage, na.rm = TRUE),
-        spouse_hrly_wage = max(spouse_hrly_wage, na.rm = TRUE),
-        hh_total_earnings = max(hh_total_earnings, na.rm = TRUE),
-        respondent_income_contrib = max(respondent_income_contrib, na.rm = TRUE),
-        spouse_income_contrib = max(spouse_income_contrib, na.rm = TRUE),
-        woman_income_contrib = max(woman_income_contrib, na.rm = TRUE)
-      ) |>
-    ungroup()
+Travel
+180805	Travel related to using personal care services
+181201	Travel related to socializing and communicating	
+181202	Travel related to attending or hosting social events	
+181203	Travel related to relaxing and leisure (2003, 2004)
+181204	Travel related to arts and entertainment	
+181205	Travel as a form of entertainment (2005+)
+181206	Travel related to relaxing and leisure (2005+)
+181299	Travel related to socializing, relaxing, and leisure, n.e.c.
+181300	Travel Related to Sports, Exercise, and Recreation
+181301	Travel related to participating in sports, exercise, or recreation	
+181302	Travel related to attending sporting or recreational events
+181401	Travel related to religious or spiritual practices
+181499	Travel related to religious or spiritual activities, n.e.c.
+181501	Travel related to volunteering
+181599	Travel related to volunteer activities, n.e.c.
 ```
 
-# Random summary statistics
+People do activities with...
 
+```
+0100	Alone	
+0200	Spouse	
+0201	Unmarried partner	
+0202	Own household child	
+0203	Grandchild	
+0204	Parent	
+0205	Brother sister	
+0206	Other related person	
+0207	Foster child	
+0208	Housemate, roommate	
+0209	Roomer, boarder	
+0210	Other nonrelative	
+0300	Own non-household child under 18	
+0400	Parents (not living in household)	
+0401	Other non-household family members under 18	
+0402	Other non-household family members 18 and older (including parents-in-law)	
+0403	Friends	
+0404	Co-workers, colleagues, clients (non-work activities only)
+0405	Neighbors, acquaintances	
+0406	Other non-household children under 18	
+0407	Other non-household adults 18 and older	
+0408	Boss or manager
+0409	People whom I supervise
+0410	Co-workers
+0411	Customers
+9996	Refused
+9997	Don't know	
+9998	Blank	
+```
+
+# Random summary statistics and stuff
+
+Import data
 ```{r}
-data_working_parents |>
-  # individual respondents
-  group_by(person_id) |>
-  # income levels? or something like that
-  group_by(FAMINCOME) |>
-  summarise(
-    min_kids   = min(HH_NUMKIDS, na.rm = TRUE),
-    max_kids   = max(HH_NUMKIDS, na.rm = TRUE),
-    mean_kids  = mean(HH_NUMKIDS, na.rm = TRUE),
-    median_kids = median(HH_NUMKIDS, na.rm = TRUE),
-    sd_kids    = sd(HH_NUMKIDS, na.rm = TRUE)
-  )
+parents = read.csv("sharing_est.csv") |>
+  filter(YEAR %in% c(2007, 2008, 2009, 2010, 2011))
 ```
 
-Weekly earnings of respondents and their spouses
-```{r}
-data_adults |>
-  # individual respondents
-  group_by(person_id) |>
-  # by gender
-  group_by(SEX) |>
-  # this takes out all the spouses who aren't asked SPEARNWEEK or EARNWEEK
-  # only keep the respondents bc they answer on spouse's behalf
-  filter(EARNWEEK <= topcode_earnweek & SPEARNWEEK <= topcode_earnweek) |>
-  summarise(mean_earnweek_resp = mean(EARNWEEK), 
-            mean_earnweek_spouse = mean(SPEARNWEEK), 
-            n = n())
-```
-
-Working hours of respondents and their spouses
-```{r}
-data_adults |>
-  # individual respondents
-  group_by(person_id) |>
-  # by gender
-  group_by(SEX) |>
-  # this also takes out all the spouses and keeps respondent answers only
-  filter(UHRSWORKT < varying_workhours & SPUSUALHRS < varying_workhours) |>
-  summarise(mean_workhours_resp = mean(UHRSWORKT), 
-            mean_workhours_spouse = mean(SPUSUALHRS))
-```
-
-Income contribution of respondent to household by gender of respondent
-```{r}
-data_adults |>
-  # individual respondents
-  group_by(person_id) |>
-  # by gender
-  group_by(SEX) |>
-  # this also takes out all the spouses and keeps respondent answers only
-  filter(UHRSWORKT < varying_workhours & SPUSUALHRS < varying_workhours) |>
-  summarise(mean_contrib_resp = mean(respondent_income_contrib),
-            min_contrib_resp = min(respondent_income_contrib),
-            max_contrib_resp = max(respondent_income_contrib),
-            med_contrib_resp = median(respondent_income_contrib))
-```
-
-## Considerations in Arduini
-
+# Considerations in Arduini
 
 Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
 
 Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP).
 
-Variables I will need:
-`ACTIVITY`: pretty straightforward
-`RELATEWU == 1` means an activity is done alone
-`DURATION` provides duration of activity
-(There are also many variables that indicate if a respondent or household member is the one to usually do household administration related tasks, like planning meals, which could be super useful)
-
 ```{r}
-write.csv(data_merged,"test.csv", row.names = FALSE)
+### 4) Specify equations (dependent variables: household leisure expenditure per gender)
+eq_m = leisure_exp_m ~ y + Bx_dev_wage_f + Bx_dev_wage_m +
+                        Bx_dev_educ_f + Bx_dev_educ_m +
+                        Bx_dev_age + Bx_dev_age_gap
+
+eq_f = leisure_exp_f ~ y + Bx_dev_wage_f + Bx_dev_wage_m +
+                        Bx_dev_educ_f + Bx_dev_educ_m +
+                        Bx_dev_age + Bx_dev_age_gap
+
+eqns = list(male = eq_m, female = eq_f)
 ```
+
+unrestricted
+```{r}
+fit_unres = systemfit(eqns, method = "SUR", data = parents)
+summary(fit_unres)
+```
+
+Build constraints matrix (symmetry: coefficient in male + coefficient in female = 0)
+```{r}
+# all coefficients except on household budget sum to zero across equations
+
+```
+
+what
