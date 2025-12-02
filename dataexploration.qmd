@@ -9,6 +9,57 @@ library(tidyverse)
 library(systemfit)
 ```
 
+Build constraints matrix (symmetry: coefficient in male + coefficient in female = 0)
+```{r}
+regMat = matrix(c(
+  # row 1: male_(Intercept)
+  1,0,0,0,0,0,0,0,0,0,
+  # row 2: male_y
+  0,0,1,0,0,0,0,0,0,0,
+  # row 3: male_Bx_dev_wage_f
+  0,0,0,0,1,0,0,0,0,0,
+  # row 4: male_Bx_dev_wage_m
+  0,0,0,0,0,1,0,0,0,0,
+  # row 5: male_Bx_dev_educ_f
+  0,0,0,0,0,0,1,0,0,0,
+  # row 6: male_Bx_dev_educ_m
+  0,0,0,0,0,0,0,1,0,0,
+  # row 7: male_Bx_dev_avgage
+  0,0,0,0,0,0,0,0,1,0,
+  # row 8: male_Bx_dev_agegap
+  0,0,0,0,0,0,0,0,0,1,
+  # row 9: female_(Intercept)
+  0,1,0,0,0,0,0,0,0,0,
+  # row 10: female_y
+  0,0,0,1,0,0,0,0,0,0,
+  # row 11: female_Bx_dev_wage_f
+  0,0,0,0,-1,0,0,0,0,0,
+  # row 12: female_Bx_dev_wage_m
+  0,0,0,0,0,-1,0,0,0,0,
+  # row 13: female_Bx_dev_educ_f
+  0,0,0,0,0,0,-1,0,0,0,
+  # row 14: female_Bx_dev_educ_m
+  0,0,0,0,0,0,0,-1,0,0,
+  # row 15: female_Bx_dev_avgage
+  0,0,0,0,0,0,0,0,-1,0,
+  # row 16: female_Bx_dev_agegap
+  0,0,0,0,0,0,0,0,0,-1
+), nrow = 16, byrow = TRUE)
+
+# Assign row & column names to make inspection easy
+rownames(regMat) = c("male_(Intercept)", "male_y", "male_Bx_dev_wage_f", 
+                     "male_Bx_dev_wage_m", "male_Bx_dev_educ_f", 
+                     "male_Bx_dev_educ_m", "male_Bx_dev_avgage", 
+                     "male_Bx_dev_agegap", "female_(Intercept)", "female_y",
+                     "female_Bx_dev_wage_f", "female_Bx_dev_wage_m",
+                     "female_Bx_dev_educ_f", "female_Bx_dev_educ_m",
+                     "female_Bx_dev_avgage", "female_Bx_dev_agegap")
+
+colnames(regMat) = c("male_(Intercept)", "female_(Intercept)", "male_y", 
+                     "female_y", "theta_wf", "theta_wm", "theta_ef", "theta_em",
+                     "theta_age", "theta_agegap")
+```
+
 # Thought jail
 
 My project (roughly): What is the impact of women’s control over their earnings (their bargaining power in the home) on their "child-rearing" supply? Using method as in Arduini to find the sharing rule, say who has more bargaining power based on private leisure, and then see if the person with more power spends more or less time on childcare. Developed from literature on the income effects of household fertility choice and intra-household bargaining, I use the American Time Use Survey (ATUS) to extend existing collective household models estimating intra-household inequality. In line with existing methodology, my Identification relies on private assignable goods, goods that cannot be shared between more than one person and are observed to be consumed by only one person in the household. This information is typically found in household expenditure surveys, but such goods are typically durable in the sense that they appear sparingly in expenditure data. To address the resulting power limitations with this approach, I adapt the approach of Arduini (2025) to a setting with parents and children, using private leisure in time use data to estimate bargaining power in the household. I then take this sharing rule to further discussions of childcare provision based on the bargaining power of individual parents. I both estimate and test for heterogeneity of childcare provision. I want to see the differences between male- or female-"dominated" households? Some existing papers use earnings/education differentials as a measure of bargaining power or fertility rates as a way to talk about family planning, but culture and gender roles may play a role in within-household childcare decisions and time spent on childcare is very tractable considering the breadth of time use data available for many countries.
@@ -301,29 +352,39 @@ Private leisure C-D SRAT: the ratio between men and women’s preference paramet
 
 Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP).
 
+# Estimating sharing rule
 ```{r}
-### 4) Specify equations (dependent variables: household leisure expenditure per gender)
-eq_m = leisure_exp_m ~ y + Bx_dev_wage_f + Bx_dev_wage_m +
-                        Bx_dev_educ_f + Bx_dev_educ_m +
-                        Bx_dev_age + Bx_dev_age_gap
+# male and female specifications
+eq_m = leisure_exp_m ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
+  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
 
-eq_f = leisure_exp_f ~ y + Bx_dev_wage_f + Bx_dev_wage_m +
-                        Bx_dev_educ_f + Bx_dev_educ_m +
-                        Bx_dev_age + Bx_dev_age_gap
+eq_f = leisure_exp_f ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
+  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
 
 eqns = list(male = eq_m, female = eq_f)
 ```
 
-unrestricted
+unrestricted regressions
 ```{r}
 fit_unres = systemfit(eqns, method = "SUR", data = parents)
 summary(fit_unres)
 ```
 
-Build constraints matrix (symmetry: coefficient in male + coefficient in female = 0)
+Following the paper:
+
+The mean female resource share is calculated by dividing the coefficient on ‘Budget’ in the
+female regression by the sum of the ‘Budget’ coefficients across the two equations: 0.123463149 / (0.123463149 + 0.171590327) = 0.41844329602
+
+The preference coefficient is estimated by dividing the coefficient on ‘Budget’ in the female
+regression by the estimated average female resource share: 
+
+restricted regressions
 ```{r}
-# all coefficients except on household budget sum to zero across equations
+fit_restr = systemfit(eqns, 
+                      method = "SUR", 
+                      data = hh, 
+                      restrict.regMat = regMat)
 
+summary(fit_restr)
 ```
-
 what
