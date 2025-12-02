@@ -10,7 +10,8 @@ invalid_earnweek = 99999.98
 invalid_workhours = 995
 invalid_race = 998
 invalid_educ = 998
-invalid_age = 996
+invalid_age = 85
+invalid_sex = 99
 invalid_kid_dummy = 99
 who_partner = c(200, 201)
 who_private_exclude = c(200, 201, 202, 207, 300)
@@ -23,7 +24,7 @@ variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE",
               "total_private_leisure_r", "total_childcare", 
               "total_childcare_nospouse", "KID1TO2", "KID3TO5", "KID6TO12", 
               "KID13TO17", "spouse_earnweek", "spouse_usualhours", 
-              "spouse_educ", "spouse_race")
+              "spouse_educ", "spouse_race", "spouse_age", "spouse_sex")
 
 # childcare activities (currently not used)
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
@@ -223,6 +224,16 @@ data_working_parents = data_adults |>
     spouse_race = if (any(SPRACE < invalid_race, na.rm = TRUE)) {
       max(SPRACE[SPRACE < invalid_race], na.rm = TRUE)
     } else NA_real_,
+    
+    # respondent-reported spouse age, fill to household level
+    spouse_age = if (any(SPAGE <= invalid_age, na.rm = TRUE)) {
+      max(SPAGE[SPAGE <= invalid_age], na.rm = TRUE)
+    } else NA_real_,
+
+    # respondent-reported spouse sex, fill to household level
+    spouse_sex = if (any(SPSEX < invalid_sex, na.rm = TRUE)) {
+      max(SPSEX[SPSEX < invalid_sex], na.rm = TRUE)
+    } else NA_real_,
 
     # fill in respondent-reported kid dummy variables to household level
     KID1TO2 = if (any(KID1TO2 < invalid_kid_dummy, na.rm = TRUE)) {
@@ -355,6 +366,9 @@ final_individual_data = final_individual_data |>
          # sex specific usual hours worked
          uhrsworkt_f = if_else(SEX == 2, UHRSWORKT, spouse_usualhours),
          uhrsworkt_m = if_else(SEX == 1, UHRSWORKT, spouse_usualhours)) |>
+  
+  # to get the age gap, i'm doing an ordering like this
+  arrange(YEAR, SERIAL, desc(SEX)) |>
   
   # household-level constructs
   group_by(YEAR, SERIAL) |>
