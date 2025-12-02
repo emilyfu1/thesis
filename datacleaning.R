@@ -33,7 +33,7 @@ childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107,
                        030399, 080101, 080102, 080199, 160103, 160107, 180301, 
                        180302, 180303, 180304, 180801)
 
-# with eating, sleeping and washing
+# leisure including eating, drinking, washing, religious activity, volunteering
 leisure_actlines = c(010101, 010102, 010199, 010301, 010399, 010401, 010499, 
                      019999, 050201, 020603, 120201, 120202, 120299, 120301,
                      120302, 120303, 120304, 120305, 120306, 120307, 120308,
@@ -300,20 +300,20 @@ activity_summaries = data_working_parents |>
             total_childcare_nospouse = sum(total_childcare[activity_excludesspouse], na.rm=TRUE),
             .groups="drop")
 
-# keep only households where parents have non-zero private leisure
+# check how many zeros are in data for leisure and childcare
 valid_households = activity_summaries |>
   group_by(YEAR, SERIAL) |>
   summarise(filtered_household_size = n(),
             # check at household level if activity requirements are met
             both_private_leisure = all(total_private_leisure > 0),
             both_private_leisure_r = all(total_private_leisure_r > 0),
-            any_childcare = any(total_childcare > 0),
+            any_private_leisure = any(total_private_leisure > 0),
+            any_private_leisure_r = any(total_private_leisure_r > 0),
+            any_childcare = any(total_childcare_nospouse > 0),
+            both_childcare = all(total_childcare_nospouse > 0),
             .groups="drop") |>
-  # need some private leisure activity taken by both people
-  filter(filtered_household_size == 2,
-         # maybe need that at least one parent does some childcare
-         # any_childcare == 1,
-         both_private_leisure_r)
+  # this gets rid of anyone who doesn't have a partner with activity data
+  filter(filtered_household_size == 2)
 
 # get back to individual-level data
 final_individual_data = data_working_parents |>
