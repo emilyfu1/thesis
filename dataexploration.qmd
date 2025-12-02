@@ -122,6 +122,7 @@ Childcare-related activities from the ATUS documentation:
 080101  Using paid childcare services
 080102  Waiting associated with purchasing childcare services
 080199  Using paid childcare services, n.e.c.
+160103	Telephone calls to or from education services providers
 160107  Telephone calls to or from paid child or adult care providers
 180301  Travel related to caring for and helping household children, inclusive (2003, 2004)
 180302  Travel related to caring for and helping household children (2005+)
@@ -131,12 +132,15 @@ Childcare-related activities from the ATUS documentation:
 ```
 
 Private leisure activities from the ATUS documentation: needs to be done without the spouse or other household members present
+This includes all types of self care including sleeping and eating!
 
 ```
 General
 010101	Sleeping	
 010102	Sleeplessness	
 010199	Sleeping, n.e.c.
+010201	Washing, dressing, and grooming oneself
+010299	Grooming, n.e.c.
 010301	Health-related self care	
 010399	Self care, n.e.c.
 010401	Personal or private activities	
@@ -173,6 +177,27 @@ General
 120504  Waiting associated with arts and entertainment
 120599  Waiting associated with socializing, n.e.c.
 129999  Socializing, relaxing, and leisure, n.e.c.
+060102	Taking class for personal interest
+060201	Extracurricular club activities
+060202	Extracurricular music and performance activities
+060203	Extracurricular student government activities
+060204	Waiting associated with extracurricular activities (2004+)
+060299	Education-related extracurricular activities, n.e.c.
+060302	Research or homework for class (for personal interest)
+060402	Administrative activities: class for personal interest
+070104	Shopping, except groceries, food, and gas
+110101	Eating and drinking
+050202	Eating and drinking as part of job
+110201	Waiting associated with eating and drinking
+110299	Waiting associated with eating and drinking, n.e.c.
+119999	Eating and drinking, n.e.c.
+120101	Socializing and communicating with others
+120199	Socializing and communicating, n.e.c.
+160101	Telephone calls to or from family members
+160102	Telephone calls to or from friends, neighbors, or acquaintances
+080501	Using personal care services
+080502	Waiting associated with personal care services
+080599	Using personal care services, n.e.c.
 
 Sport
 130101  Doing aerobics
@@ -291,6 +316,8 @@ Travel
 180805	Travel related to using personal care services
 181201	Travel related to socializing and communicating	
 181202	Travel related to attending or hosting social events	
+181101	Travel related to eating and drinking
+181199	Travel related to eating and drinking, n.e.c.
 181203	Travel related to relaxing and leisure (2003, 2004)
 181204	Travel related to arts and entertainment	
 181205	Travel as a form of entertainment (2005+)
@@ -342,32 +369,114 @@ People do activities with...
 
 Import data
 ```{r}
-parents = read.csv("sharing_est.csv") |>
-  filter(YEAR %in% c(2007, 2008, 2009, 2010, 2011))
+hh = read.csv("sharing_est.csv")
 ```
 
-# Considerations in Arduini
+## Compare leisure definitions
+```{r}
+hh |>
+  pivot_longer(
+    cols = c(leisure_exp_m, leisure_exp_f, leisure_exp_m_r, leisure_exp_f_r),
+    names_to = "var",
+    values_to = "leisure_exp") |>
+  mutate(sex = case_when(grepl("_m", var) ~ "Men", grepl("_f", var) ~ "Women"),
+         type = case_when(grepl("_r$", var) ~ "Restricted leisure expenditure",
+                          TRUE ~ "Total leisure expenditure")) |>
+  group_by(sex, type) |>
+  summarise(mean = mean(leisure_exp, na.rm = TRUE),
+            sd = sd(leisure_exp, na.rm = TRUE),
+            q1 = quantile(leisure_exp, 0.25, na.rm = TRUE),
+            q2 = quantile(leisure_exp, 0.50, na.rm = TRUE),
+            q3 = quantile(leisure_exp, 0.75, na.rm = TRUE),
+            .groups = "drop") |>
+  arrange(type, sex)
+```
+## Comparing age and ability
+```{r}
+hh |>
+  pivot_longer(cols = c(educ_f, educ_m, age_gap),
+               names_to = "var",
+               values_to = "value") |>
+  mutate(sex = case_when(grepl("_m", var) ~ "Education men (levels 0,1,2)",
+                         grepl("_f", var) ~ "Education women (levels 0,1,2)",
+                         grepl("age_gap", var) ~ "Age gap (men - women)")) |>
+  group_by(sex) |>
+  summarise(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            q1 = quantile(value, 0.25, na.rm = TRUE),
+            q2 = quantile(value, 0.50, na.rm = TRUE),
+            q3 = quantile(value, 0.75, na.rm = TRUE),
+            .groups = "drop") |>
+  arrange(sex)
+```
+
+
+## Comparing childcare and working hours
+```{r}
+hh |>
+  pivot_longer(
+    cols = c(total_childcare_nospouse_h_f, total_childcare_nospouse_h_m,
+             uhrsworkt_f, uhrsworkt_m),
+    names_to = "var",
+    values_to = "value") |>
+  
+  # Label sex and category clearly
+  mutate(sex = case_when(grepl("_f$", var) ~ "Women", 
+                         grepl("_m$", var) ~ "Men"),
+    type = case_when(grepl("childcare", var) ~ "Childcare (no spouse present)",
+                     grepl("uhrsworkt", var) ~ "Usual weekly hours worked")) |>
+  
+  # Summary statistics by sex and variable type
+  group_by(sex, type) |>
+  summarise(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE),
+            q1 = quantile(value, 0.25, na.rm = TRUE),
+            q2 = quantile(value, 0.50, na.rm = TRUE),
+            q3 = quantile(value, 0.75, na.rm = TRUE),
+    .groups = "drop") |>
+  arrange(type, sex)
+```
+
+# Trying to find the sharing rule
+
+## Considerations in Arduini
 
 Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
 
 Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP).
 
-# Estimating sharing rule
+male and female specifications
 ```{r}
-# male and female specifications
+# leisure including eating, drinking, washing, spirituality, volunteering
 eq_m = leisure_exp_m ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
   Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
 
 eq_f = leisure_exp_f ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
   Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
 
+# relaxing, socialising, sport, entertainment, and hobbies only
+eq_m_r = leisure_exp_m_r ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
+  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
+
+eq_f_r = leisure_exp_f_r ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
+  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
+
 eqns = list(male = eq_m, female = eq_f)
+eqns_r = list(male = eq_m, female = eq_f)
 ```
 
-unrestricted regressions
+Unrestricted regressions (no restrictions on coefficients): leisure including eating, drinking, and washing
 ```{r}
-fit_unres = systemfit(eqns, method = "SUR", data = parents)
+# leisure including eating, drinking, washing, spirituality, volunteering
+fit_unres = systemfit(eqns, method = "SUR", data = hh)
 summary(fit_unres)
+```
+
+Unrestricted regressions (no restrictions on coefficients): leisure not including eating, drinking, and washing
+```{r}
+# relaxing, socialising, sport, entertainment, and hobbies only
+fit_unres_r = systemfit(eqns_r, method = "SUR", data = hh)
+summary(fit_unres_r)
 ```
 
 Following the paper:
@@ -387,4 +496,4 @@ fit_restr = systemfit(eqns,
 
 summary(fit_restr)
 ```
-what
+to do: period specific intercepts
