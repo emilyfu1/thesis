@@ -6,7 +6,7 @@ setwd("/Users/emilyfu/Desktop/school/thesis")
 
 # things to help with data cleaning
 topcode_earnweek = 2884.61
-invalid_earnweek = 99999.98
+invalid_earnweek = c(99999.99, 99999.98)
 invalid_workhours = 995
 invalid_race = 998
 invalid_educ = 998
@@ -24,7 +24,10 @@ variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE",
               "total_private_leisure_r", "total_childcare", 
               "total_childcare_nospouse", "KID1TO2", "KID3TO5", "KID6TO12", 
               "KID13TO17", "spouse_earnweek", "spouse_usualhours", 
-              "spouse_educ", "spouse_race", "spouse_age", "spouse_sex")
+              "spouse_educ", "spouse_race", "spouse_age", "spouse_sex",
+              "any_private_leisure", "any_private_leisure_r", 
+              "any_childcare", "both_private_leisure", "both_private_leisure_r", 
+              "both_childcare")
 
 # childcare activities (currently not used)
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
@@ -206,8 +209,8 @@ data_working_parents = data_adults |>
   group_by(YEAR, SERIAL) |>
   mutate(
     # respondent-reported spouse weekly earnings, fill to household level
-    spouse_earnweek = if (any(SPEARNWEEK < invalid_earnweek, na.rm = TRUE)) {
-      max(SPEARNWEEK[SPEARNWEEK < invalid_earnweek], na.rm = TRUE)
+    spouse_earnweek = if (any(SPEARNWEEK <= topcode_earnweek, na.rm = TRUE)) {
+      max(SPEARNWEEK[SPEARNWEEK <= invalid_earnweek], na.rm = TRUE)
     } else NA_real_,
     
     # respondent-reported spouse usual hours, fill to household level
@@ -226,8 +229,8 @@ data_working_parents = data_adults |>
     } else NA_real_,
     
     # respondent-reported spouse age, fill to household level
-    spouse_age = if (any(SPAGE <= invalid_age, na.rm = TRUE)) {
-      max(SPAGE[SPAGE <= invalid_age], na.rm = TRUE)
+    spouse_age = if (any(SPAGE < invalid_age, na.rm = TRUE)) {
+      max(SPAGE[SPAGE < invalid_age], na.rm = TRUE)
     } else NA_real_,
 
     # respondent-reported spouse sex, fill to household level
@@ -255,22 +258,20 @@ data_working_parents = data_adults |>
   mutate(EARNWEEK = if_else(is_resp, EARNWEEK, spouse_earnweek),
          UHRSWORKT = if_else(is_resp, UHRSWORKT, spouse_usualhours)) |>
   
+  # check for respondents who are working+earning regularly
+  # validity for BOTH respondent and spouse
+  mutate(valid_wage = (EARNWEEK <= topcode_earnweek & EARNWEEK > 0 & 
+                         UHRSWORKT > 0 & UHRSWORKT < invalid_workhours)) |>
+
   group_by(YEAR, SERIAL) |>
-  mutate(
-    # check for respondents who are working+earning regularly
-    # validity for BOTH respondent and spouse
-    valid_wage = (EARNWEEK < invalid_earnweek &
-                         EARNWEEK > 0 &
-                         UHRSWORKT > 0 &
-                         UHRSWORKT < invalid_workhours)) |>
   # only keep respondents who are working+earning regularly
-  filter(sum(valid_wage) == 2) |> 
+  filter(all(valid_wage)) |> 
   mutate(
     # earnings countributions of each person to household
     hh_total_earn = sum(EARNWEEK[EARNWEEK < invalid_earnweek], na.rm = TRUE),
     # how much is contributed
     earn_share = if_else(hh_total_earn > 0, EARNWEEK / hh_total_earn, NA_real_)) |>
-
+  
   ungroup()
 
 # individual level time use for tasks of interest
@@ -302,17 +303,31 @@ activity_summaries = data_working_parents |>
 
 # check how many zeros are in data for leisure and childcare
 valid_households = activity_summaries |>
+  mutate(positive_private_leisure = total_private_leisure > 0,
+         positive_private_leisure_r = total_private_leisure_r > 0,
+         positive_nospouse_childcare = total_childcare_nospouse > 0,) |>
   group_by(YEAR, SERIAL) |>
   summarise(filtered_household_size = n(),
-            # check at household level if activity requirements are met
-            both_private_leisure = all(total_private_leisure > 0),
-            both_private_leisure_r = all(total_private_leisure_r > 0),
-            any_private_leisure = any(total_private_leisure > 0),
-            any_private_leisure_r = any(total_private_leisure_r > 0),
-            any_childcare = any(total_childcare_nospouse > 0),
-            both_childcare = all(total_childcare_nospouse > 0),
+            # check if at least one spouse does childcare or has private leisure
+            # or if both spouses do childcare or have private leisure
+            
+            # number of spouses who have non-zero leisure or childcare
+            num_private = sum(positive_private_leisure, na.rm = TRUE),
+            num_private_r = sum(positive_private_leisure_r, na.rm = TRUE),
+            num_childcare = sum(positive_nospouse_childcare, na.rm = TRUE),
+            
+            # any = at least 1 spouse has positive time
+            any_private_leisure = num_private >= 1,
+            any_private_leisure_r = num_private_r >= 1,
+            any_childcare = num_childcare >= 1,
+            
+            # both = both spouses have positive time
+            both_private_leisure = num_private == 2,
+            both_private_leisure_r = num_private_r == 2,
+            both_childcare = num_childcare == 2,
             .groups="drop") |>
   # this gets rid of anyone who doesn't have a partner with activity data
+  # or also anyone who doesn't have a partner with 
   filter(filtered_household_size == 2)
 
 # get back to individual-level data
