@@ -5,6 +5,7 @@ editor: visual
 ---
 
 Importing packages
+
 ```{r echo=FALSE}
 library(tidyverse)
 library(systemfit)
@@ -14,6 +15,7 @@ library(knitr)
 ```
 
 Build constraints matrix (symmetry: coefficient in male + coefficient in female = 0)
+gotta fix this to deal with the between/within-sex deviation variables
 ```{r}
 # 14 rows (coefficients) x 8 columns (free parameters)
 regMat = matrix(0, nrow = 14, ncol = 8)
@@ -60,15 +62,20 @@ regMat["female_Bx_dev_agegap", "theta_agegap"] = -1
 ```
 
 Table printing:
+
 ```{r}
 source("functions.R")
 
 # sharing rule table for coefficients
 row_labels = c("y" = "Budget",
-               "Bx_dev_wage_f_all" = "Budget * dev. fem. hourly pay",
-               "Bx_dev_wage_m_all" = "Budget * dev. mal. hourly pay",
-               "Bx_dev_educ_f_all" = "Budget * dev. fem. qualification",
-               "Bx_dev_educ_m_all" = "Budget * dev. mal. qualification",
+               "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
+               "Bx_dev_wage_m_all" = "Budget * dev. all hourly pay",
+               "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
+               "Bx_dev_educ_m_all" = "Budget * dev. all qualification",
+               "Bx_dev_wage_f_only" = "Budget * dev. fem. hourly pay",
+               "Bx_dev_wage_m_only" = "Budget * dev. mal. hourly pay",
+               "Bx_dev_educ_f_only" = "Budget * dev. fem. qualification",
+               "Bx_dev_educ_m_only" = "Budget * dev. mal. qualification",
                "Bx_dev_avgage" = "Budget * dev. average age",
                "Bx_dev_agegap" = "Budget * dev. age gap")
 ```
@@ -89,14 +96,7 @@ Literature on household inequality generally tends to and focuses on working cou
 
 \[Hyee and Robledo (2010)\]\[https://www.nottingham.ac.uk/economics/documents/discussion-papers/10-06.pdf\]
 
-Calvi (2002): Under some mild assumptions, there exists
-a monotonic correspondence between Pareto
-weights and resource shares. Consequently,
-resource shares may also be interpreted as a
-measure of intrahousehold bargaining power.
-In effect, these are more tractable measures of
-power, as they are invariant to unobservable car-
-dinalizations of the utility functions.
+Calvi (2002): Under some mild assumptions, there exists a monotonic correspondence between Pareto weights and resource shares. Consequently, resource shares may also be interpreted as a measure of intrahousehold bargaining power. In effect, these are more tractable measures of power, as they are invariant to unobservable car- dinalizations of the utility functions.
 
 \[Andrew et al (2021)\]\[https://ifs.org.uk/inequality/wp-content/uploads/2021/03/BN-The-careers-and-time-use-of-mothers-and-fathers.pdf\] show that heteronormative households, mothers are more likely to leave the labour force after having children regardless of the relative wages between mother and father before childbirth. (Much of the recent literature in this area focuses on COVID-19, maybe look into this.) It's difficult to really prove who in a relationship is doing the colloquially-named "mental load" of parenting (stuff like keeping appointments, planning meals, remembering when the laundry was last done), although anecdotally this is usually the wife or mother's job in this kind of household. (There may be a time use paper somewhere that tries to deal with this, maybe look into this). The ATUS records time spent doing activities, but not the thoughts that go on in someone's head. It also records the people present during an activity, but not, as far as I've seen, who is a active participant, or if someone needs to be actively prompted to do the groceries or pick up after a child.
 
@@ -142,7 +142,7 @@ Childcare-related activities from the ATUS documentation:
 080101  Using paid childcare services
 080102  Waiting associated with purchasing childcare services
 080199  Using paid childcare services, n.e.c.
-160103	Telephone calls to or from education services providers
+160103  Telephone calls to or from education services providers
 160107  Telephone calls to or from paid child or adult care providers
 180301  Travel related to caring for and helping household children, inclusive (2003, 2004)
 180302  Travel related to caring for and helping household children (2005+)
@@ -151,23 +151,22 @@ Childcare-related activities from the ATUS documentation:
 180801  Travel related to using childcare services
 ```
 
-Private leisure activities from the ATUS documentation: needs to be done without the spouse or other household members present
-This includes all types of self care including sleeping and eating!
+Private leisure activities from the ATUS documentation: needs to be done without the spouse or other household members present This includes all types of self care including sleeping and eating!
 
-```
+```         
 General
-010101	Sleeping	
-010102	Sleeplessness	
-010199	Sleeping, n.e.c.
-010201	Washing, dressing, and grooming oneself
-010299	Grooming, n.e.c.
-010301	Health-related self care	
-010399	Self care, n.e.c.
-010401	Personal or private activities	
-010499	Personal activities, n.e.c.
-019999	Personal care, n.e.c.
-050201	Socializing, relaxing, and leisure as part of job
-020603	Walking, exercising, playing with animals (2008+)
+010101  Sleeping    
+010102  Sleeplessness   
+010199  Sleeping, n.e.c.
+010201  Washing, dressing, and grooming oneself
+010299  Grooming, n.e.c.
+010301  Health-related self care    
+010399  Self care, n.e.c.
+010401  Personal or private activities  
+010499  Personal activities, n.e.c.
+019999  Personal care, n.e.c.
+050201  Socializing, relaxing, and leisure as part of job
+020603  Walking, exercising, playing with animals (2008+)
 120201  Attending or hosting parties, receptions, or ceremonies
 120202  Attending meetings for personal interest (not volunteering)
 120299  Attending or hosting social events, n.e.c.
@@ -197,27 +196,27 @@ General
 120504  Waiting associated with arts and entertainment
 120599  Waiting associated with socializing, n.e.c.
 129999  Socializing, relaxing, and leisure, n.e.c.
-060102	Taking class for personal interest
-060201	Extracurricular club activities
-060202	Extracurricular music and performance activities
-060203	Extracurricular student government activities
-060204	Waiting associated with extracurricular activities (2004+)
-060299	Education-related extracurricular activities, n.e.c.
-060302	Research or homework for class (for personal interest)
-060402	Administrative activities: class for personal interest
-070104	Shopping, except groceries, food, and gas
-110101	Eating and drinking
-050202	Eating and drinking as part of job
-110201	Waiting associated with eating and drinking
-110299	Waiting associated with eating and drinking, n.e.c.
-119999	Eating and drinking, n.e.c.
-120101	Socializing and communicating with others
-120199	Socializing and communicating, n.e.c.
-160101	Telephone calls to or from family members
-160102	Telephone calls to or from friends, neighbors, or acquaintances
-080501	Using personal care services
-080502	Waiting associated with personal care services
-080599	Using personal care services, n.e.c.
+060102  Taking class for personal interest
+060201  Extracurricular club activities
+060202  Extracurricular music and performance activities
+060203  Extracurricular student government activities
+060204  Waiting associated with extracurricular activities (2004+)
+060299  Education-related extracurricular activities, n.e.c.
+060302  Research or homework for class (for personal interest)
+060402  Administrative activities: class for personal interest
+070104  Shopping, except groceries, food, and gas
+110101  Eating and drinking
+050202  Eating and drinking as part of job
+110201  Waiting associated with eating and drinking
+110299  Waiting associated with eating and drinking, n.e.c.
+119999  Eating and drinking, n.e.c.
+120101  Socializing and communicating with others
+120199  Socializing and communicating, n.e.c.
+160101  Telephone calls to or from family members
+160102  Telephone calls to or from friends, neighbors, or acquaintances
+080501  Using personal care services
+080502  Waiting associated with personal care services
+080599  Using personal care services, n.e.c.
 
 Sport
 130101  Doing aerobics
@@ -295,144 +294,151 @@ Sport
 130399  Waiting associated with sports, exercise, and recreation, n.e.c.
 
 Religion
-140101	Attending religious services	
-140102	Participation in religious practices	
-140103	Waiting associated with religious and spiritual activities	
-140104	Security procedures related to religious and spiritual activities
-140105	Religious education activities (2007+)
-149999	Religious and spiritual activities, n.e.c.
+140101  Attending religious services    
+140102  Participation in religious practices    
+140103  Waiting associated with religious and spiritual activities  
+140104  Security procedures related to religious and spiritual activities
+140105  Religious education activities (2007+)
+149999  Religious and spiritual activities, n.e.c.
 
 Volunteering
-150101	Computer use	
-150102	Organizing and preparing	
-150103	Reading	
-150104	Telephone calls (except hotline counseling)	
-150105	Writing	
-150106	Fundraising	
-150199	Administrative and support activities, n.e.c.
-150201	Food preparation, presentation, clean-up
-150202	Collecting and delivering clothing and other goods
-150203	Providing care	
-150204	Teaching, leading, counseling, mentoring	
-150299	Social service and care activities, n.e.c.
-150301	Building houses, wildlife sites, and other structures
-150302	Indoor and outdoor maintenance, repair, and clean-up
-150399	Indoor and outdoor maintenance, building, and clean-up activities, n.e.c.
-150402	Serving at volunteer events and cultural activities
-150499	Participating in performance and cultural activities, n.e.c.
-150500	Attending Meetings, Conferences, and Training
-150501	Attending meetings, conferences, and training	
-150599	Attending meetings, conferences, and training, n.e.c.
-150601	Public health activities
-150602	Public safety activities	
-150699	Public health and safety activities, n.e.c.	
-150701	Waiting associated with volunteer activities (2004+)
-150799	Waiting associated with volunteer activities, n.e.c. (2004+)
-150801	Security procedures related to volunteer activities (2007+)
-150899	Security proecdures related to voluteer activities, n.e.c. (2007+)
-159999	Volunteer activities, n.e.c.
+150101  Computer use    
+150102  Organizing and preparing    
+150103  Reading 
+150104  Telephone calls (except hotline counseling) 
+150105  Writing 
+150106  Fundraising 
+150199  Administrative and support activities, n.e.c.
+150201  Food preparation, presentation, clean-up
+150202  Collecting and delivering clothing and other goods
+150203  Providing care  
+150204  Teaching, leading, counseling, mentoring    
+150299  Social service and care activities, n.e.c.
+150301  Building houses, wildlife sites, and other structures
+150302  Indoor and outdoor maintenance, repair, and clean-up
+150399  Indoor and outdoor maintenance, building, and clean-up activities, n.e.c.
+150402  Serving at volunteer events and cultural activities
+150499  Participating in performance and cultural activities, n.e.c.
+150500  Attending Meetings, Conferences, and Training
+150501  Attending meetings, conferences, and training   
+150599  Attending meetings, conferences, and training, n.e.c.
+150601  Public health activities
+150602  Public safety activities    
+150699  Public health and safety activities, n.e.c. 
+150701  Waiting associated with volunteer activities (2004+)
+150799  Waiting associated with volunteer activities, n.e.c. (2004+)
+150801  Security procedures related to volunteer activities (2007+)
+150899  Security proecdures related to voluteer activities, n.e.c. (2007+)
+159999  Volunteer activities, n.e.c.
 
 Travel
-180805	Travel related to using personal care services
-181201	Travel related to socializing and communicating	
-181202	Travel related to attending or hosting social events	
-181101	Travel related to eating and drinking
-181199	Travel related to eating and drinking, n.e.c.
-181203	Travel related to relaxing and leisure (2003, 2004)
-181204	Travel related to arts and entertainment	
-181205	Travel as a form of entertainment (2005+)
-181206	Travel related to relaxing and leisure (2005+)
-181299	Travel related to socializing, relaxing, and leisure, n.e.c.
-181300	Travel Related to Sports, Exercise, and Recreation
-181301	Travel related to participating in sports, exercise, or recreation	
-181302	Travel related to attending sporting or recreational events
-181401	Travel related to religious or spiritual practices
-181499	Travel related to religious or spiritual activities, n.e.c.
-181501	Travel related to volunteering
-181599	Travel related to volunteer activities, n.e.c.
+180805  Travel related to using personal care services
+181201  Travel related to socializing and communicating 
+181202  Travel related to attending or hosting social events    
+181101  Travel related to eating and drinking
+181199  Travel related to eating and drinking, n.e.c.
+181203  Travel related to relaxing and leisure (2003, 2004)
+181204  Travel related to arts and entertainment    
+181205  Travel as a form of entertainment (2005+)
+181206  Travel related to relaxing and leisure (2005+)
+181299  Travel related to socializing, relaxing, and leisure, n.e.c.
+181300  Travel Related to Sports, Exercise, and Recreation
+181301  Travel related to participating in sports, exercise, or recreation  
+181302  Travel related to attending sporting or recreational events
+181401  Travel related to religious or spiritual practices
+181499  Travel related to religious or spiritual activities, n.e.c.
+181501  Travel related to volunteering
+181599  Travel related to volunteer activities, n.e.c.
 ```
 
 People do activities with...
 
-```
-0100	Alone	
-0200	Spouse	
-0201	Unmarried partner	
-0202	Own household child	
-0203	Grandchild	
-0204	Parent	
-0205	Brother sister	
-0206	Other related person	
-0207	Foster child	
-0208	Housemate, roommate	
-0209	Roomer, boarder	
-0210	Other nonrelative	
-0300	Own non-household child under 18	
-0400	Parents (not living in household)	
-0401	Other non-household family members under 18	
-0402	Other non-household family members 18 and older (including parents-in-law)	
-0403	Friends	
-0404	Co-workers, colleagues, clients (non-work activities only)
-0405	Neighbors, acquaintances	
-0406	Other non-household children under 18	
-0407	Other non-household adults 18 and older	
-0408	Boss or manager
-0409	People whom I supervise
-0410	Co-workers
-0411	Customers
-9996	Refused
-9997	Don't know	
-9998	Blank	
+```         
+0100    Alone   
+0200    Spouse  
+0201    Unmarried partner   
+0202    Own household child 
+0203    Grandchild  
+0204    Parent  
+0205    Brother sister  
+0206    Other related person    
+0207    Foster child    
+0208    Housemate, roommate 
+0209    Roomer, boarder 
+0210    Other nonrelative   
+0300    Own non-household child under 18    
+0400    Parents (not living in household)   
+0401    Other non-household family members under 18 
+0402    Other non-household family members 18 and older (including parents-in-law)  
+0403    Friends 
+0404    Co-workers, colleagues, clients (non-work activities only)
+0405    Neighbors, acquaintances    
+0406    Other non-household children under 18   
+0407    Other non-household adults 18 and older 
+0408    Boss or manager
+0409    People whom I supervise
+0410    Co-workers
+0411    Customers
+9996    Refused
+9997    Don't know  
+9998    Blank   
 ```
 
 # Random summary statistics and stuff
 
 Import data
+
 ```{r}
 final_individual_data = read.csv("atus_working_parents_act.csv")
 hh = read.csv("sharing_est.csv")
 ```
 
 ## Weird age gaps?
+
 ```{r}
 jay_and_gloria = final_individual_data |> filter(age_gap > 30)
 print(jay_and_gloria[c("YEAR", "SERIAL", "SEX", "AGE")])
 ```
 
 ## Number of observations in each year
+
 ```{r}
 hh |>
   count(YEAR, name = "n_households")
 ```
 
 ## Zeros in leisure and childcare
-Something that is supposed to be advantageous about private leisure is that people tend to "consume" it more than other private assignable goods like clothing (which is durable and not purchased as often as one would watch TV). However, it looks like ATUS respondents just don't tend to have a lot of fun.
-this code lowkey is not giving me percentages that make sense rn
+
+Something that is supposed to be advantageous about private leisure is that people tend to "consume" it more than other private assignable goods like clothing (which is durable and not purchased as often as one would watch TV). However, it looks like ATUS respondents just don't tend to have a lot of fun. 
+
 ```{r}
-missings_leisure = final_individual_data |>
+zeros_leisure_childcare = final_individual_data |>
   group_by(YEAR) |>
+  # find people who don't have any private leisure time use
+  # or no-spouse-present childcare time use
   summarise(
-    # private leisure: at least one spouse has zero
-    pct_any_zero_private_leisure = 1 - sum(any_private_leisure) / n(),
-    # private leisure: both spouses have zero
-    pct_both_zero_private_leisure = 1 - sum(both_private_leisure) / n(),
+    # at least one person in hh with no private leisure
+    pct_any_zero_private_leisure  = mean(any_zero_private_leisure),
+    # both people in hh with no private leisure
+    pct_both_zero_private_leisure = mean(both_zero_private_leisure),
+    
+    # at least one person in hh with no private leisure (restricted def)
+    pct_any_zero_private_leisure_r  = mean(any_zero_private_leisure_r),
+    # both people in hh with no private leisure (restricted def)
+    pct_both_zero_private_leisure_r = mean(both_zero_private_leisure_r),
+    
+    # at least one person in hh with no no-spouse-present childcare
+    pct_any_zero_childcare  = mean(any_zero_childcare),
+    # both people in hh with no no-spouse-present childcare
+    pct_both_zero_childcare = mean(both_zero_childcare))
 
-    # restricted private leisure: at least one spouse has zero
-    pct_any_zero_private_leisure_r = 1 - sum(any_private_leisure_r) / n(),
-    # restricted private leisure: both spouses have zero
-    pct_both_zero_private_leisure_r = 1 - sum(both_private_leisure_r) / n(),
-
-    # childcare: at least one spouse has zero
-    pct_any_zero_childcare = 1 - sum(any_childcare) / n(),
-    # childcare: both spouses have zero
-    pct_both_zero_childcare = 1 - sum(both_childcare) / n())
-
-missings_leisure
+zeros_leisure_childcare
 ```
 
 ## Comparing leisure definitions
 
 Expenditure refers to hours spent on leisure valued at the person’s hourly wage. I currently have two definitions of leisure: one very broadly counts sleeping, eating, and washing/grooming (as defined by Arduini) and one only includes recreation/social activities. Women generally command more leisure expenditure than men in the broader definition of leisure, but less in the narrower definition, but this varies a lot for both men and women.
+
 ```{r}
 hh |>
   pivot_longer(
@@ -453,7 +459,9 @@ hh |>
 ```
 
 ## Comparing age and ability
+
 Men tend to be older and less educated, but earn more than women, although there is also a lot of variation in earnings.
+
 ```{r}
 hh |>
   pivot_longer(cols = c(educ_f, educ_m, wage_f, wage_m, age_gap),
@@ -475,7 +483,9 @@ hh |>
 ```
 
 ## Comparing childcare and working hours
-I compare working hours between men and women, and childcare performed by one spouse without the other present. Men tend to work more hours, while childcare undertaken by one parent varies a lot within the sample. This makes sense as I haven’t taken any restrictions on child ages at this point, but women tend to spend more time on childcare at the upper end of the distribution. I’m guessing this is the part of the sample with younger children. 
+
+I compare working hours between men and women, and childcare performed by one spouse without the other present. Men tend to work more hours, while childcare undertaken by one parent varies a lot within the sample. This makes sense as I haven’t taken any restrictions on child ages at this point, but women tend to spend more time on childcare at the upper end of the distribution. I’m guessing this is the part of the sample with younger children.
+
 ```{r}
 hh |>
   pivot_longer(
@@ -502,6 +512,7 @@ hh |>
 ```
 
 ## Male/female broad leisure expenditure
+There are a few people who regularly work very few hours a week, yet earn a lot. Maybe they are anesthesiologists
 ```{r}
 ggplot(hh) +
   # points
@@ -513,7 +524,9 @@ ggplot(hh) +
   labs(x = "leisure expenditure (broad definition)", y = "household budget") +
   theme_minimal()
 ```
+
 ## Male/female broad leisure expenditure
+
 ```{r}
 ggplot(hh) +
   # points
@@ -526,13 +539,11 @@ ggplot(hh) +
   theme_minimal()
 ```
 
-
 # Trying to find the sharing rule
 
 ## Considerations in Arduini paper
 
-Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. 
-Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
+Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
 
 Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP). "With Cobb-Douglas preferences, we can achieve the desired restriction with public good C-D SAP. Under public good C-D SAP, the resource share and Pareto weight coincide. Public good C-D SAP imposes that the sum of all public good preference parameters is the same for all individuals of the same household category g."
 
@@ -542,10 +553,8 @@ The question of how to deal with children is a big issue. Time spent parenting (
 
 ## it is time to run a LOT of regressions
 
-### Male and female specifications
+### Male and female specifications: deviations from average with own sex
 ```{r}
-### deviations from average with own sex
-
 # leisure including eating, drinking, washing, spirituality, volunteering
 
 # men
@@ -569,7 +578,10 @@ eq_f_r_within = leisure_exp_f_r ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_onl
 # list of regressions
 eqns_within = list(male = eq_m_within, female = eq_f_within)
 eqns_r_within = list(male = eq_m_r_within, female = eq_f_r_within)
+```
 
+### Male and female specifications: deviations from average of men AND women
+```{r}
 ### deviations from average with both sexes
 
 # leisure including eating, drinking, washing, spirituality, volunteering
@@ -597,7 +609,7 @@ eqns_between = list(male = eq_m_between, female = eq_f_between)
 eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
 ```
 
-### No restrictions on coefficients, within-sex deviations
+### No restrictions on coefficients: deviations from average with own sex
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
 fit_unres_within = systemfit(eqns_within, method = "SUR", data = hh)
@@ -605,7 +617,7 @@ fit_unres_within = systemfit(eqns_within, method = "SUR", data = hh)
 fit_unres_r_within = systemfit(eqns_r_within, method = "SUR", data = hh)
 ```
 
-### No restrictions on coefficients, between-sex deviations
+### No restrictions on coefficients: deviations from average of men AND women
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
 fit_unres_between = systemfit(eqns_between, method = "SUR", data = hh)
@@ -613,7 +625,33 @@ fit_unres_between = systemfit(eqns_between, method = "SUR", data = hh)
 fit_unres_r_between = systemfit(eqns_r_between, method = "SUR", data = hh)
 ```
 
+### looking at some regressions
+```{r}
+# get all regressions
+within_m = extract_fit(fit_unres_within, "male")
+within_f = extract_fit(fit_unres_within, "female")
+between_m = extract_fit(fit_unres_between, "male")
+between_f = extract_fit(fit_unres_between, "female")
+
+# ensure all models have the same ordering of covariates
+all_vars = names(row_labels)
+
+# assemble estimates
+table_df = data.frame(Variable = unname(row_labels),
+                      `Within-sex (Men)` = within_m[all_vars],
+                      `Within-sex (Women)` = within_f[all_vars],
+                      `Between-sex (Men)` = between_m[all_vars],
+                      `Between-sex (Women)`= between_f[all_vars],
+                      check.names = FALSE)
+
+print_unres = kable(table_df, format = "pipe")
+cat(print_unres, sep = "\n")
+```
+
+
+(don't run this until you fix the matrix of restrictions)
 ### Restricted coefficients, within-sex deviations
+
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
 fit_res_within = systemfit(eqns_within, method = "SUR", data = hh)
@@ -622,6 +660,7 @@ fit_res_r_within = systemfit(eqns_r_within, method = "SUR", data = hh)
 ```
 
 ### Restricted coefficients, between-sex deviations
+
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
 fit_res_between = systemfit(eqns_between, method = "SUR", data = hh)
@@ -629,50 +668,36 @@ fit_res_between = systemfit(eqns_between, method = "SUR", data = hh)
 fit_res_r_between = systemfit(eqns_r_between, method = "SUR", data = hh)
 ```
 
-### looking at some regressions
-```{r}
-# get all regressions
-within_m = extract_fit(fit_unres_within, "eq_m_within")
-within_f = extract_fit(fit_unres_within, "eq_f_within")
-between_m = extract_fit(fit_unres_between, "eq_m_between")
-between_f = extract_fit(fit_unres_between, "eq_f_between")
 
-# ensure all models have the same ordering of covariates
-all_vars = names(row_labels)
-
-# assemble estimates
-table_df = data.frame(Variable = unname(row_labels),
-                      `Within-sex (Men)`   = within_m[all_vars],
-                      `Within-sex (Women)` = within_f[all_vars],
-                      `Between-sex (Men)`  = between_m[all_vars],
-                      `Between-sex (Women)`= between_f[all_vars],
-                      check.names = FALSE)
-
-# print nicely
-kable(table_df, align = "lcccc", 
-      caption = "SUR Estimates: Within- and Between-Sex Deviations")
-```
 
 Following the paper:
 
 "The mean female resource share is calculated by dividing the coefficient on ‘Budget’ in the female regression by the sum of the ‘Budget’ coefficients across the two equations... The preference coefficient is estimated by dividing the coefficient on ‘Budget’ in the female regression by the estimated average female resource share."
 
 # To do: notes
-- clean the gdp per capita data and add deviations and interactions to regressions
-- actually calculate the resource shares lol
-- deviations from averages: compare to other women or other men and women? try both of these. what’s my replacement value? bargaining power may come from strength relative to spouse, but strength relative to other options within your gender
-- say in 2006 there is a leisure gap when both contribute similar to household.
-over time, women contribute more to the household, but this may result in smaller increases in women’s leisure than if it were men
-- tease out whether you’re earning more relative to your husband or relative to other women
-- two different regressions, and include both in the same regression
 
-- if women get richer does time spend with child increase or decrease?
-- extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man?
-- if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
+-   clean the gdp per capita data and add deviations and interactions to regressions
 
-- changes over time: take income and matchings from 2004, and take coefficients from 2024. apply the betas to the observed behaviour of 2024, would i get different counterfactual leisures?
-- margins plot
+-   actually calculate the resource shares lol
 
-- child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters
-- check gender ratios of births in states
-I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. There is some literature that suggests men tend to spend more time with sons than daughters. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women.
+-   deviations from averages: compare to other women or other men and women? try both of these. what’s my replacement value? bargaining power may come from strength relative to spouse, but strength relative to other options within your gender
+
+-   say in 2006 there is a leisure gap when both contribute similar to household. over time, women contribute more to the household, but this may result in smaller increases in women’s leisure than if it were men
+
+-   tease out whether you’re earning more relative to your husband or relative to other women
+
+-   two different regressions, and include both in the same regression
+
+-   if women get richer does time spend with child increase or decrease?
+
+-   extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man?
+
+-   if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
+
+-   changes over time: take income and matchings from 2004, and take coefficients from 2024. apply the betas to the observed behaviour of 2024, would i get different counterfactual leisures?
+
+-   margins plot
+
+-   child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters
+
+-   check gender ratios of births in states I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. There is some literature that suggests men tend to spend more time with sons than daughters. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women.
