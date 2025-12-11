@@ -406,19 +406,29 @@ final_individual_data = final_individual_data |>
   
   # since it's a pooled sample? 
   group_by(YEAR) |>
-  # deviations from mean
-  mutate(dev_wage_f = wage_f - mean(wage_f, na.rm=TRUE),
-         dev_wage_m = wage_m - mean(wage_m, na.rm=TRUE),
-         dev_educ_f = educ_f - mean(educ_f, na.rm=TRUE),
-         dev_educ_m = educ_m - mean(educ_m, na.rm=TRUE),
+  # deviations from mean (gender-specific)
+  mutate(dev_wage_f_only = wage_f - mean(wage_f, na.rm=TRUE),
+         dev_wage_m_only = wage_m - mean(wage_m, na.rm=TRUE),
+         dev_educ_f_only = educ_f - mean(educ_f, na.rm=TRUE),
+         dev_educ_m_only = educ_m - mean(educ_m, na.rm=TRUE),
          dev_avgage = avg_age - mean(avg_age, na.rm=TRUE),
          dev_agegap = age_gap - mean(age_gap, na.rm=TRUE)) |> 
+  # to do: deviations from mean (entire sample)
+  mutate(dev_wage_f_all = wage_f - mean(hrly_wage, na.rm=TRUE),
+         dev_wage_m_all = wage_m - mean(hrly_wage, na.rm=TRUE),
+         dev_educ_f_all = educ_f - mean(educ_cat, na.rm=TRUE),
+         dev_educ_m_all = educ_m - mean(educ_cat, na.rm=TRUE)) |>
+  
   ungroup() |>
   # interaction terms
-  mutate(Bx_dev_wage_f = y * dev_wage_f,
-         Bx_dev_wage_m = y * dev_wage_m,
-         Bx_dev_educ_f = y * dev_educ_f,
-         Bx_dev_educ_m = y * dev_educ_m,
+  mutate(Bx_dev_wage_f_only = y * dev_wage_f,
+         Bx_dev_wage_m_only = y * dev_wage_m,
+         Bx_dev_educ_f_only = y * dev_educ_f,
+         Bx_dev_educ_m_only = y * dev_educ_m,
+         Bx_dev_wage_f_all = y * dev_wage_f,
+         Bx_dev_wage_m_all = y * dev_wage_m,
+         Bx_dev_educ_f_all = y * dev_educ_f,
+         Bx_dev_educ_m_all = y * dev_educ_m,
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap)
 

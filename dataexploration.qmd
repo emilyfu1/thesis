@@ -4,60 +4,73 @@ format: html
 editor: visual
 ---
 
+Importing packages
 ```{r echo=FALSE}
 library(tidyverse)
 library(systemfit)
+library(ggplot2)
+library(purrr)
+library(knitr)
 ```
 
 Build constraints matrix (symmetry: coefficient in male + coefficient in female = 0)
 ```{r}
-regMat = matrix(c(
-  # row 1: male_(Intercept)
-  1,0,0,0,0,0,0,0,0,0,
-  # row 2: male_y
-  0,0,1,0,0,0,0,0,0,0,
-  # row 3: male_Bx_dev_wage_f
-  0,0,0,0,1,0,0,0,0,0,
-  # row 4: male_Bx_dev_wage_m
-  0,0,0,0,0,1,0,0,0,0,
-  # row 5: male_Bx_dev_educ_f
-  0,0,0,0,0,0,1,0,0,0,
-  # row 6: male_Bx_dev_educ_m
-  0,0,0,0,0,0,0,1,0,0,
-  # row 7: male_Bx_dev_avgage
-  0,0,0,0,0,0,0,0,1,0,
-  # row 8: male_Bx_dev_agegap
-  0,0,0,0,0,0,0,0,0,1,
-  # row 9: female_(Intercept)
-  0,1,0,0,0,0,0,0,0,0,
-  # row 10: female_y
-  0,0,0,1,0,0,0,0,0,0,
-  # row 11: female_Bx_dev_wage_f
-  0,0,0,0,-1,0,0,0,0,0,
-  # row 12: female_Bx_dev_wage_m
-  0,0,0,0,0,-1,0,0,0,0,
-  # row 13: female_Bx_dev_educ_f
-  0,0,0,0,0,0,-1,0,0,0,
-  # row 14: female_Bx_dev_educ_m
-  0,0,0,0,0,0,0,-1,0,0,
-  # row 15: female_Bx_dev_avgage
-  0,0,0,0,0,0,0,0,-1,0,
-  # row 16: female_Bx_dev_agegap
-  0,0,0,0,0,0,0,0,0,-1
-), nrow = 16, byrow = TRUE)
+# 14 rows (coefficients) x 8 columns (free parameters)
+regMat = matrix(0, nrow = 14, ncol = 8)
 
-# Assign row & column names to make inspection easy
-rownames(regMat) = c("male_(Intercept)", "male_y", "male_Bx_dev_wage_f", 
-                     "male_Bx_dev_wage_m", "male_Bx_dev_educ_f", 
-                     "male_Bx_dev_educ_m", "male_Bx_dev_avgage", 
-                     "male_Bx_dev_agegap", "female_(Intercept)", "female_y",
+colnames(regMat) = c("male_y", "female_y", "theta_wf", "theta_wm", "theta_ef",
+                     "theta_em", "theta_age", "theta_agegap")
+
+rownames(regMat) = c("male_y", "male_Bx_dev_wage_f", "male_Bx_dev_wage_m",
+                     "male_Bx_dev_educ_f", "male_Bx_dev_educ_m",
+                     "male_Bx_dev_avgage", "male_Bx_dev_agegap", "female_y",
                      "female_Bx_dev_wage_f", "female_Bx_dev_wage_m",
                      "female_Bx_dev_educ_f", "female_Bx_dev_educ_m",
                      "female_Bx_dev_avgage", "female_Bx_dev_agegap")
 
-colnames(regMat) = c("male_(Intercept)", "female_(Intercept)", "male_y", 
-                     "female_y", "theta_wf", "theta_wm", "theta_ef", "theta_em",
-                     "theta_age", "theta_agegap")
+# map y coefficients to their own free params (no restriction)
+regMat["male_y", "male_y"]   = 1
+regMat["female_y", "female_y"] = 1
+
+# symmetry constraints: male = +theta, female = -theta
+
+# wage_f
+regMat["male_Bx_dev_wage_f", "theta_wf"] =  1
+regMat["female_Bx_dev_wage_f", "theta_wf"] = -1
+
+# wage_m
+regMat["male_Bx_dev_wage_m", "theta_wm"] =  1
+regMat["female_Bx_dev_wage_m", "theta_wm"] = -1
+
+# educ_f
+regMat["male_Bx_dev_educ_f", "theta_ef"] =  1
+regMat["female_Bx_dev_educ_f", "theta_ef"] = -1
+
+# educ_m
+regMat["male_Bx_dev_educ_m", "theta_em"] =  1
+regMat["female_Bx_dev_educ_m", "theta_em"] = -1
+
+# avg_age
+regMat["male_Bx_dev_avgage", "theta_age"] =  1
+regMat["female_Bx_dev_avgage", "theta_age"] = -1
+
+# age_gap
+regMat["male_Bx_dev_agegap", "theta_agegap"] =  1
+regMat["female_Bx_dev_agegap", "theta_agegap"] = -1
+```
+
+Table printing:
+```{r}
+source("functions.R")
+
+# sharing rule table for coefficients
+row_labels = c("y" = "Budget",
+               "Bx_dev_wage_f_all" = "Budget * dev. fem. hourly pay",
+               "Bx_dev_wage_m_all" = "Budget * dev. mal. hourly pay",
+               "Bx_dev_educ_f_all" = "Budget * dev. fem. qualification",
+               "Bx_dev_educ_m_all" = "Budget * dev. mal. qualification",
+               "Bx_dev_avgage" = "Budget * dev. average age",
+               "Bx_dev_agegap" = "Budget * dev. age gap")
 ```
 
 # Thought jail
@@ -66,17 +79,24 @@ My project (roughly): What is the impact of women’s control over their earning
 
 For the purpose of this exercise, I'm not too sure what I want to focus on yet. A good place to start could be nuclear heterosexual households (i.e. two parents, a male partner, a female partner, and children) since I want to look at inequality within the heteronormative household.
 
+## The literature
+
 Literature on household inequality generally tends to and focuses on working couples *without* children, or models them as public goods. \[Arduini (2024)\]\[https://ifs.org.uk/sites/default/files/2025-05/WP202517-Estimating-intra-household-sharing-from-time-use-data.pdf\] uses the concept of private leisure time (time spent on leisure activities without other members of the household present) to estimate intra-household sharing. She defines the "assignable good", which is a private good. These parts are useful:
 
 *"The main limitation of private leisure is that its price is only known for those who work, for whom it coincides with the observed wage. For non-participants, the price of time is higher than their (unobserved) wage and we would have to estimate that in order to use time-use data to identify sharing. That extension is left for future work: in my application to UK data, I focus on working couples."*
 
-Since I wanted to study family-related stuff in the first place, to that end, I think it's worth taking a different look at the role children play in their households. What I originally thought to study were income effects on fertility, and some literature in that subject finds evidence for children being "normal goods" in the sense that fertility increases with income. Would it be reasonable to take the public goods approach, that both parents could allocate resources (time) to "producing the public good" (parenting their children so that they grow up to have characteristics that the family wants as a whole)? btw time spent caring for household children can be for non-own children too?
-
-The question of how to deal with children is a big issue. Time spent parenting (maybe focus on solo parenting, i.e. without spouse present, could also do money spent on kids) has some of the same characteristics as private leisure time. Parenting is also an unpaid activity, but its value isn't really known (even for those who work) since children aren't true goods---they are autonomous people and have their own preferences/choices, especially in adulthood. Treating children as a private good, where each parent can spend more time and/or own resources on raising their shared children for some private benefit, not necessarily something that the other spouse can benefit from (like teaching your child traits that are socially undesirable but personally useful), is complicated and I'm not sure if it's defensible. However, it is essentially the other side of the same coin as private leisure time. The more parenting you do, the less private leisure time you usually get. I just think parenting would be an interesting angle to take if I want to focus on families. Even if I can't use solo parenting time as a way to measure household sharing, it could be interesting to try and use it to answer my original question about the normal-ness or inferior-ness of children.
-
 \[Blundell et al (2019)\]\[https://www.sfu.ca/\~pendakur/papers/BKLP16_longtitle.pdf\] still need to read this lol
 
 \[Hyee and Robledo (2010)\]\[https://www.nottingham.ac.uk/economics/documents/discussion-papers/10-06.pdf\]
+
+Calvi (2002): Under some mild assumptions, there exists
+a monotonic correspondence between Pareto
+weights and resource shares. Consequently,
+resource shares may also be interpreted as a
+measure of intrahousehold bargaining power.
+In effect, these are more tractable measures of
+power, as they are invariant to unobservable car-
+dinalizations of the utility functions.
 
 \[Andrew et al (2021)\]\[https://ifs.org.uk/inequality/wp-content/uploads/2021/03/BN-The-careers-and-time-use-of-mothers-and-fathers.pdf\] show that heteronormative households, mothers are more likely to leave the labour force after having children regardless of the relative wages between mother and father before childbirth. (Much of the recent literature in this area focuses on COVID-19, maybe look into this.) It's difficult to really prove who in a relationship is doing the colloquially-named "mental load" of parenting (stuff like keeping appointments, planning meals, remembering when the laundry was last done), although anecdotally this is usually the wife or mother's job in this kind of household. (There may be a time use paper somewhere that tries to deal with this, maybe look into this). The ATUS records time spent doing activities, but not the thoughts that go on in someone's head. It also records the people present during an activity, but not, as far as I've seen, who is a active participant, or if someone needs to be actively prompted to do the groceries or pick up after a child.
 
@@ -369,10 +389,50 @@ People do activities with...
 
 Import data
 ```{r}
+final_individual_data = read.csv("atus_working_parents_act.csv")
 hh = read.csv("sharing_est.csv")
 ```
 
-## Compare leisure definitions
+## Weird age gaps?
+```{r}
+jay_and_gloria = final_individual_data |> filter(age_gap > 30)
+print(jay_and_gloria[c("YEAR", "SERIAL", "SEX", "AGE")])
+```
+
+## Number of observations in each year
+```{r}
+hh |>
+  count(YEAR, name = "n_households")
+```
+
+## Zeros in leisure and childcare
+Something that is supposed to be advantageous about private leisure is that people tend to "consume" it more than other private assignable goods like clothing (which is durable and not purchased as often as one would watch TV). However, it looks like ATUS respondents just don't tend to have a lot of fun.
+this code lowkey is not giving me percentages that make sense rn
+```{r}
+missings_leisure = final_individual_data |>
+  group_by(YEAR) |>
+  summarise(
+    # private leisure: at least one spouse has zero
+    pct_any_zero_private_leisure = 1 - sum(any_private_leisure) / n(),
+    # private leisure: both spouses have zero
+    pct_both_zero_private_leisure = 1 - sum(both_private_leisure) / n(),
+
+    # restricted private leisure: at least one spouse has zero
+    pct_any_zero_private_leisure_r = 1 - sum(any_private_leisure_r) / n(),
+    # restricted private leisure: both spouses have zero
+    pct_both_zero_private_leisure_r = 1 - sum(both_private_leisure_r) / n(),
+
+    # childcare: at least one spouse has zero
+    pct_any_zero_childcare = 1 - sum(any_childcare) / n(),
+    # childcare: both spouses have zero
+    pct_both_zero_childcare = 1 - sum(both_childcare) / n())
+
+missings_leisure
+```
+
+## Comparing leisure definitions
+
+Expenditure refers to hours spent on leisure valued at the person’s hourly wage. I currently have two definitions of leisure: one very broadly counts sleeping, eating, and washing/grooming (as defined by Arduini) and one only includes recreation/social activities. Women generally command more leisure expenditure than men in the broader definition of leisure, but less in the narrower definition, but this varies a lot for both men and women.
 ```{r}
 hh |>
   pivot_longer(
@@ -391,14 +451,18 @@ hh |>
             .groups = "drop") |>
   arrange(type, sex)
 ```
+
 ## Comparing age and ability
+Men tend to be older and less educated, but earn more than women, although there is also a lot of variation in earnings.
 ```{r}
 hh |>
-  pivot_longer(cols = c(educ_f, educ_m, age_gap),
+  pivot_longer(cols = c(educ_f, educ_m, wage_f, wage_m, age_gap),
                names_to = "var",
                values_to = "value") |>
-  mutate(sex = case_when(grepl("_m", var) ~ "Education men (levels 0,1,2)",
-                         grepl("_f", var) ~ "Education women (levels 0,1,2)",
+  mutate(sex = case_when(grepl("educ_m", var) ~ "Education men (levels 0,1,2)",
+                         grepl("educ_f", var) ~ "Education women (levels 0,1,2)",
+                         grepl("wage_m", var) ~ "Hourly earnings men ($)",
+                         grepl("wage_f", var) ~ "Hourly earnings women ($)",
                          grepl("age_gap", var) ~ "Age gap (men - women)")) |>
   group_by(sex) |>
   summarise(mean = mean(value, na.rm = TRUE),
@@ -410,8 +474,8 @@ hh |>
   arrange(sex)
 ```
 
-
 ## Comparing childcare and working hours
+I compare working hours between men and women, and childcare performed by one spouse without the other present. Men tend to work more hours, while childcare undertaken by one parent varies a lot within the sample. This makes sense as I haven’t taken any restrictions on child ages at this point, but women tend to spend more time on childcare at the upper end of the distribution. I’m guessing this is the part of the sample with younger children. 
 ```{r}
 hh |>
   pivot_longer(
@@ -437,63 +501,178 @@ hh |>
   arrange(type, sex)
 ```
 
+## Male/female broad leisure expenditure
+```{r}
+ggplot(hh) +
+  # points
+  geom_point(aes(x = leisure_exp_f, y = y), color = "pink") +
+  geom_point(aes(x = leisure_exp_m, y = y), color = "lightblue", shape=23) +
+  # lines of best fit
+  geom_smooth(aes(x = leisure_exp_f, y = y), method = "lm", color = "pink", se = FALSE) +
+  geom_smooth(aes(x = leisure_exp_m, y = y), method = "lm", color = "lightblue", se = FALSE) +
+  labs(x = "leisure expenditure (broad definition)", y = "household budget") +
+  theme_minimal()
+```
+## Male/female broad leisure expenditure
+```{r}
+ggplot(hh) +
+  # points
+  geom_point(aes(x = leisure_exp_f_r, y = y), color = "pink") +
+  geom_point(aes(x = leisure_exp_m_r, y = y), color = "lightblue", shape=23) +
+  # lines of best fit
+  geom_smooth(aes(x = leisure_exp_f_r, y = y), method = "lm", color = "pink", se = FALSE) +
+  geom_smooth(aes(x = leisure_exp_m_r, y = y), method = "lm", color = "lightblue", se = FALSE) +
+  labs(x = "leisure expenditure (narrow definition)", y = "household budget") +
+  theme_minimal()
+```
+
+
 # Trying to find the sharing rule
 
-## Considerations in Arduini
+## Considerations in Arduini paper
 
-Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
+Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. 
+Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
 
-Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP).
+Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP). "With Cobb-Douglas preferences, we can achieve the desired restriction with public good C-D SAP. Under public good C-D SAP, the resource share and Pareto weight coincide. Public good C-D SAP imposes that the sum of all public good preference parameters is the same for all individuals of the same household category g."
 
-male and female specifications
+Since I wanted to study family-related stuff in the first place, to that end, I think it's worth taking a different look at the role children play in their households. What I originally thought to study were income effects on fertility, and some literature in that subject finds evidence for children being "normal goods" in the sense that fertility increases with income. Would it be reasonable to take the public goods approach, that both parents could allocate resources (time) to "producing the public good" (parenting their children so that they grow up to have characteristics that the family wants as a whole)? btw time spent caring for household children can be for non-own children too?
+
+The question of how to deal with children is a big issue. Time spent parenting (maybe focus on solo parenting, i.e. without spouse present, could also do money spent on kids) has some of the same characteristics as private leisure time. Parenting is also an unpaid activity, but its value isn't really known (even for those who work) since children aren't true goods---they are autonomous people and have their own preferences/choices, especially in adulthood. Treating children as a private good, where each parent can spend more time and/or own resources on raising their shared children for some private benefit, not necessarily something that the other spouse can benefit from (like teaching your child traits that are socially undesirable but personally useful), is complicated and I'm not sure if it's defensible. However, it is essentially the other side of the same coin as private leisure time. The more parenting you do, the less private leisure time you usually get. I just think parenting would be an interesting angle to take if I want to focus on families. Even if I can't use solo parenting time as a way to measure household sharing, it could be interesting to try and use it to answer my original question about the normal-ness or inferior-ness of children.
+
+## it is time to run a LOT of regressions
+
+### Male and female specifications
 ```{r}
-# leisure including eating, drinking, washing, spirituality, volunteering
-eq_m = leisure_exp_m ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
-  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
+### deviations from average with own sex
 
-eq_f = leisure_exp_f ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
-  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
+# leisure including eating, drinking, washing, spirituality, volunteering
+
+# men
+eq_m_within = leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap
+
+# women
+eq_f_within = leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap
 
 # relaxing, socialising, sport, entertainment, and hobbies only
-eq_m_r = leisure_exp_m_r ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
-  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
 
-eq_f_r = leisure_exp_f_r ~ y + Bx_dev_wage_f + Bx_dev_wage_m + Bx_dev_educ_f + 
-  Bx_dev_educ_m + Bx_dev_avgage + Bx_dev_agegap
+# men
+eq_m_r_within = leisure_exp_m_r ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap
 
-eqns = list(male = eq_m, female = eq_f)
-eqns_r = list(male = eq_m, female = eq_f)
+# women
+eq_f_r_within = leisure_exp_f_r ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap
+
+# list of regressions
+eqns_within = list(male = eq_m_within, female = eq_f_within)
+eqns_r_within = list(male = eq_m_r_within, female = eq_f_r_within)
+
+### deviations from average with both sexes
+
+# leisure including eating, drinking, washing, spirituality, volunteering
+
+# men
+eq_m_between = leisure_exp_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap
+
+# women
+eq_f_between = leisure_exp_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap
+
+# relaxing, socialising, sport, entertainment, and hobbies only
+
+# men
+eq_m_r_between = leisure_exp_m_r ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap
+
+# women
+eq_f_r_between = leisure_exp_f_r ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap
+
+# list of regressions
+eqns_between = list(male = eq_m_between, female = eq_f_between)
+eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
 ```
 
-Unrestricted regressions (no restrictions on coefficients): leisure including eating, drinking, and washing
+### No restrictions on coefficients, within-sex deviations
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_unres = systemfit(eqns, method = "SUR", data = hh)
-summary(fit_unres)
+fit_unres_within = systemfit(eqns_within, method = "SUR", data = hh)
+# relaxing, socialising, sport, entertainment, and hobbies only
+fit_unres_r_within = systemfit(eqns_r_within, method = "SUR", data = hh)
 ```
 
-Unrestricted regressions (no restrictions on coefficients): leisure not including eating, drinking, and washing
+### No restrictions on coefficients, between-sex deviations
 ```{r}
+# leisure including eating, drinking, washing, spirituality, volunteering
+fit_unres_between = systemfit(eqns_between, method = "SUR", data = hh)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_unres_r = systemfit(eqns_r, method = "SUR", data = hh)
-summary(fit_unres_r)
+fit_unres_r_between = systemfit(eqns_r_between, method = "SUR", data = hh)
+```
+
+### Restricted coefficients, within-sex deviations
+```{r}
+# leisure including eating, drinking, washing, spirituality, volunteering
+fit_res_within = systemfit(eqns_within, method = "SUR", data = hh)
+# relaxing, socialising, sport, entertainment, and hobbies only
+fit_res_r_within = systemfit(eqns_r_within, method = "SUR", data = hh)
+```
+
+### Restricted coefficients, between-sex deviations
+```{r}
+# leisure including eating, drinking, washing, spirituality, volunteering
+fit_res_between = systemfit(eqns_between, method = "SUR", data = hh)
+# relaxing, socialising, sport, entertainment, and hobbies only
+fit_res_r_between = systemfit(eqns_r_between, method = "SUR", data = hh)
+```
+
+### looking at some regressions
+```{r}
+# get all regressions
+within_m = extract_fit(fit_unres_within, "eq_m_within")
+within_f = extract_fit(fit_unres_within, "eq_f_within")
+between_m = extract_fit(fit_unres_between, "eq_m_between")
+between_f = extract_fit(fit_unres_between, "eq_f_between")
+
+# ensure all models have the same ordering of covariates
+all_vars = names(row_labels)
+
+# assemble estimates
+table_df = data.frame(Variable = unname(row_labels),
+                      `Within-sex (Men)`   = within_m[all_vars],
+                      `Within-sex (Women)` = within_f[all_vars],
+                      `Between-sex (Men)`  = between_m[all_vars],
+                      `Between-sex (Women)`= between_f[all_vars],
+                      check.names = FALSE)
+
+# print nicely
+kable(table_df, align = "lcccc", 
+      caption = "SUR Estimates: Within- and Between-Sex Deviations")
 ```
 
 Following the paper:
 
-The mean female resource share is calculated by dividing the coefficient on ‘Budget’ in the
-female regression by the sum of the ‘Budget’ coefficients across the two equations: 0.123463149 / (0.123463149 + 0.171590327) = 0.41844329602
+"The mean female resource share is calculated by dividing the coefficient on ‘Budget’ in the female regression by the sum of the ‘Budget’ coefficients across the two equations... The preference coefficient is estimated by dividing the coefficient on ‘Budget’ in the female regression by the estimated average female resource share."
 
-The preference coefficient is estimated by dividing the coefficient on ‘Budget’ in the female
-regression by the estimated average female resource share: 
+# To do: notes
+- clean the gdp per capita data and add deviations and interactions to regressions
+- actually calculate the resource shares lol
+- deviations from averages: compare to other women or other men and women? try both of these. what’s my replacement value? bargaining power may come from strength relative to spouse, but strength relative to other options within your gender
+- say in 2006 there is a leisure gap when both contribute similar to household.
+over time, women contribute more to the household, but this may result in smaller increases in women’s leisure than if it were men
+- tease out whether you’re earning more relative to your husband or relative to other women
+- two different regressions, and include both in the same regression
 
-restricted regressions
-```{r}
-fit_restr = systemfit(eqns, 
-                      method = "SUR", 
-                      data = hh, 
-                      restrict.regMat = regMat)
+- if women get richer does time spend with child increase or decrease?
+- extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man?
+- if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 
-summary(fit_restr)
-```
-to do: period specific intercepts
+- changes over time: take income and matchings from 2004, and take coefficients from 2024. apply the betas to the observed behaviour of 2024, would i get different counterfactual leisures?
+- margins plot
+
+- child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters
+- check gender ratios of births in states
+I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. There is some literature that suggests men tend to spend more time with sons than daughters. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women.
