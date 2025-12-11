@@ -208,50 +208,44 @@ data_working_parents = data_adults |>
   # first get household level helper variables
   group_by(YEAR, SERIAL) |>
   mutate(
-    # respondent-reported spouse weekly earnings, fill to household level
-    spouse_earnweek = if (any(SPEARNWEEK <= topcode_earnweek, na.rm = TRUE)) {
-      max(SPEARNWEEK[SPEARNWEEK <= invalid_earnweek], na.rm = TRUE)
-    } else NA_real_,
-    
-    # respondent-reported spouse usual hours, fill to household level
-    spouse_usualhours = if (any(SPUSUALHRS < invalid_workhours, na.rm = TRUE)) {
-      max(SPUSUALHRS[SPUSUALHRS < invalid_workhours], na.rm = TRUE)
-    } else NA_real_,
-    
-    # respondent-reported spouse education, fill to household level
-    spouse_educ = if (any(SPEDUC < invalid_educ, na.rm = TRUE)) {
-      max(SPEDUC[SPEDUC < invalid_educ], na.rm = TRUE)
-    } else NA_real_,
-    
-    # respondent-reported spouse race, fill to household level
-    spouse_race = if (any(SPRACE < invalid_race, na.rm = TRUE)) {
-      max(SPRACE[SPRACE < invalid_race], na.rm = TRUE)
-    } else NA_real_,
-    
-    # respondent-reported spouse age, fill to household level
-    spouse_age = if (any(SPAGE < invalid_age, na.rm = TRUE)) {
-      max(SPAGE[SPAGE < invalid_age], na.rm = TRUE)
-    } else NA_real_,
-
-    # respondent-reported spouse sex, fill to household level
-    spouse_sex = if (any(SPSEX < invalid_sex, na.rm = TRUE)) {
-      max(SPSEX[SPSEX < invalid_sex], na.rm = TRUE)
-    } else NA_real_,
-
+    spouse_earnweek = if_else(any(SPEARNWEEK <= topcode_earnweek, na.rm = TRUE),
+                              max(SPEARNWEEK[!(SPEARNWEEK %in% invalid_earnweek)], na.rm = TRUE),
+                              NA_real_),
+      
+    spouse_usualhours = if_else(any(SPUSUALHRS < invalid_workhours, na.rm = TRUE),
+                                max(SPUSUALHRS[SPUSUALHRS < invalid_workhours], na.rm = TRUE),
+                                NA_real_),
+      
+    spouse_educ = if_else(any(SPEDUC < invalid_educ, na.rm = TRUE),
+                          max(SPEDUC[SPEDUC < invalid_educ], na.rm = TRUE),
+                          NA_real_),
+      
+    spouse_race = if_else(any(SPRACE < invalid_race, na.rm = TRUE),
+                          max(SPRACE[SPRACE < invalid_race], na.rm = TRUE),
+                          NA_real_),
+      
+    spouse_age = if_else(any(SPAGE < invalid_age, na.rm = TRUE),
+                         max(SPAGE[SPAGE < invalid_age], na.rm = TRUE),
+                         NA_real_),
+      
+    spouse_sex = if_else(any(SPSEX < invalid_sex, na.rm = TRUE),
+                         max(SPSEX[SPSEX < invalid_sex], na.rm = TRUE),
+                         NA_real_),
+      
     # fill in respondent-reported kid dummy variables to household level
-    KID1TO2 = if (any(KID1TO2 < invalid_kid_dummy, na.rm = TRUE)) {
-      max(KID1TO2[KID1TO2 < invalid_kid_dummy], na.rm = TRUE)
-    } else NA_real_,
-    KID3TO5 = if (any(KID3TO5 < invalid_kid_dummy, na.rm = TRUE)) {
-      max(KID3TO5[KID3TO5 < invalid_kid_dummy], na.rm = TRUE)
-    } else NA_real_,
-    KID6TO12 = if (any(KID6TO12 < invalid_kid_dummy, na.rm = TRUE)) {
-      max(KID6TO12[KID6TO12 < invalid_kid_dummy], na.rm = TRUE)
-    } else NA_real_,
-    KID13TO17 = if (any(KID13TO17 < invalid_kid_dummy, na.rm = TRUE)) {
-      max(KID13TO17[KID13TO17 < invalid_kid_dummy], na.rm = TRUE)
-    } else NA_real_
-  ) |>
+    KID1TO2 = if_else(any(KID1TO2 < invalid_kid_dummy, na.rm = TRUE),
+                         max(KID1TO2[KID1TO2 < invalid_kid_dummy], na.rm = TRUE),
+                         NA_real_),
+    KID3TO5 = if_else(any(KID3TO5 < invalid_kid_dummy, na.rm = TRUE),
+                      max(KID3TO5[KID3TO5 < invalid_kid_dummy], na.rm = TRUE),
+                      NA_real_),
+    KID6TO12 = if_else(any(KID6TO12 < invalid_kid_dummy, na.rm = TRUE),
+                      max(KID6TO12[KID6TO12 < invalid_kid_dummy], na.rm = TRUE),
+                      NA_real_),
+    KID13TO17 = if_else(any(KID13TO17 < invalid_kid_dummy, na.rm = TRUE),
+                       max(KID13TO17[KID13TO17 < invalid_kid_dummy], na.rm = TRUE),
+                       NA_real_)) |>
+  
   ungroup() |>
   
   # use the helper variables to fill in
@@ -260,7 +254,7 @@ data_working_parents = data_adults |>
   
   # check for respondents who are working+earning regularly
   # validity for BOTH respondent and spouse
-  mutate(valid_wage = (EARNWEEK <= topcode_earnweek & EARNWEEK > 0 & 
+  mutate(valid_wage = (!(EARNWEEK %in% invalid_earnweek) & EARNWEEK > 0 & 
                          UHRSWORKT > 0 & UHRSWORKT < invalid_workhours)) |>
 
   group_by(YEAR, SERIAL) |>
@@ -268,7 +262,7 @@ data_working_parents = data_adults |>
   filter(all(valid_wage)) |> 
   mutate(
     # earnings countributions of each person to household
-    hh_total_earn = sum(EARNWEEK[EARNWEEK < invalid_earnweek], na.rm = TRUE),
+    hh_total_earn = sum(EARNWEEK, na.rm = TRUE),
     # how much is contributed
     earn_share = if_else(hh_total_earn > 0, EARNWEEK / hh_total_earn, NA_real_)) |>
   
@@ -413,7 +407,7 @@ final_individual_data = final_individual_data |>
          dev_educ_m_only = educ_m - mean(educ_m, na.rm=TRUE),
          dev_avgage = avg_age - mean(avg_age, na.rm=TRUE),
          dev_agegap = age_gap - mean(age_gap, na.rm=TRUE)) |> 
-  # to do: deviations from mean (entire sample)
+  # deviations from mean (entire sample)
   mutate(dev_wage_f_all = wage_f - mean(hrly_wage, na.rm=TRUE),
          dev_wage_m_all = wage_m - mean(hrly_wage, na.rm=TRUE),
          dev_educ_f_all = educ_f - mean(educ_cat, na.rm=TRUE),
@@ -421,14 +415,14 @@ final_individual_data = final_individual_data |>
   
   ungroup() |>
   # interaction terms
-  mutate(Bx_dev_wage_f_only = y * dev_wage_f,
-         Bx_dev_wage_m_only = y * dev_wage_m,
-         Bx_dev_educ_f_only = y * dev_educ_f,
-         Bx_dev_educ_m_only = y * dev_educ_m,
-         Bx_dev_wage_f_all = y * dev_wage_f,
-         Bx_dev_wage_m_all = y * dev_wage_m,
-         Bx_dev_educ_f_all = y * dev_educ_f,
-         Bx_dev_educ_m_all = y * dev_educ_m,
+  mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
+         Bx_dev_wage_m_only = y * dev_wage_m_only,
+         Bx_dev_educ_f_only = y * dev_educ_f_only,
+         Bx_dev_educ_m_only = y * dev_educ_m_only,
+         Bx_dev_wage_f_all = y * dev_wage_f_all,
+         Bx_dev_wage_m_all = y * dev_wage_m_all,
+         Bx_dev_educ_f_all = y * dev_educ_f_all,
+         Bx_dev_educ_m_all = y * dev_educ_m_all,
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap)
 
