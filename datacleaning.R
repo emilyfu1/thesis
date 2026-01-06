@@ -25,9 +25,9 @@ variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE",
               "total_childcare_nospouse", "KID1TO2", "KID3TO5", "KID6TO12", 
               "KID13TO17", "spouse_earnweek", "spouse_usualhours", 
               "spouse_educ", "spouse_race", "spouse_age", "spouse_sex",
-              "any_private_leisure", "any_private_leisure_r", 
-              "any_childcare", "both_private_leisure", "both_private_leisure_r", 
-              "both_childcare")
+              "any_zero_private_leisure", "any_zero_private_leisure_r", 
+              "any_zero_childcare", "both_zero_private_leisure", 
+              "both_zero_private_leisure_r", "both_zero_childcare")
 
 # childcare activities (currently not used)
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
@@ -105,7 +105,7 @@ data = read_ipums_micro(ddi) |>
   # SERIAL makes CASEID redundant
   select(-STRATA, -CASEID)
 
-# household level data
+# household level data (all)
 data_hh = data |>
   filter(RECTYPE == '1') |> # indicates a household observation) 
   
@@ -116,7 +116,7 @@ data_hh = data |>
   # drop rectype now in preparation for merge
   select(-RECTYPE)
 
-# individual level data
+# individual level data (all)
 data_individual = data |>
   filter(RECTYPE == '2') |> # indicates a person
   # this will show all relevant varables collected at individual level
@@ -135,13 +135,15 @@ data_individual = data |>
   
   # find the respondent
   mutate(is_resp = LINENO == 1) |>
+  # find the resnpodent's spouse using SPAGE
+  mutate(is_spouse = SPAGE <= invalid_age) |>
   
-  # should probably generate an individual person identifier
+  # should generate an individual person identifier
   # this works since the ATUS is a repeated cross section
   mutate(person_id = row_number()) |>
   
   # populate SPOUSEPRES to the household level
-  group_by("YEAR", "SERIAL") |>
+  group_by(YEAR, SERIAL) |>
   mutate(SPOUSEPRES = any(SPOUSEPRES == 1, na.rm = TRUE)) |>
   ungroup()
 
@@ -194,20 +196,37 @@ data_kids = data_individual |>
   filter(!is_adult) |>
   select(where(~ !all(is.na(.))))
 
-# individual data for hetero, working, cohabiting, parenting couples
+# individual-level data for hetero, working, cohabiting, parenting couples
 data_working_parents = data_adults |>
   # keep two heterosexual parent households with children
   filter(HH_CHILD == 1, 
          SPOUSEPRES == 1, 
          num_adults_in_HH == 2,
          num_male_adults == 1,
-         num_female_adults == 1) |>
+         num_female_adults == 1)
   
+# now, split into respondent and the respondent's spouse
+data_resp = data_working_parents |> 
+  filter(is_resp)
+
+data_spouse = data_working_parents |>
+  filter(!is_resp)
+
+  
+
+
+
+
+
+
   # populate incomes/working hours for spouses into the same variable
   # so i dont have to use SPEARNWEEK or SPUSUALHRS
-  # first get household level helper variables
+  # first fill in to household level
   group_by(YEAR, SERIAL) |>
   mutate(
+    
+    # spouse related
+    
     spouse_earnweek = if_else(any(SPEARNWEEK <= topcode_earnweek, na.rm = TRUE),
                               max(SPEARNWEEK[!(SPEARNWEEK %in% invalid_earnweek)], na.rm = TRUE),
                               NA_real_),
@@ -224,15 +243,18 @@ data_working_parents = data_adults |>
                           max(SPRACE[SPRACE < invalid_race], na.rm = TRUE),
                           NA_real_),
       
-    spouse_age = if_else(any(SPAGE < invalid_age, na.rm = TRUE),
-                         max(SPAGE[SPAGE < invalid_age], na.rm = TRUE),
+    spouse_age = if_else(any(SPAGE <= invalid_age, na.rm = TRUE),
+                         max(SPAGE[SPAGE <= invalid_age], na.rm = TRUE),
                          NA_real_),
       
     spouse_sex = if_else(any(SPSEX < invalid_sex, na.rm = TRUE),
                          max(SPSEX[SPSEX < invalid_sex], na.rm = TRUE),
                          NA_real_),
+    
+    # respondent (self) related
       
     # fill in respondent-reported kid dummy variables to household level
+    
     KID1TO2 = if_else(any(KID1TO2 < invalid_kid_dummy, na.rm = TRUE),
                          max(KID1TO2[KID1TO2 < invalid_kid_dummy], na.rm = TRUE),
                          NA_real_),
@@ -248,7 +270,7 @@ data_working_parents = data_adults |>
   
   ungroup() |>
   
-  # use the helper variables to fill in
+  # use the helper variables to fill in original variables
   mutate(EARNWEEK = if_else(is_resp, EARNWEEK, spouse_earnweek),
          UHRSWORKT = if_else(is_resp, UHRSWORKT, spouse_usualhours)) |>
   
@@ -270,7 +292,6 @@ data_working_parents = data_adults |>
 
 # individual level time use for tasks of interest
 activity_summaries = data_working_parents |>
-  filter(YEAR >= 2004) |>
   inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO")) |>
   # identify categories
   mutate(activity_is_leisure = ACTIVITY %in% leisure_actlines,
@@ -289,6 +310,7 @@ activity_summaries = data_working_parents |>
             total_leisure_r = sum(DURATION_EXT[activity_is_leisure_r], na.rm=TRUE),
             total_private_leisure_r = sum(DURATION_EXT[private_leisure_r], na.rm=TRUE),
             # to create the childcare variable, combine activities and secondary
+            # these already contain time spent with children
             total_childcare_act = sum(DURATION_EXT[activity_is_childcare], na.rm=TRUE),
             total_childcare_sec = sum(SCC_OWN_LN, na.rm=TRUE),
             total_childcare = max(total_childcare_act, total_childcare_sec),
@@ -299,7 +321,7 @@ activity_summaries = data_working_parents |>
 valid_households = activity_summaries |>
   mutate(positive_private_leisure = total_private_leisure > 0,
          positive_private_leisure_r = total_private_leisure_r > 0,
-         positive_nospouse_childcare = total_childcare_nospouse > 0,) |>
+         positive_nospouse_childcare = total_childcare_nospouse > 0) |>
   group_by(YEAR, SERIAL) |>
   summarise(filtered_household_size = n(),
             # check if at least one spouse does childcare or has private leisure
@@ -310,18 +332,24 @@ valid_households = activity_summaries |>
             num_private_r = sum(positive_private_leisure_r, na.rm = TRUE),
             num_childcare = sum(positive_nospouse_childcare, na.rm = TRUE),
             
-            # any = at least 1 spouse has positive time
-            any_private_leisure = num_private >= 1,
-            any_private_leisure_r = num_private_r >= 1,
-            any_childcare = num_childcare >= 1,
+            # number of spouses with zero leisure or childcare
+            num_zero_private = sum(!positive_private_leisure, na.rm = TRUE),
+            num_zero_private_r = sum(!positive_private_leisure_r, na.rm = TRUE),
+            num_zero_childcare = sum(!positive_nospouse_childcare, na.rm = TRUE),
             
-            # both = both spouses have positive time
-            both_private_leisure = num_private == 2,
-            both_private_leisure_r = num_private_r == 2,
-            both_childcare = num_childcare == 2,
+            # any = at least 1 spouse has positive time use
+            # both = both spouses have positive time use
+            any_zero_private_leisure = num_zero_private >= 1,
+            both_zero_private_leisure = num_zero_private == 2,
+            
+            any_zero_private_leisure_r = num_zero_private_r >= 1,
+            both_zero_private_leisure_r = num_zero_private_r == 2,
+            
+            any_zero_childcare = num_zero_childcare >= 1,
+            both_zero_childcare = num_zero_childcare == 2,
+            
             .groups="drop") |>
   # this gets rid of anyone who doesn't have a partner with activity data
-  # or also anyone who doesn't have a partner with 
   filter(filtered_household_size == 2)
 
 # get back to individual-level data
@@ -360,31 +388,37 @@ final_individual_data = final_individual_data |>
                                      spouse_educ >= 217 & spouse_educ <= 321 ~ 2,
                                      TRUE ~ NA_real_),
          
-         # sex specific wages
+         # within-couple sex specific wages
          wage_f = if_else(SEX == 2, hrly_wage, spouse_hrly_wage),
          wage_m = if_else(SEX == 1, hrly_wage, spouse_hrly_wage),
          
-         # sex specific education
+         # within-couple sex specific education
          educ_f = if_else(SEX == 2, educ_cat, spouse_educ_cat),
          educ_m = if_else(SEX == 1, educ_cat, spouse_educ_cat),
          
-         # sex specific race
+         # within-couple sex specific race
          race_f = if_else(SEX == 2, RACE, spouse_race),
          race_m = if_else(SEX == 1, RACE, spouse_race),
          
-         # sex specific usual hours worked
+         # within-couple sex specific usual hours worked
          uhrsworkt_f = if_else(SEX == 2, UHRSWORKT, spouse_usualhours),
-         uhrsworkt_m = if_else(SEX == 1, UHRSWORKT, spouse_usualhours)) |>
-  
-  # to get the age gap, i'm doing an ordering like this
-  arrange(YEAR, SERIAL, desc(SEX)) |>
+         uhrsworkt_m = if_else(SEX == 1, UHRSWORKT, spouse_usualhours),
+         
+         # within-couple sex specific age 
+         age_f = if_else(SEX == 2, AGE, spouse_age),
+         age_m = if_else(SEX == 1, AGE, spouse_age),
+         
+         # within-couple sex specific age gaps?
+         agegap_f = age_f - age_m,
+         agegap_m = age_m - age_f) |>
   
   # household-level constructs
   group_by(YEAR, SERIAL) |>
-  mutate(avg_age = mean(AGE),
-         age_gap = diff(AGE),
+  mutate(avgage = mean(AGE), # average age of the couple
          # the household budget
          y = (wage_f + wage_m) * 24,
+         
+         # some summary statistics by sex
          
          # gender-specific leisure expenditure
          leisure_exp_f = sum(leisure_exp[SEX==2]),
@@ -392,28 +426,31 @@ final_individual_data = final_individual_data |>
          leisure_exp_f_r = sum(leisure_exp_r[SEX==2]),
          leisure_exp_m_r = sum(leisure_exp_r[SEX==1]),
          
-         # gender-specific childcare)
+         # gender-specific childcare
          total_childcare_nospouse_h_f = sum(total_childcare_nospouse_h[SEX==2]),
          total_childcare_nospouse_h_m = sum(total_childcare_nospouse_h[SEX==1])
          ) |> 
   ungroup() |>
   
-  # since it's a pooled sample? 
+  # since it's a pooled sample, use deviations from means in a particular year
   group_by(YEAR) |>
-  # deviations from mean (gender-specific)
+  # deviations from mean (mean of own sex in year)
   mutate(dev_wage_f_only = wage_f - mean(wage_f, na.rm=TRUE),
          dev_wage_m_only = wage_m - mean(wage_m, na.rm=TRUE),
          dev_educ_f_only = educ_f - mean(educ_f, na.rm=TRUE),
-         dev_educ_m_only = educ_m - mean(educ_m, na.rm=TRUE),
-         dev_avgage = avg_age - mean(avg_age, na.rm=TRUE),
-         dev_agegap = age_gap - mean(age_gap, na.rm=TRUE)) |> 
-  # deviations from mean (entire sample)
+         dev_educ_m_only = educ_m - mean(educ_m, na.rm=TRUE)) |> 
+  # deviations from mean (mean of both sexes in year)
   mutate(dev_wage_f_all = wage_f - mean(hrly_wage, na.rm=TRUE),
          dev_wage_m_all = wage_m - mean(hrly_wage, na.rm=TRUE),
          dev_educ_f_all = educ_f - mean(educ_cat, na.rm=TRUE),
          dev_educ_m_all = educ_m - mean(educ_cat, na.rm=TRUE)) |>
+  # age gap and average age variables
+  mutate(dev_avgage = avgage - mean(avgage, na.rm=TRUE),
+         # here i don't think it matters which age gap, just picked men-women
+         dev_agegap = agegap_m - mean(agegap_m, na.rm=TRUE)) |>
   
   ungroup() |>
+  
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
          Bx_dev_wage_m_only = y * dev_wage_m_only,
@@ -429,7 +466,6 @@ final_individual_data = final_individual_data |>
 # save all the stuff
 write.csv(data_hh,"atus_hh.csv", row.names = FALSE)
 write.csv(data_individual,"atus_individuals.csv", row.names = FALSE)
-write.csv(data_adults,"atus_adults.csv", row.names = FALSE)
 write.csv(data_kids,"atus_kids.csv", row.names = FALSE)
 write.csv(data_adults,"atus_adults.csv", row.names = FALSE)
 write.csv(data_working_parents,"atus_working_parents_individual.csv", 
