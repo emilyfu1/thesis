@@ -126,7 +126,7 @@ data_individual = data |>
   # keep only relevant variables
   select(where(~ !all(is.na(.)))) |>
   
-  # but this can help identify kids and adults
+  # this can help identify kids and adults
   mutate(is_adult = AGE >= 18) |>
   
   # drop rectype now in preparation for merge
@@ -139,11 +139,17 @@ data_individual = data |>
   
   # should generate an individual person identifier
   # this works since the ATUS is a repeated cross section
-  mutate(person_id = row_number())
+  mutate(person_id = row_number()) |>
+  
+  # keep valid race, age, sex
+  filter(AGE <= invalid_age, 
+         RACE < invalid_race,
+         SEX < invalid_sex)
 
 # who line data (all)
 data_who = data |>
   filter(RECTYPE == '4') |> # indicates a person someone did activity with
+  
   # keep only relevant variables
   select(where(~ !all(is.na(.)))) |>
   
@@ -156,8 +162,10 @@ data_who = data |>
 # activities (all)
 data_activities = data |>
   filter(RECTYPE == '3') |> # indicates an activity
+  
   # keep only relevant variables
   select(where(~ !all(is.na(.)))) |>
+  
   # drop rectype now in preparation for merge
   select(-RECTYPE) |>
   
@@ -173,19 +181,8 @@ data_activities = data |>
 
 # separating types of hh members
 
-# kids (under 18)
-data_kids = data_individual |>
-  filter(!is_adult) |>
-  # keep only relevatn variables
-  select(where(~ !all(is.na(.))))
-
 # hetero, working, cohabiting, parents
 data_working_parents = data_individual |>
-  
-  # keep adults in households with children and spouse present
-  filter(is_adult,
-         HH_CHILD == 1,
-         SPOUSEPRES == 1) |>
   
   # populate spouse and respondent variables to the household level
   # now these represent the characteristics of the household spouse/respondent
@@ -199,25 +196,55 @@ data_working_parents = data_individual |>
          SPSEX = min(SPSEX, na.rm=TRUE),
          SPRACE = min(SPRACE, na.rm=TRUE),
          SPEDUC = min(SPEDUC, na.rm=TRUE),
-         SPEMPSTAT = min(SPEMPSTAT, na.rm=TRUE),
          SPUSUALHRS = min(SPUSUALHRS, na.rm=TRUE),
          SPEARNWEEK = min(SPEARNWEEK, na.rm=TRUE),
          
          # respondent-reported self characteristics
          # note that AGE, SEX, and RACE aren't respondent or spouse-specific
-         EDUCYRS = min(EDUCYRS, na.rm=TRUE),
-         EMPSTAT = min(EMPSTAT, na.rm=TRUE),
-         UHRSWORKT = min(UHRSWORKT, na.rm=TRUE),
-         EARNWEEK = min(EARNWEEK, na.rm=TRUE)) |>
+         RESPEDUCYRS = min(EDUCYRS, na.rm=TRUE),
+         RESPUHRSWORKT = min(UHRSWORKT, na.rm=TRUE),
+         RESPEARNWEEK = min(EARNWEEK, na.rm=TRUE),
+         
+         # finding respondents and spouses
+         is_resp = LINENO == 1, # find the respondent
+         # find the respondent person number
+         resp_sploc = SPLOC[LINENO == 1][1],
+         # find respondent's spouse using SPLOC
+         is_spouse = LINENO == resp_sploc) |>
   
   ungroup() |>
   
-  # find the respondent
-  mutate(is_resp = LINENO == 1) |>
-  # find respondent's spouse using respondent-reported SPAGE and AGE
-  mutate(is_spouse = (SPAGE == AGE) & (!is_resp)) |>
+  # finding valid and invalid spouses and respondents
+  mutate(
+         # valid earnings
+         valid_earn_resp = !is.na(RESPEARNWEEK) &
+           !(RESPEARNWEEK %in% invalid_earnweek) &
+           RESPEARNWEEK > 0 & RESPEARNWEEK <= topcode_earnweek,
+         
+         valid_earn_spouse = !is.na(SPEARNWEEK) &
+           !(SPEARNWEEK %in% invalid_earnweek) &
+           SPEARNWEEK > 0 & SPEARNWEEK <= topcode_earnweek,
+         
+         # valid regular working hours
+         valid_hours_resp = !is.na(RESPUHRSWORKT) & RESPUHRSWORKT > 0 &
+           RESPUHRSWORKT < invalid_workhours,
+         
+         valid_hours_spouse = !is.na(SPUSUALHRS) & SPUSUALHRS > 0 &
+           SPUSUALHRS < invalid_workhours,
+         
+         # valid education 
+         valid_educ_resp = !is.na(RESPEDUCYRS) & RESPEDUCYRS < invalid_educ,
+         valid_educ_spouse = !is.na(SPEDUC) & SPEDUC < invalid_educ,
+         
+         # define valid spouse and valid respondent
+         valid_resp = valid_earn_resp & valid_hours_resp & valid_educ_resp,
+         valid_spouse = valid_earn_spouse & valid_hours_spouse & 
+           valid_educ_spouse) |>
   
   # keep only households where you truly observe a male-female couple 
+  
+  # get rid of entire households who don't have valid earnings, working hours,
+  # education levels for both respondent and spouse
   group_by(YEAR, SERIAL) |>
   filter(sum(is_resp, na.rm = TRUE) == 1, # exactly one respondent
          sum(is_spouse, na.rm = TRUE) == 1, # exactly one spouse
@@ -228,17 +255,44 @@ data_working_parents = data_individual |>
   ungroup() |>
   
   # now keep only respondent + spouse rows
-  filter(is_resp | is_spouse) |>
+  filter(is_resp | is_spouse,
+         is_adult,
+         HH_CHILD == 1,
+         SPOUSEPRES == 1,
+         valid_resp,
+         valid_spouse) |>
   
-  # get rid of households who don't have valid earnings, working hours,
-  # education, race, age, sex
+  # create categorical education variables to make SPEDUC and EDUCYRS equivalent
+  mutate(           
+    educ_cat = case_when(RESPEDUCYRS < 200 ~ 0, # below high school
+                         # high school to some college
+                         RESPEDUCYRS >= 200 & RESPEDUCYRS < 217 ~ 1,
+                         # completed undergraduate/graduate degrees
+                         RESPEDUCYRS >= 217 & RESPEDUCYRS <= 321 ~ 2,
+                         TRUE ~ NA_real_),
+    # spouse education in levels
+    spouse_educ_cat = case_when(SPEDUC < 20 ~ 0, # below high school
+                                # high school to some college 
+                                # the spouse variable includes vocational
+                                SPEDUC >= 20 & SPEDUC <= 32 ~ 1,
+                                # completed undergraduate/graduate degrees
+                                SPEDUC >= 40 & SPEDUC <= 43 ~ 2,
+                                TRUE ~ NA_real_))
+
   
 # now, split into respondent and the respondent's spouse
+  
+# respondent
 data_resp = data_working_parents |> 
   filter(is_resp)
 
+# spouse
 data_spouse = data_working_parents |>
   filter(!is_resp)
+
+# kids living in respective households (under 18)
+data_kids = data_individual |>
+  filter(!is_adult) |>
 
   
 
@@ -253,34 +307,6 @@ data_spouse = data_working_parents |>
   group_by(YEAR, SERIAL) |>
   mutate(
     
-    # spouse related
-    
-    spouse_earnweek = if_else(any(SPEARNWEEK <= topcode_earnweek, na.rm = TRUE),
-                              max(SPEARNWEEK[!(SPEARNWEEK %in% invalid_earnweek)], na.rm = TRUE),
-                              NA_real_),
-      
-    spouse_usualhours = if_else(any(SPUSUALHRS < invalid_workhours, na.rm = TRUE),
-                                max(SPUSUALHRS[SPUSUALHRS < invalid_workhours], na.rm = TRUE),
-                                NA_real_),
-      
-    spouse_educ = if_else(any(SPEDUC < invalid_educ, na.rm = TRUE),
-                          max(SPEDUC[SPEDUC < invalid_educ], na.rm = TRUE),
-                          NA_real_),
-      
-    spouse_race = if_else(any(SPRACE < invalid_race, na.rm = TRUE),
-                          max(SPRACE[SPRACE < invalid_race], na.rm = TRUE),
-                          NA_real_),
-      
-    spouse_age = if_else(any(SPAGE <= invalid_age, na.rm = TRUE),
-                         max(SPAGE[SPAGE <= invalid_age], na.rm = TRUE),
-                         NA_real_),
-      
-    spouse_sex = if_else(any(SPSEX < invalid_sex, na.rm = TRUE),
-                         max(SPSEX[SPSEX < invalid_sex], na.rm = TRUE),
-                         NA_real_),
-    
-    # respondent (self) related
-      
     # fill in respondent-reported kid dummy variables to household level
     
     KID1TO2 = if_else(any(KID1TO2 < invalid_kid_dummy, na.rm = TRUE),
