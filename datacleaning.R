@@ -1,6 +1,7 @@
 # import packages
 library(ipumsr)
 library(tidyverse)
+library(haven)
 
 setwd("/Users/emilyfu/Desktop/school/thesis")
 
@@ -103,7 +104,10 @@ data = read_ipums_micro(ddi) |>
   filter(YEAR >= 2004) |>
   # strata isn't right after 2016 but it was preselected so im removing it
   # SERIAL makes CASEID redundant
-  select(-STRATA, -CASEID)
+  select(-STRATA, -CASEID) |>
+  # this removes labels (labels are still available in documentation)
+  # gets rid of warnings due to slightly different phrasing
+  zap_labels()
 
 # household level data (all)
 data_hh = data |>
@@ -119,10 +123,9 @@ data_hh = data |>
 # individual level data (all)
 data_individual = data |>
   filter(RECTYPE == '2') |> # indicates a person
-  # this will show all relevant varables collected at individual level
+  # keep only relevant variables
   select(where(~ !all(is.na(.)))) |>
   
-  # there isn't a straightforward way to find parents/couples...
   # but this can help identify kids and adults
   mutate(is_adult = AGE >= 18) |>
   
@@ -131,25 +134,17 @@ data_individual = data |>
   
   # do an actual merge of household data and individual data together 
   # merge on YEAR, SERIAL
+  # this gets us household characteristics for the respondents
   inner_join(data_hh, by = c("YEAR", "SERIAL")) |>
-  
-  # find the respondent
-  mutate(is_resp = LINENO == 1) |>
-  # find the resnpodent's spouse using SPAGE
-  mutate(is_spouse = SPAGE <= invalid_age) |>
   
   # should generate an individual person identifier
   # this works since the ATUS is a repeated cross section
-  mutate(person_id = row_number()) |>
-  
-  # populate SPOUSEPRES to the household level
-  group_by(YEAR, SERIAL) |>
-  mutate(SPOUSEPRES = any(SPOUSEPRES == 1, na.rm = TRUE)) |>
-  ungroup()
+  mutate(person_id = row_number())
 
-# who line data
+# who line data (all)
 data_who = data |>
-  filter(RECTYPE == '4') |>
+  filter(RECTYPE == '4') |> # indicates a person someone did activity with
+  # keep only relevant variables
   select(where(~ !all(is.na(.)))) |>
   
   # drop rectype now in preparation for merge
@@ -158,9 +153,10 @@ data_who = data |>
   # to merge them together need to rename activity line number so its the same
   rename(ACTLINE = ACTLINEW)
 
-# activities
+# activities (all)
 data_activities = data |>
-  filter(RECTYPE == '3') |>
+  filter(RECTYPE == '3') |> # indicates an activity
+  # keep only relevant variables
   select(where(~ !all(is.na(.)))) |>
   # drop rectype now in preparation for merge
   select(-RECTYPE) |>
@@ -177,33 +173,65 @@ data_activities = data |>
 
 # separating types of hh members
 
-# all adults 
-data_adults = data_individual |>
-  filter(is_adult) |>
-  select(where(~ !all(is.na(.)))) |>
-  
-  # how many adults in each household?
-  mutate(num_adults_in_HH = HH_SIZE - HH_NUMKIDS) |>
-  
-  # how many males and female adults in each household
-  group_by(YEAR, SERIAL) |>
-  mutate(num_male_adults = sum(SEX == 1 & AGE >= 18, na.rm=TRUE),
-         num_female_adults = sum(SEX == 2 & AGE >= 18, na.rm=TRUE)) |>
-  ungroup()
-
-# all kids
+# kids (under 18)
 data_kids = data_individual |>
   filter(!is_adult) |>
+  # keep only relevatn variables
   select(where(~ !all(is.na(.))))
 
-# individual-level data for hetero, working, cohabiting, parenting couples
-data_working_parents = data_adults |>
-  # keep two heterosexual parent households with children
-  filter(HH_CHILD == 1, 
-         SPOUSEPRES == 1, 
-         num_adults_in_HH == 2,
-         num_male_adults == 1,
-         num_female_adults == 1)
+# hetero, working, cohabiting, parents
+data_working_parents = data_individual |>
+  
+  # keep adults in households with children and spouse present
+  filter(is_adult,
+         HH_CHILD == 1,
+         SPOUSEPRES == 1) |>
+  
+  # populate spouse and respondent variables to the household level
+  # now these represent the characteristics of the household spouse/respondent
+  group_by(YEAR, SERIAL) |>
+  mutate(SPOUSEPRES = any(SPOUSEPRES == 1, na.rm = TRUE),
+         
+         # respondent-reported spouse characteristics
+         # note that SPEDUC and EDUCYRS are categorised differently!
+         # using mins here because the "invalid" labels are all larger
+         SPAGE = min(SPAGE, na.rm=TRUE),
+         SPSEX = min(SPSEX, na.rm=TRUE),
+         SPRACE = min(SPRACE, na.rm=TRUE),
+         SPEDUC = min(SPEDUC, na.rm=TRUE),
+         SPEMPSTAT = min(SPEMPSTAT, na.rm=TRUE),
+         SPUSUALHRS = min(SPUSUALHRS, na.rm=TRUE),
+         SPEARNWEEK = min(SPEARNWEEK, na.rm=TRUE),
+         
+         # respondent-reported self characteristics
+         # note that AGE, SEX, and RACE aren't respondent or spouse-specific
+         EDUCYRS = min(EDUCYRS, na.rm=TRUE),
+         EMPSTAT = min(EMPSTAT, na.rm=TRUE),
+         UHRSWORKT = min(UHRSWORKT, na.rm=TRUE),
+         EARNWEEK = min(EARNWEEK, na.rm=TRUE)) |>
+  
+  ungroup() |>
+  
+  # find the respondent
+  mutate(is_resp = LINENO == 1) |>
+  # find respondent's spouse using respondent-reported SPAGE and AGE
+  mutate(is_spouse = (SPAGE == AGE) & (!is_resp)) |>
+  
+  # keep only households where you truly observe a male-female couple 
+  group_by(YEAR, SERIAL) |>
+  filter(sum(is_resp, na.rm = TRUE) == 1, # exactly one respondent
+         sum(is_spouse, na.rm = TRUE) == 1, # exactly one spouse
+         sum(is_resp | is_spouse, na.rm = TRUE) == 2,
+         # one male and one female
+         sum(SEX == 1 & (is_resp | is_spouse), na.rm = TRUE) == 1,
+         sum(SEX == 2 & (is_resp | is_spouse), na.rm = TRUE) == 1) |>
+  ungroup() |>
+  
+  # now keep only respondent + spouse rows
+  filter(is_resp | is_spouse) |>
+  
+  # get rid of households who don't have valid earnings, working hours,
+  # education, race, age, sex
   
 # now, split into respondent and the respondent's spouse
 data_resp = data_working_parents |> 
