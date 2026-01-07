@@ -18,18 +18,6 @@ who_partner = c(200, 201)
 who_private_exclude = c(200, 201, 202, 207, 300)
 who_invalid = c(996, 997, 998)
 
-variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE", 
-              "SEX", "RACE", "EDUCYRS", "UHRSWORKT", "EARNWEEK", 
-              "hh_total_earn", "earn_share", "HH_NUMKIDS", "total_leisure", 
-              "total_private_leisure", "total_leisure_r", 
-              "total_private_leisure_r", "total_childcare", 
-              "total_childcare_nospouse", "KID1TO2", "KID3TO5", "KID6TO12", 
-              "KID13TO17", "spouse_earnweek", "spouse_usualhours", 
-              "spouse_educ", "spouse_race", "spouse_age", "spouse_sex",
-              "any_zero_private_leisure", "any_zero_private_leisure_r", 
-              "any_zero_childcare", "both_zero_private_leisure", 
-              "both_zero_private_leisure_r", "both_zero_childcare")
-
 # childcare activities (currently used with childcare time summary variables)
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
                        030108, 030109, 030110, 030111, 030112, 030199, 030201, 
@@ -181,10 +169,6 @@ data_activities = data |>
 
 # separating types of hh members
 
-# kids (under 18)
-data_kids = data_individual |>
-  filter(!is_adult)
-
 # hetero, working, cohabiting, parents
 data_working_parents = data_individual |>
   
@@ -324,12 +308,65 @@ data_working_parents = data_individual |>
     age_f = if_else(SEX == 2, AGE, SPAGE),
     age_m = if_else(SEX == 1, AGE, SPAGE),
     
+    # within-couple sex specific earnings contributions
+    earn_share_f = if_else(SEX == 2, resp_earn_share, spouse_earn_share),
+    earn_share_m = if_else(SEX == 1, resp_earn_share, spouse_earn_share),
+    
     # average age of couple
     avgage = (age_f + age_m) / 2,
          
     # age gap (male spouse - female spouse)
     agegap_m = age_m - age_f)
 
+# households in data_working_parents
+hh_keys = data_working_parents |>
+  distinct(YEAR, SERIAL)
+
+# their children
+data_kids = data_individual |>
+  filter(!is_adult) |>
+  inner_join(hh_keys, by = c("YEAR", "SERIAL"))
+
+# how many kids of each sex
+kids_counts = data_kids |>
+  group_by(YEAR, SERIAL) |>
+  summarise(num_kids_total = n(),
+            num_kids_male = sum(SEX == 1, na.rm = TRUE),
+            num_kids_female = sum(SEX == 2, na.rm = TRUE),
+            .groups = "drop")
+
+# kid age distribution
+kids_age_dist = data_kids |>
+  group_by(YEAR, SERIAL) |>
+  summarise(kid_age_min  = min(AGE, na.rm = TRUE),
+            kid_age_max  = max(AGE, na.rm = TRUE),
+            kid_age_mean = mean(AGE, na.rm = TRUE),
+                  
+            n_kid_aged_0_2 = sum(AGE <= 2, na.rm = TRUE),
+            n_kid_aged_3_5 = sum(AGE >= 3  & AGE <= 5, na.rm = TRUE),
+            n_kid_aged_6_10 = sum(AGE >= 6  & AGE <= 10, na.rm = TRUE),
+            n_kid_aged_11_13  = sum(AGE >= 11 & AGE <= 13, na.rm = TRUE),
+            n_kid_aged_14_17 = sum(AGE >= 14 & AGE <= 17, na.rm = TRUE),
+            .groups = "drop") |>
+  select(YEAR, SERIAL, kid_age_min, kid_age_max, kid_age_mean, n_kid_aged_0_2,
+         n_kid_aged_3_5, n_kid_aged_6_10, n_kid_aged_11_13, n_kid_aged_14_17)
+
+# get ages of each kid
+kids_age_wide = data_kids |>
+  arrange(YEAR, SERIAL, desc(AGE)) |>
+  group_by(YEAR, SERIAL) |>
+  mutate(kid_index = row_number()) |>
+  ungroup() |>
+  select(YEAR, SERIAL, kid_index, AGE) |>
+  pivot_wider(names_from = kid_index,
+              values_from = AGE,
+              names_prefix = "age_of_kid_")
+
+# attach ages of kids to parents
+data_working_parents = data_working_parents |>
+  inner_join(kids_counts, by = c("YEAR", "SERIAL")) |>
+  inner_join(kids_age_wide, by = c("YEAR", "SERIAL")) |>
+  inner_join(kids_age_dist, by = c("YEAR", "SERIAL"))
 
 # individual level time use for leisure and childcare activities
 activity_summaries = data_working_parents |>
