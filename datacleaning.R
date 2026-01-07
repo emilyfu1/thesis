@@ -284,21 +284,23 @@ data_working_parents = data_individual |>
                                 SPEDUC >= 40 & SPEDUC <= 43 ~ 2,
                                 TRUE ~ NA_real_),
     
+    # make EARNWEEK, UHRSWORKT, and educ_cat no longer respondent-specific
+    EARNWEEK = if_else(is_resp, EARNWEEK, SPEARNWEEK),
+    UHRSWORKT = if_else(is_resp, UHRSWORKT, SPUSUALHRS),
+    educ_cat = if_else(is_resp, resp_educ_cat, spouse_educ_cat),
+    
     # earnings contributions of each person to household
     hh_total_earn = RESPEARNWEEK + SPEARNWEEK,
     
     # how much is contributed by each member
     resp_earn_share = RESPEARNWEEK / hh_total_earn,
     spouse_earn_share = SPEARNWEEK / hh_total_earn,
+    earn_share = EARNWEEK/hh_total_earn,
     
     # hourly wage of each member
     resp_hrly_wage = RESPEARNWEEK / UHRSWORKT,
     spouse_hrly_wage = SPEARNWEEK / SPUSUALHRS,
-    
-    # make EARNWEEK, UHRSWORKT, and educ_cat no longer respondent-specific
-    EARNWEEK = if_else(is_resp, EARNWEEK, SPEARNWEEK),
-    UHRSWORKT = if_else(is_resp, UHRSWORKT, SPUSUALHRS),
-    educ_cat = if_else(is_resp, resp_educ_cat, spouse_educ_cat)) |>
+    hrly_wage = EARNWEEK / UHRSWORKT) |>
   
   # characteristics of the female and male couple of the household
   mutate(
@@ -395,25 +397,34 @@ valid_households = activity_summaries |>
 sharing_est_data = data_working_parents |>
   inner_join(valid_households, by=c("YEAR","SERIAL")) |>
   inner_join(activity_summaries, by=c("YEAR","SERIAL","person_id")) |>
-
+  
+  # leisure and childcare time use in hours
+  mutate(total_leisure_h = total_leisure / 60,
+         total_private_leisure_h = total_private_leisure / 60,
+         total_leisure_h_r = total_leisure_r / 60,
+         total_private_leisure_h_r = total_private_leisure_r / 60,
+         total_childcare_h = total_childcare / 60,
+         total_childcare_nospouse_h = total_childcare_nospouse / 60,
+         # private leisure expenditure
+         leisure_exp = hrly_wage * total_private_leisure_h,
+         leisure_exp_r = hrly_wage * total_private_leisure_h_r) |>
+  
   # household-level constructs
   group_by(YEAR, SERIAL) |>
-  mutate(avgage = mean(AGE), # average age of the couple
-         # the household budget
-         y = (wage_f + wage_m) * 24,
-         
-         # some summary statistics by sex
-         
-         # gender-specific leisure expenditure
-         leisure_exp_f = sum(leisure_exp[SEX==2]),
-         leisure_exp_m = sum(leisure_exp[SEX==1]),
-         leisure_exp_f_r = sum(leisure_exp_r[SEX==2]),
-         leisure_exp_m_r = sum(leisure_exp_r[SEX==1]),
-         
-         # gender-specific childcare
-         total_childcare_nospouse_h_f = sum(total_childcare_nospouse_h[SEX==2]),
-         total_childcare_nospouse_h_m = sum(total_childcare_nospouse_h[SEX==1])
-         ) |> 
+  mutate(
+    # the household budget
+    y = (wage_f + wage_m) * 24,
+
+    # gender-specific leisure expenditure
+    leisure_exp_f = sum(leisure_exp[SEX==2]),
+    leisure_exp_m = sum(leisure_exp[SEX==1]),
+    leisure_exp_f_r = sum(leisure_exp_r[SEX==2]),
+    leisure_exp_m_r = sum(leisure_exp_r[SEX==1]),
+    
+    # gender-specific childcare
+    total_childcare_nospouse_h_f = sum(total_childcare_nospouse_h[SEX==2]),
+    total_childcare_nospouse_h_m = sum(total_childcare_nospouse_h[SEX==1])) |> 
+  
   ungroup() |>
   
   # since it's a pooled sample, use deviations from means in a particular year
