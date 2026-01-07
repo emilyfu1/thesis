@@ -2,77 +2,53 @@ library(tidyverse)
 setwd("/Users/emilyfu/Desktop/school/thesis")
 
 # import data
-final_individual_data = read.csv("atus_working_parents_act.csv")
+sharing_est_data = read.csv("atus_working_parents_act.csv")
 
-# household level (since now there's a proper separate variable for respondent)
-hh = final_individual_data |>
-  group_by(YEAR, SERIAL) |>   # unique household identifier
-  summarise(
-    # household state and county fip codes
-    STATEFIP = max(STATEFIP, na.rm=TRUE),
-    county = max(COUNTY, na.rm=TRUE),
+# household level (since now there's a proper separate variable for each member)
+sharing_est_data_collapse = sharing_est_data |>
+  arrange(YEAR, SERIAL) |>
+  distinct(YEAR, SERIAL, .keep_all = TRUE) |>
+  transmute(
+    # identifiers
+    YEAR, SERIAL, STATEFIP, COUNTY,
     
-    # household id
-    SERIAL = max(SERIAL, na.rm=TRUE),
+    # kids
+    num_kids_total, num_kids_male, num_kids_female, kid_age_min, kid_age_max, 
+    kid_age_mean, n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10, 
+    n_kid_aged_11_13, n_kid_aged_14_17, age_of_kid_1, age_of_kid_2, 
+    age_of_kid_3, age_of_kid_4, age_of_kid_5, age_of_kid_6, age_of_kid_7, 
+    age_of_kid_8, age_of_kid_9,
     
-    # child dummies
-    KID1TO2 = max(KID1TO2, na.r=TRUE),
-    KID3TO5 = max(KID3TO5, na.r=TRUE),
-    KID6TO12 = max(KID6TO12, na.r=TRUE),
-    KID13TO17 = max(KID13TO17, na.r=TRUE),
+    # time use, expenditure, budget
+    leisure_exp_f, leisure_exp_m,
+    leisure_exp_f_r, leisure_exp_m_r,
+    total_childcare_nospouse_h_f, total_childcare_nospouse_h_m,
+    y,
     
-    # household leisure expenditure by gender
-    leisure_exp_f = max(leisure_exp_f, na.rm=TRUE),
-    leisure_exp_m = max(leisure_exp_m, na.rm=TRUE),
-    leisure_exp_f_r = max(leisure_exp_f_r, na.rm=TRUE),
-    leisure_exp_m_r = max(leisure_exp_m_r, na.rm=TRUE),
-    total_childcare_nospouse_h_f = max(total_childcare_nospouse_h_f),
-    total_childcare_nospouse_h_m = max(total_childcare_nospouse_h_m),
+    # covariates
+    wage_f, wage_m,
+    educ_f, educ_m,
+    race_f, race_m,
+    uhrsworkt_f, uhrsworkt_m,
+    avgage,
+    agegap = agegap_m,
     
-    # total household budget
-    y = max(y, na.rm=TRUE),
+    # deviations
+    dev_wage_f_only, dev_wage_m_only,
+    dev_educ_f_only, dev_educ_m_only,
+    dev_wage_f_all, dev_wage_m_all,
+    dev_educ_f_all, dev_educ_m_all,
+    dev_avgage,
+    dev_agegap,
     
-    # sex-specific variables
-    wage_f = max(wage_f, na.rm=TRUE),
-    wage_m = max(wage_m, na.rm=TRUE),
-    educ_f = max(educ_f, na.rm=TRUE),
-    educ_m = max(educ_m, na.rm=TRUE),
-    race_f = max(race_f, na.rm=TRUE),
-    race_m = max(race_m, na.rm=TRUE),
-    race_f = max(race_f, na.rm=TRUE),
-    race_m = max(race_m, na.rm=TRUE),
-    uhrsworkt_f = max(uhrsworkt_f, na.rm=TRUE),
-    uhrsworkt_m = max(uhrsworkt_m, na.rm=TRUE),
-    
-    # age variables (your grouped variables already computed these correctly)
-    avg_age = max(avg_age, na.rm=TRUE),
-    age_gap = max(age_gap, na.rm=TRUE),
-    
-    # include deviations
-    dev_wage_f_only = max(dev_wage_f_only, na.rm=TRUE),
-    dev_wage_m_only = max(dev_wage_m_only, na.rm=TRUE),
-    dev_educ_f_only = max(dev_educ_f_only, na.rm=TRUE),
-    dev_educ_m_only = max(dev_educ_m_only, na.rm=TRUE),
-    dev_wage_f_all = max(dev_wage_f_all, na.rm=TRUE),
-    dev_wage_m_all = max(dev_wage_m_all, na.rm=TRUE),
-    dev_educ_f_all = max(dev_educ_f_all, na.rm=TRUE),
-    dev_educ_m_all = max(dev_educ_m_all, na.rm=TRUE),
-    dev_avg_age = max(dev_avgage, na.rm=TRUE),
-    dev_age_gap = max(dev_agegap, na.rm=TRUE),
-    
-    # interaction terms for the SUR
-    Bx_dev_wage_f_only = max(Bx_dev_wage_f_only, na.rm=TRUE),
-    Bx_dev_wage_m_only = max(Bx_dev_wage_m_only, na.rm=TRUE),
-    Bx_dev_educ_f_only = max(Bx_dev_educ_f_only, na.rm=TRUE),
-    Bx_dev_educ_m_only = max(Bx_dev_educ_m_only, na.rm=TRUE),
-    Bx_dev_wage_f_all = max(Bx_dev_wage_f_all, na.rm=TRUE),
-    Bx_dev_wage_m_all = max(Bx_dev_wage_m_all, na.rm=TRUE),
-    Bx_dev_educ_f_all = max(Bx_dev_educ_f_all, na.rm=TRUE),
-    Bx_dev_educ_m_all = max(Bx_dev_educ_m_all, na.rm=TRUE),
-    Bx_dev_avgage = max(Bx_dev_avgage, na.rm=TRUE),
-    Bx_dev_agegap = max(Bx_dev_agegap, na.rm=TRUE),
-    
-    .groups = "drop")
+    # interactions
+    Bx_dev_wage_f_only, Bx_dev_wage_m_only,
+    Bx_dev_educ_f_only, Bx_dev_educ_m_only,
+    Bx_dev_wage_f_all, Bx_dev_wage_m_all,
+    Bx_dev_educ_f_all, Bx_dev_educ_m_all,
+    Bx_dev_avgage,
+    Bx_dev_agegap)
 
 # save
-write.csv(hh,"sharing_est.csv", row.names = FALSE)
+write.csv(sharing_est_data_collapse,"atus_working_parents_act_collapse.csv", 
+          row.names = FALSE)
