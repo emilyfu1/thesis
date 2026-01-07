@@ -32,6 +32,7 @@ sharing_est_data_collapse = sharing_est_data |>
     uhrsworkt_f, uhrsworkt_m,
     avgage,
     agegap = agegap_m,
+    gdp_pc_nominal,
     
     # deviations
     dev_wage_f_only, dev_wage_m_only,
