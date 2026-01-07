@@ -1,5 +1,5 @@
 library(tidyverse)
-setwd("/Users/emilyfu/Desktop/school/thesis")
+setwd(Sys.getenv("THESIS_WD"))
 
 # import data
 sharing_est_data = read.csv("atus_working_parents_act.csv")

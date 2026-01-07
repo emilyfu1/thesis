@@ -3,7 +3,7 @@ library(ipumsr)
 library(tidyverse)
 library(haven)
 
-setwd("/Users/emilyfu/Desktop/school/thesis")
+setwd(Sys.getenv("THESIS_WD"))
 
 # things to help with data cleaning
 topcode_earnweek = 2884.61
