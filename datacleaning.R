@@ -30,7 +30,7 @@ variables = c("YEAR", "STATEFIP", "COUNTY", "SERIAL", "person_id", "AGE",
               "any_zero_childcare", "both_zero_private_leisure", 
               "both_zero_private_leisure_r", "both_zero_childcare")
 
-# childcare activities (currently not used)
+# childcare activities (currently used with childcare time summary variables)
 childcare_actlines = c(030101, 030102, 030103, 030104, 030105, 030106, 030107, 
                        030108, 030109, 030110, 030111, 030112, 030199, 030201, 
                        030202, 030203, 030204, 030299, 030301, 030302, 030303, 
@@ -181,6 +181,10 @@ data_activities = data |>
 
 # separating types of hh members
 
+# kids (under 18)
+data_kids = data_individual |>
+  filter(!is_adult)
+
 # hetero, working, cohabiting, parents
 data_working_parents = data_individual |>
   
@@ -216,7 +220,7 @@ data_working_parents = data_individual |>
   
   # finding valid and invalid spouses and respondents
   mutate(
-         # valid earnings
+         # valid regular earnings
          valid_earn_resp = !is.na(RESPEARNWEEK) &
            !(RESPEARNWEEK %in% invalid_earnweek) &
            RESPEARNWEEK > 0 & RESPEARNWEEK <= topcode_earnweek,
@@ -262,9 +266,10 @@ data_working_parents = data_individual |>
          valid_resp,
          valid_spouse) |>
   
-  # create categorical education variables to make SPEDUC and EDUCYRS equivalent
-  mutate(           
-    educ_cat = case_when(RESPEDUCYRS < 200 ~ 0, # below high school
+  # categorical education variable and populate earnings, working hours
+  mutate(    
+    # make SPEDUC and EDUCYRS equivalent
+    resp_educ_cat = case_when(RESPEDUCYRS < 200 ~ 0, # below high school
                          # high school to some college
                          RESPEDUCYRS >= 200 & RESPEDUCYRS < 217 ~ 1,
                          # completed undergraduate/graduate degrees
@@ -277,74 +282,54 @@ data_working_parents = data_individual |>
                                 SPEDUC >= 20 & SPEDUC <= 32 ~ 1,
                                 # completed undergraduate/graduate degrees
                                 SPEDUC >= 40 & SPEDUC <= 43 ~ 2,
-                                TRUE ~ NA_real_))
-
-  
-# now, split into respondent and the respondent's spouse
-  
-# respondent
-data_resp = data_working_parents |> 
-  filter(is_resp)
-
-# spouse
-data_spouse = data_working_parents |>
-  filter(!is_resp)
-
-# kids living in respective households (under 18)
-data_kids = data_individual |>
-  filter(!is_adult) |>
-
-  
-
-
-
-
-
-
-  # populate incomes/working hours for spouses into the same variable
-  # so i dont have to use SPEARNWEEK or SPUSUALHRS
-  # first fill in to household level
-  group_by(YEAR, SERIAL) |>
-  mutate(
+                                TRUE ~ NA_real_),
     
-    # fill in respondent-reported kid dummy variables to household level
+    # earnings contributions of each person to household
+    hh_total_earn = RESPEARNWEEK + SPEARNWEEK,
     
-    KID1TO2 = if_else(any(KID1TO2 < invalid_kid_dummy, na.rm = TRUE),
-                         max(KID1TO2[KID1TO2 < invalid_kid_dummy], na.rm = TRUE),
-                         NA_real_),
-    KID3TO5 = if_else(any(KID3TO5 < invalid_kid_dummy, na.rm = TRUE),
-                      max(KID3TO5[KID3TO5 < invalid_kid_dummy], na.rm = TRUE),
-                      NA_real_),
-    KID6TO12 = if_else(any(KID6TO12 < invalid_kid_dummy, na.rm = TRUE),
-                      max(KID6TO12[KID6TO12 < invalid_kid_dummy], na.rm = TRUE),
-                      NA_real_),
-    KID13TO17 = if_else(any(KID13TO17 < invalid_kid_dummy, na.rm = TRUE),
-                       max(KID13TO17[KID13TO17 < invalid_kid_dummy], na.rm = TRUE),
-                       NA_real_)) |>
+    # how much is contributed by each member
+    resp_earn_share = RESPEARNWEEK / hh_total_earn,
+    spouse_earn_share = SPEARNWEEK / hh_total_earn,
+    
+    # hourly wage of each member
+    resp_hrly_wage = RESPEARNWEEK / UHRSWORKT,
+    spouse_hrly_wage = SPEARNWEEK / SPUSUALHRS,
+    
+    # make EARNWEEK, UHRSWORKT, and educ_cat no longer respondent-specific
+    EARNWEEK = if_else(is_resp, EARNWEEK, SPEARNWEEK),
+    UHRSWORKT = if_else(is_resp, UHRSWORKT, SPUSUALHRS),
+    educ_cat = if_else(is_resp, resp_educ_cat, spouse_educ_cat)) |>
   
-  ungroup() |>
-  
-  # use the helper variables to fill in original variables
-  mutate(EARNWEEK = if_else(is_resp, EARNWEEK, spouse_earnweek),
-         UHRSWORKT = if_else(is_resp, UHRSWORKT, spouse_usualhours)) |>
-  
-  # check for respondents who are working+earning regularly
-  # validity for BOTH respondent and spouse
-  mutate(valid_wage = (!(EARNWEEK %in% invalid_earnweek) & EARNWEEK > 0 & 
-                         UHRSWORKT > 0 & UHRSWORKT < invalid_workhours)) |>
-
-  group_by(YEAR, SERIAL) |>
-  # only keep respondents who are working+earning regularly
-  filter(all(valid_wage)) |> 
+  # characteristics of the female and male couple of the household
   mutate(
-    # earnings countributions of each person to household
-    hh_total_earn = sum(EARNWEEK, na.rm = TRUE),
-    # how much is contributed
-    earn_share = if_else(hh_total_earn > 0, EARNWEEK / hh_total_earn, NA_real_)) |>
-  
-  ungroup()
+    # within-couple sex specific wages
+    wage_f = if_else(SEX == 2, resp_hrly_wage, spouse_hrly_wage),
+    wage_m = if_else(SEX == 1, resp_hrly_wage, spouse_hrly_wage),
+         
+    # within-couple sex specific education
+    educ_f = if_else(SEX == 2, resp_educ_cat, spouse_educ_cat),
+    educ_m = if_else(SEX == 1, resp_educ_cat, spouse_educ_cat),
+         
+    # within-couple sex specific race
+    race_f = if_else(SEX == 2, RACE, SPRACE),
+    race_m = if_else(SEX == 1, RACE, SPRACE),
+         
+    # within-couple sex specific usual hours worked
+    uhrsworkt_f = if_else(SEX == 2, UHRSWORKT, SPUSUALHRS),
+    uhrsworkt_m = if_else(SEX == 1, UHRSWORKT, SPUSUALHRS),
+         
+    # within-couple sex specific age 
+    age_f = if_else(SEX == 2, AGE, SPAGE),
+    age_m = if_else(SEX == 1, AGE, SPAGE),
+    
+    # average age of couple
+    avgage = (age_f + age_m) / 2,
+         
+    # age gap (male spouse - female spouse)
+    agegap_m = age_m - age_f)
 
-# individual level time use for tasks of interest
+
+# individual level time use for leisure and childcare activities
 activity_summaries = data_working_parents |>
   inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO")) |>
   # identify categories
@@ -407,65 +392,10 @@ valid_households = activity_summaries |>
   filter(filtered_household_size == 2)
 
 # get back to individual-level data
-final_individual_data = data_working_parents |>
+sharing_est_data = data_working_parents |>
   inner_join(valid_households, by=c("YEAR","SERIAL")) |>
   inner_join(activity_summaries, by=c("YEAR","SERIAL","person_id")) |>
-  select(all_of(variables))
 
-# generate variables for sharing estimates
-final_individual_data = final_individual_data |> 
-  mutate(hrly_wage = EARNWEEK / UHRSWORKT, # hourly wage
-         # spouse hourly wage
-         spouse_hrly_wage = spouse_earnweek / spouse_usualhours,
-         # time use in hours
-         total_leisure_h = total_leisure / 60,
-         total_private_leisure_h = total_private_leisure / 60,
-         total_leisure_h_r = total_leisure_r / 60,
-         total_private_leisure_h_r = total_private_leisure_r / 60,
-         total_childcare_h = total_childcare / 60,
-         total_childcare_nospouse_h = total_childcare_nospouse / 60,
-         # private leisure expenditure
-         leisure_exp = hrly_wage * total_private_leisure_h,
-         leisure_exp_r = hrly_wage * total_private_leisure_h_r,
-         # education in levels
-         educ_cat = case_when(EDUCYRS < 200 ~ 0, # below high school
-                              # high school to some college
-                              EDUCYRS >= 200 & EDUCYRS < 217 ~ 1,
-                              # completed undergraduate/graduate degrees
-                              EDUCYRS >= 217 & EDUCYRS <= 321 ~ 2,
-                              TRUE ~ NA_real_),
-         # spouse education in levels
-         spouse_educ_cat = case_when(spouse_educ < 200 ~ 0, # below high school
-                                     # high school to some college
-                                     spouse_educ >= 200 & spouse_educ < 217 ~ 1,
-                                     # completed undergraduate/graduate degrees
-                                     spouse_educ >= 217 & spouse_educ <= 321 ~ 2,
-                                     TRUE ~ NA_real_),
-         
-         # within-couple sex specific wages
-         wage_f = if_else(SEX == 2, hrly_wage, spouse_hrly_wage),
-         wage_m = if_else(SEX == 1, hrly_wage, spouse_hrly_wage),
-         
-         # within-couple sex specific education
-         educ_f = if_else(SEX == 2, educ_cat, spouse_educ_cat),
-         educ_m = if_else(SEX == 1, educ_cat, spouse_educ_cat),
-         
-         # within-couple sex specific race
-         race_f = if_else(SEX == 2, RACE, spouse_race),
-         race_m = if_else(SEX == 1, RACE, spouse_race),
-         
-         # within-couple sex specific usual hours worked
-         uhrsworkt_f = if_else(SEX == 2, UHRSWORKT, spouse_usualhours),
-         uhrsworkt_m = if_else(SEX == 1, UHRSWORKT, spouse_usualhours),
-         
-         # within-couple sex specific age 
-         age_f = if_else(SEX == 2, AGE, spouse_age),
-         age_m = if_else(SEX == 1, AGE, spouse_age),
-         
-         # within-couple sex specific age gaps?
-         agegap_f = age_f - age_m,
-         agegap_m = age_m - age_f) |>
-  
   # household-level constructs
   group_by(YEAR, SERIAL) |>
   mutate(avgage = mean(AGE), # average age of the couple
@@ -521,8 +451,7 @@ final_individual_data = final_individual_data |>
 write.csv(data_hh,"atus_hh.csv", row.names = FALSE)
 write.csv(data_individual,"atus_individuals.csv", row.names = FALSE)
 write.csv(data_kids,"atus_kids.csv", row.names = FALSE)
-write.csv(data_adults,"atus_adults.csv", row.names = FALSE)
 write.csv(data_working_parents,"atus_working_parents_individual.csv", 
           row.names = FALSE)
-write.csv(final_individual_data,"atus_working_parents_act.csv", 
+write.csv(sharing_est_data,"atus_working_parents_act.csv", 
           row.names = FALSE)
