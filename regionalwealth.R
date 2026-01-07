@@ -45,5 +45,6 @@ state_gdppc = bind_rows(pop_long, gdp_long) |>
   # find FIP codes
   inner_join(state_fips_crosswalk, by=c("state"))
 
-
-
+# save
+write.csv(state_gdppc,"regionalwealth.csv", 
+          row.names = FALSE)

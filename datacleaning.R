@@ -5,6 +5,9 @@ library(haven)
 
 setwd(Sys.getenv("THESIS_WD"))
 
+# regional wealth (GDP per capita)
+state_gdppc = read.csv("state_gdppc.csv")
+
 # things to help with data cleaning
 topcode_earnweek = 2884.61
 invalid_earnweek = c(99999.99, 99999.98)
@@ -95,7 +98,7 @@ data = read_ipums_micro(ddi) |>
   select(-STRATA, -CASEID) |>
   # this removes labels (labels are still available in documentation)
   # gets rid of warnings due to slightly different phrasing
-  zap_labels()
+  zap_labels() 
 
 # household level data (all)
 data_hh = data |>
@@ -124,6 +127,10 @@ data_individual = data |>
   # merge on YEAR, SERIAL
   # this gets us household characteristics for the respondents
   inner_join(data_hh, by = c("YEAR", "SERIAL")) |>
+  
+  # add regional wealth
+  # merge with GDP per capita
+  inner_join(state_gdppc, by = c("YEAR", "STATEFIP")) |>
   
   # should generate an individual person identifier
   # this works since the ATUS is a repeated cross section
@@ -480,6 +487,8 @@ sharing_est_data = data_working_parents |>
   mutate(dev_avgage = avgage - mean(avgage, na.rm=TRUE),
          # here i don't think it matters which age gap, just picked men-women
          dev_agegap = agegap_m - mean(agegap_m, na.rm=TRUE)) |>
+  # regional wealth
+  mutate(dev_gdppc = gdp_pc_nominal - mean(gdp_pc_nominal)) |>
   
   ungroup() |>
   
@@ -493,7 +502,8 @@ sharing_est_data = data_working_parents |>
          Bx_dev_educ_f_all = y * dev_educ_f_all,
          Bx_dev_educ_m_all = y * dev_educ_m_all,
          Bx_dev_avgage = y * dev_avgage,
-         Bx_dev_agegap = y * dev_agegap)
+         Bx_dev_agegap = y * dev_agegap,
+         Bx_dev_gdppc = y * dev_gdppc)
 
 # save all the stuff
 write.csv(data_hh,"atus_hh.csv", row.names = FALSE)

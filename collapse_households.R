@@ -40,6 +40,7 @@ sharing_est_data_collapse = sharing_est_data |>
     dev_educ_f_all, dev_educ_m_all,
     dev_avgage,
     dev_agegap,
+    dev_gdppc,
     
     # interactions
     Bx_dev_wage_f_only, Bx_dev_wage_m_only,
@@ -47,7 +48,8 @@ sharing_est_data_collapse = sharing_est_data |>
     Bx_dev_wage_f_all, Bx_dev_wage_m_all,
     Bx_dev_educ_f_all, Bx_dev_educ_m_all,
     Bx_dev_avgage,
-    Bx_dev_agegap)
+    Bx_dev_agegap,
+    Bx_dev_gdppc)
 
 # save
 write.csv(sharing_est_data_collapse,"atus_working_parents_act_collapse.csv", 
