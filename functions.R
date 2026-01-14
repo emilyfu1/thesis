@@ -51,3 +51,85 @@ make_regMat = function(regressors, theta_names,
   
   regMat
 }
+
+add_shares_from_lm = function(fit, data,
+                              dev_type,
+                              male_prefix = "male:",
+                              female_prefix = "female:",
+                              y_term_m = "male:y",
+                              y_term_f = "y:female",
+                              clamp01 = FALSE,
+                              prefix_out = "share") {
+  dev_map_ownsex = c("Bx_dev_wage_f_only" = "dev_wage_f_only",
+                     "Bx_dev_wage_m_only" = "dev_wage_m_only",
+                     "Bx_dev_educ_f_only" = "dev_educ_f_only",
+                     "Bx_dev_educ_m_only" = "dev_educ_m_only",
+                     "Bx_dev_avgage" = "dev_avgage",
+                     "Bx_dev_agegap" = "dev_agegap",
+                     "Bx_dev_gdppc" = "dev_gdppc")
+  dev_map_bothsex = c("Bx_dev_wage_f_all" = "dev_wage_f_all",
+                      "Bx_dev_wage_m_all" = "dev_wage_m_all",
+                      "Bx_dev_educ_f_all" = "dev_educ_f_all",
+                      "Bx_dev_educ_m_all" = "dev_educ_m_all",
+                      "Bx_dev_avgage" = "dev_avgage",
+                      "Bx_dev_agegap" = "dev_agegap",
+                      "Bx_dev_gdppc" = "dev_gdppc")
+  
+  if (dev_type == "own") {
+    dev_map = dev_map_ownsex
+  } else {
+    dev_map = dev_map_bothsex
+  }
+  
+  coefficients = fit$coefficients
+  nm = names(coefficients)
+  
+  betahat0_m = unname(coefficients[y_term_m])
+  betahat0_f = unname(coefficients[y_term_f])
+  sum_betahat0_mf = betahat0_m + betahat0_f
+  # find average resource share for men and women
+  etahat0_m = betahat0_m / sum_betahat0_mf
+  etahat0_f = betahat0_f / sum_betahat0_mf
+  
+  # the cobb doublas preference parameter is given by beta0_t / eta_t
+  # but this is just sum_beta0_mf
+  alphahat_l = sum_betahat0_mf
+  
+  # print(nm)
+  
+  # helper function for string names
+  get_beta_z = function(sex_prefix, suffix) {
+    key = paste0(sex_prefix, suffix)
+    if (!key %in% nm) return(NA_real_)
+    unname(coefficients[key])
+  }
+  
+  # now, find influence of each deviation thing for each gender
+  etahat_z_m = vapply(names(dev_map),
+                      function(suf) get_beta_z(male_prefix, suf) / alphahat_l, 
+                      numeric(1))
+  etahat_z_f = vapply(names(dev_map), 
+                      function(suf) get_beta_z(female_prefix, suf) / alphahat_l, 
+                      numeric(1))
+  
+  # matrix of deviation variables in data (columns align with dev_map order)
+  dev_mat = as.matrix(data[, unname(dev_map), drop = FALSE])
+  etahat_m_h = as.numeric(etahat0_m + dev_mat %*% etahat_z_m)
+  etahat_f_h = as.numeric(etahat0_f + dev_mat %*% etahat_z_f)
+  
+  # restricting proportion sizes essentially
+  if (clamp01) {
+    etahat_m_h = pmin(pmax(etahat_m_h, 0), 1)
+    etahat_f_h = pmin(pmax(etahat_f_h, 0), 1)
+  }
+  
+  # add outputs
+  addcols = data
+  addcols[[paste0(prefix_out, dev_type, "_etahat0_m")]] = etahat0_m
+  addcols[[paste0(prefix_out, dev_type, "_etahat0_f")]] = etahat0_f
+  addcols[[paste0(prefix_out, dev_type, "_alphahat_l")]] = alphahat_l
+  addcols[[paste0(prefix_out, dev_type, "_etahat_m")]] = etahat_m_h
+  addcols[[paste0(prefix_out, dev_type, "_etahat_f")]] = etahat_f_h
+  
+  return (addcols)
+}
