@@ -11,6 +11,9 @@ library(systemfit)
 library(ggplot2)
 library(purrr)
 library(knitr)
+library(lmtest)
+library(sandwich)
+library(car)
 
 # functions
 source("functions.R")
@@ -22,8 +25,11 @@ source("restriction_matrices.R")
 Import data
 
 ```{r}
-individual = read.csv("atus_working_parents_act.csv")
-hh = read.csv("atus_working_parents_act_collapse.csv")
+hh = read.csv("atus_working_parents_act.csv")  |>
+  mutate(leisure_exp_resp = if_else(!is.na(leisure_exp_m), leisure_exp_m, leisure_exp_f),
+         leisure_exp_resp_r = if_else(!is.na(leisure_exp_m_r), leisure_exp_m_r, leisure_exp_f_r),
+         male = if_else(SEX == 1, 1, 0),
+         female = if_else(SEX == 2, 1, 0))
 ```
 
 Table printing:
@@ -84,165 +90,134 @@ JT = f^{JT}(\mathbf{jt})$$
 - Sharing rule: determines the share of household budget net of public good expenditure assigned to each member (the individual’s resource share $\eta_{i,h}$)
 - Stage 2: Members decide how to allocate their individual budgets $\rho_{i,h}$ to private expenditure.
 
-Everyone, regardless of their type (in a given household category) is assumed to have the same Cobb-Douglas preference parameter for private leisure: $\alpha_{t,g}^l = \alpha_{g}^l$. Preference heterogeneity across types is maintained for all other preference parameters, and across household compositions.
+## Arduini (2025) specification:
+In particular, Cobb-Douglas preferences impose homotheticity, which may seem to strong an assumption for certain goods. It is important to
+note that I do not require the whole utility function to be Cobb-Douglas: more specifically, I require preferences that are Cobb-Douglas over the assignable good and some aggregate good. Therefore, I am imposing homotheticity on the assignable good, but not on other specific goods.
 
 ## Arduini (2025) identifying assumptions:
-Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure.
+- Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure. Everyone, regardless of their type (in a given household category) is assumed to have the same Cobb-Douglas preference parameter for private leisure: $\alpha_{t,g}^l = \alpha_{g}^l$. Preference heterogeneity across types is maintained for all other preference parameters, and across household compositions. Men and women spend
+the same share of their individual second-stage budget on leisure, but will split the remaining budget differently between other private goods.
 
 Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP). "With Cobb-Douglas preferences, we can achieve the desired restriction with public good C-D SAP. Under public good C-D SAP, the resource share and Pareto weight coincide. Public good C-D SAP imposes that the sum of all public good preference parameters is the same for all individuals of the same household category g."
 
 Since I wanted to study family-related stuff in the first place, to that end, I think it's worth taking a different look at the role children play in their households. What I originally thought to study were income effects on fertility, and some literature in that subject finds evidence for children being "normal goods" in the sense that fertility increases with income. Would it be reasonable to take the public goods approach, that both parents could allocate resources (time) to "producing the public good" (parenting their children so that they grow up to have characteristics that the family wants as a whole)? btw time spent caring for household children can be for non-own children too?
 
-The question of how to deal with children is a big issue. Time spent parenting (maybe focus on solo parenting, i.e. without spouse present, could also do money spent on kids) has some of the same characteristics as private leisure time. Parenting is also an unpaid activity, but its value isn't really known (even for those who work) since children aren't true goods---they are autonomous people and have their own preferences/choices, especially in adulthood. Treating children as a private good, where each parent can spend more time and/or own resources on raising their shared children for some private benefit, not necessarily something that the other spouse can benefit from (like teaching your child traits that are socially undesirable but personally useful), is complicated and I'm not sure if it's defensible. However, it is essentially the other side of the same coin as private leisure time. The more parenting you do, the less private leisure time you usually get. I just think parenting would be an interesting angle to take if I want to focus on families. Even if I can't use solo parenting time as a way to measure household sharing, it could be interesting to try and use it to answer my original question about the normal-ness or inferior-ness of children.
+
+The identification problem we face is that the man’s expenditure on private leisure may be more or less responsive than the woman’s to changes in the household budget for one of two reasons, or a combination of them. The first possibility is that the man receives a larger proportion of the household budget (net of public good expenditure), i.e. he has a higher resource share than the woman. The second possibility is that the man’s preference for private leisure is stronger relative to the woman’s, so that he spends a larger proportion of his individual budget on private leisure. In order to disentangle these two channels, I shut down the preference channel with the identifying assumption, allowing me to identify the
+sharing rule. 
+
+## Arduini (2025): estimating
+- An equation for each type of person in the form: 
+$$w_{i,h}l_{i,h} = \alpha_{t,g}^{l} y_h (\eta_{t,g}^0 + \sum_{z} \eta_{t,g}^{z}(z_h - \bar{z})) + \epsilon_{i,h}$$
+- If $z_h$ includes all key characteristics that affect bargaining (or at least all those that are correlated with regressors) then estimates should be unbiased. The errors are negatively correlated within household (with a correlation weaker in magnitude than -1), so that a SURE estimation approach is recommended.
+- Equation for women:
+$$w_{i,h}l_{i,h} = \beta_{f,g}^0 y_h + \sum_{z} \beta_{f,g}^{z} y_h (z_h - \bar{z})) + \epsilon_{i,h}$$
+- Equation for men:
+$$w_{i,h}l_{i,h} = \beta_{m,g}^0 y_h + \sum_{z} \beta_{m,g}^{z} y_h (z_h - \bar{z})) + \epsilon_{i,h}$$
+- Then, $\beta_{t}^0 = \alpha_{t,g}^{l} \eta_{t,g}^0$ and $\beta_{t}^z = \alpha_{t,g}^{l} \eta_{t,g}^z$
+- First, linear SURE regressions of leisure expenditure, one for men and one for women, with the restriction that $β_{f}^z + β_{m}^z = 0$. This is because $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$ and from private leisure C-D SAP and the definition of the linear approximation parameters, $\sum_{t \epsilon h} \beta_{t}^z = \alpha_{t}^{l} \sum_{t \epsilon h} \eta_{t}^z = 0$
+- Next, estimate each type’s average resource share as as $\hat{\eta}_{t}^0 = \frac{\hat{\beta_{t}^0}}{\hat{\beta_{f}^0} + \hat{\beta_{m}^0}}$
+- Next, estimate $\hat{\alpha_{t}^{l}} = \frac{\hat{\beta_{t}^0}}{\hat{\eta}_{t}^0}$, since $\beta_{t}^0 = \alpha_{t}^{l} \eta_{t}^0$
+- Next, estimate $\hat{\eta_{t}^{z}} = \frac{\hat{\beta_{t}^z}}{\hat{\alpha_{t}^{l}}}$, since $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$
+- Armed with the sharing rule, one can estimate individual-specific resource shares in the dataset used for estimation (the time-use dataset in this case): $\hat{\eta_{i,h}} = \hat{\eta}_{t}^0 + \sum_{z} \hat{\eta_{t}^{z}} (z_h - \bar{z})$
+
+# ONLY ONE HOUSEHOLD MEMBER COMPLETES THE TIME DIARY IN THE ATUS!! I CANNOT DIRECTLY STUDY WITHIN-HOUSEHOLD SUBSTITUTION
+- I can’t observe whether a female respondent increase in wage causes the husband's childcare to fall. I don't observe the spouse’s full time allocation or the spouse’s private leisure directly
+- In multi-diary data, I would estimate the system by SURE because the unobservables entering the two assignable-good equations share household shocks and are mechanically linked by budget splitting, inducing cross-equation correlation.
+- In ATUS, only one spouse reports a diary, so the two equations are estimated on disjoint household samples and cross-equation covariance is not identified. In the paper, the estimating system is (conceptually) two equations per household, a male assignable-good equation (male leisure expenditure) and a female assignable-good equation (female leisure expenditure) for the same household
+- ATUS does invalidate the specific identification strategy in the paper (the one that uses both spouses’ assignable-good demands in the same household plus within-household adding-up restrictions and SUR correlation).
+- With the ATUS, I do not observe the spouse’s diary outcomes. Rather, I get two different sets of households. This does not invalidate the idea of predicting shares themselves, but what I get is not the same object as the paper’s within-household resource shares.
 
 # Find the sharing rule
+
+- State and time dummies: unobserved heterogeneity that we address relates to the individual-specific intercept terms and the common time-varying component of the error term
 
 ### Male and female specifications: deviations from average with own sex
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-
-# men
-eq_m_within = leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
-  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
-
-# women
-eq_f_within = leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
-  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+eq_ownsex = leisure_exp_resp ~ 0 + male:y + female:y + 
+  male:Bx_dev_wage_f_only + female:Bx_dev_wage_f_only + 
+  male:Bx_dev_wage_m_only + female:Bx_dev_wage_m_only + 
+  male:Bx_dev_educ_f_only + female:Bx_dev_educ_f_only + 
+  male:Bx_dev_educ_m_only + female:Bx_dev_educ_m_only + 
+  male:Bx_dev_avgage + female:Bx_dev_avgage + male:Bx_dev_agegap + 
+  female:Bx_dev_agegap + male:Bx_dev_gdppc + female:Bx_dev_gdppc + 
+  factor(STATEFIP) + factor(YEAR)
+fit_ownsex = lm(eq_ownsex, data = hh)
 
 # relaxing, socialising, sport, entertainment, and hobbies only
-
-# men
-eq_m_r_within = leisure_exp_m_r ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
-  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
-
-# women
-eq_f_r_within = leisure_exp_f_r ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
-  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
-
-# list of regressions
-eqns_within = list(male = eq_m_within, female = eq_f_within)
-eqns_r_within = list(male = eq_m_r_within, female = eq_f_r_within)
+eq_ownsex_r = leisure_exp_resp_r ~ 0 + male:y + female:y + 
+  male:Bx_dev_wage_f_only + female:Bx_dev_wage_f_only + 
+  male:Bx_dev_wage_m_only + female:Bx_dev_wage_m_only + 
+  male:Bx_dev_educ_f_only + female:Bx_dev_educ_f_only + 
+  male:Bx_dev_educ_m_only + female:Bx_dev_educ_m_only + 
+  male:Bx_dev_avgage + female:Bx_dev_avgage + male:Bx_dev_agegap + 
+  female:Bx_dev_agegap + male:Bx_dev_gdppc + female:Bx_dev_gdppc + 
+  factor(STATEFIP) + factor(YEAR)
+fit_ownsex_r = lm(eq_ownsex_r, data = hh)
 ```
 
 ### Male and female specifications: deviations from average of men AND women
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-
-# men
-eq_m_between = leisure_exp_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
-  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
-
-# women
-eq_f_between = leisure_exp_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
-  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+eq_bothsex = leisure_exp_resp ~ 0 + male:y + female:y + 
+  male:Bx_dev_wage_f_all + female:Bx_dev_wage_f_all + 
+  male:Bx_dev_wage_m_all + female:Bx_dev_wage_m_all + 
+  male:Bx_dev_educ_f_all + female:Bx_dev_educ_f_all + 
+  male:Bx_dev_educ_m_all + female:Bx_dev_educ_m_all + 
+  male:Bx_dev_avgage + female:Bx_dev_avgage + male:Bx_dev_agegap + 
+  female:Bx_dev_agegap + male:Bx_dev_gdppc + female:Bx_dev_gdppc + 
+  factor(STATEFIP) + factor(YEAR)
+fit_bothsex = lm(eq_bothsex, data = hh)
 
 # relaxing, socialising, sport, entertainment, and hobbies only
-
-# men
-eq_m_r_between = leisure_exp_m_r ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
-  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
-
-# women
-eq_f_r_between = leisure_exp_f_r ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
-  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
-
-# list of regressions
-eqns_between = list(male = eq_m_between, female = eq_f_between)
-eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
+eq_bothsex_r = leisure_exp_resp_r ~ 0 + male:y + female:y + 
+  male:Bx_dev_wage_f_all + female:Bx_dev_wage_f_all + 
+  male:Bx_dev_wage_m_all + female:Bx_dev_wage_m_all + 
+  male:Bx_dev_educ_f_all + female:Bx_dev_educ_f_all + 
+  male:Bx_dev_educ_m_all + female:Bx_dev_educ_m_all + 
+  male:Bx_dev_avgage + female:Bx_dev_avgage + male:Bx_dev_agegap + 
+  female:Bx_dev_agegap + male:Bx_dev_gdppc + female:Bx_dev_gdppc + 
+  factor(STATEFIP) + factor(YEAR)
+fit_bothsex_r = lm(eq_bothsex_r, data = hh)
 ```
 
-### No restrictions on coefficients: deviations from average with own sex
+### Finding the resource shares
 ```{r}
-# leisure including eating, drinking, washing, spirituality, volunteering
-fit_unres_within = systemfit(eqns_within, method = "SUR", data = hh)
-# relaxing, socialising, sport, entertainment, and hobbies only
-fit_unres_r_within = systemfit(eqns_r_within, method = "SUR", data = hh)
+shares_fit_bothsex = add_shares_from_lm(fit_bothsex, data=hh, dev_type = "all")
+shares_fit_bothsex_r = add_shares_from_lm(fit_bothsex_r, data=hh, dev_type = "all")
+shares_fit_ownsex = add_shares_from_lm(fit_ownsex, data=hh, dev_type = "own")
+shares_fit_ownsex_r = add_shares_from_lm(fit_ownsex_r, data=hh, dev_type = "own")
 ```
 
-### No restrictions on coefficients: deviations from average of men AND women
+### Looking at these objects:
+
+Notice that the ATUS data really does not fit well with the model. 
 ```{r}
-# leisure including eating, drinking, washing, spirituality, volunteering
-fit_unres_between = systemfit(eqns_between, method = "SUR", data = hh)
-# relaxing, socialising, sport, entertainment, and hobbies only
-fit_unres_r_between = systemfit(eqns_r_between, method = "SUR", data = hh)
-```
-
-### Restricted coefficients, within-sex deviations
-```{r}
-# leisure including eating, drinking, washing, spirituality, volunteering
-fit_res_within = systemfit(eqns_within, method = "SUR", data = hh,
-                           restrict.regMat = modReg_within)
-# relaxing, socialising, sport, entertainment, and hobbies only
-fit_res_r_within = systemfit(eqns_r_within, method = "SUR", data = hh, 
-                             restrict.regMat = modReg_within)
-```
-
-### Restricted coefficients, deviations from average of men AND women
-```{r}
-# leisure including eating, drinking, washing, spirituality, volunteering
-fit_res_between = systemfit(eqns_between, method = "SUR", data = hh,
-                            restrict.regMat = modReg_between)
-# relaxing, socialising, sport, entertainment, and hobbies only
-fit_res_r_between = systemfit(eqns_r_between, method = "SUR", data = hh,
-                              restrict.regMat = modReg_between)
-```
-
-Print out some of these coefficients:
-```{r}
-summary(fit_res_r_within)
-```
-
-Unrestricted coefficients:
-```{r}
-test1 = fit_res_r_between$coefficients[c("female_y")]
-test2 = fit_res_r_between$coefficients[c("male_y")]
-
-print(test1 + test2)
-
-
-```
-
-Estimating the sharing rule:
-```{r}
-within_interactions <- c(
-  "Bx_dev_wage_f_only",
-  "Bx_dev_wage_m_only",
-  "Bx_dev_educ_f_only",
-  "Bx_dev_educ_m_only",
-  "Bx_dev_avgage",
-  "Bx_dev_agegap",
-  "Bx_dev_gdppc"
-)
-
-res_within <- estimate_sharing_rule(
-  fit = fit_unres_within,   # or fit_res_within if using restrictions
-  data  = hh,
-  interaction_vars = within_interactions
-)
-
-# Household-specific estimated shares:
-hh_within <- res_within$hh_shares
-
-# Average shares:
-res_within$eta0_f
-res_within$eta0_m
-
-# Marginal impacts (on female share):
-res_within$eta_z_f
-
+ggplot(shares_fit_bothsex) +
+  geom_density(aes(x = shareall_etahat_m, colour = "Male"), linewidth = 1) +
+  geom_density(aes(x = shareall_etahat_f, colour = "Female"), linewidth = 1) +
+  scale_colour_manual(
+    name = NULL,
+    values = c("Male" = "lightblue", "Female" = "pink")
+  ) +
+  labs(
+    x = "Estimated resource share",
+    y = "Density",
+    title = "Distribution of estimated resource shares"
+  ) +
+  theme_minimal()
 ```
 
 # To do: notes
 
-- actually calculate the resource shares lol
+- now, data cleaning for the UKTUS! or find something else
 
-- deviations from averages: compare to other women or other men and women? try both of these. what’s my replacement value? bargaining power may come from strength relative to spouse, but strength relative to other options within your gender. say in 2006 there is a leisure gap when both contribute similar to household. over time, women contribute more to the household, but this may result in smaller increases in women’s leisure than if it were men. tease out whether you’re earning more relative to your husband or relative to other women. two different regressions, and including both in the same regression
+- deviations from averages: compare to other women or other men and women? try both of these. what’s my replacement value? bargaining power may come from strength relative to spouse, but strength relative to other options within your gender. say in 2006 there is a leisure gap when women contribute more to the household, but this may result in smaller increases in women’s leisure than if it were men. tease out whether you’re earning more relative to your husband or relative to other women. two different regressions, and including both in the same regression
 
 - if women get richer does time spend with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 
 - changes over time: take income and matchings from 2004, and take coefficients from 2024. apply the betas to the observed behaviour of 2024, would i get different counterfactual leisures?
-
-- margins plot??
 
 - child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters. (check gender ratios of births in states) I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women using son and daughter ratios(?) as a source of plausible exogeneity.
 
