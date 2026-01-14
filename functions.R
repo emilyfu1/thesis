@@ -133,3 +133,38 @@ add_shares_from_lm = function(fit, data,
   
   return (addcols)
 }
+
+plot_share_densities = function(data,
+                                dev_type,
+                                prefix = "share",
+                                bw = "nrd0",
+                                alpha = 0.5) {
+  
+  # construct column names
+  col_m = paste0(prefix, dev_type, "_etahat_m")
+  col_f = paste0(prefix, dev_type, "_etahat_f")
+  
+  # reshape to long for ggplot
+  plot_data = data |>
+    dplyr::select(all_of(c(col_m, col_f))) |>
+    tidyr::pivot_longer(cols = everything(),
+                        names_to = "sex",
+                        values_to = "share") |>
+    dplyr::mutate(sex = dplyr::case_when(sex == col_m ~ "Male",
+                                         sex == col_f ~ "Female"))
+  
+  ggplot(plot_data, aes(x = share, fill = sex, colour = sex)) +
+    geom_density(alpha = alpha, bw = bw, linewidth = 1) +
+    labs(
+      x = "Estimated resource share",
+      y = "Density",
+      fill = NULL,
+      colour = NULL,
+      title = paste("Estimated resource shares (", dev_type, "-sex deviations)", sep = "")
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      plot.title = element_text(face = "bold")
+    )
+}
