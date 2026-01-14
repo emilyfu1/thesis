@@ -5,6 +5,7 @@ editor: visual
 ---
 
 Importing packages
+
 ```{r echo=FALSE}
 library(tidyverse)
 library(systemfit)
@@ -33,6 +34,7 @@ hh = read.csv("atus_working_parents_act.csv")  |>
 ```
 
 Table printing:
+
 ```{r}
 # sharing rule table for coefficients
 rows_within = c("y" = "Budget",
@@ -53,30 +55,32 @@ rows_between = c("y" = "Budget",
 
 ```
 
-# The framework 
+# The framework
 
 ## Brief summary of setup in Arduini (2025):
-- An individual $i$ belongs to a household $h$. Each individual has a person type $t$. Households are in the same category $g$ if they have the same number of household members of each type. 
-- Individual-level characteristics: $\pi_{i,h}$
-- Household-level characteristics: $\zeta_{i,h}$
-- The household purchases private material goods $c_{i,h}$ and public material goods $X$. Private good $j \epsilon \Omega^c$ has price $p_j$. Public good $j \epsilon \Omega^X$ has price $r_j$.
-- Each individual has time-endowment normalised to 1.
-- Four types of time-use: private leisure $l_{i,h}$, joint leisure $jt_{i,h}$, market work $m_{i,h}$ (hours worked, does not enter utility function) and domestic work $d_{i,h}$
-- Joint leisure and domestic work are inputs to public goods $D = f^D(\mathbf{d})$ and $JT = f^{JT}(\mathbf{jt})$ enjoyed by the household
- Private leisure $l_{i,h}$ includes leisure activities enjoyed by an individual without the co-presence of other household members. It is therefore a private good, which enters the utility function directly.
-- $Q_h$ for the vector of public goods including both material and time-use public goods ($X_h$, $JT_h$, $D_h$) and $R_h$ for the associated price vector. $R_h$ includes wages $w_{i,h}$ of each of its members.
-- Each individual has labour income endowment equal to $w_{i,h}$. An individual’s overall endowment is $y_{i,h} = y_{i,h}^{NL} + w_{i,h}$. 
-- Each member can be endowed with nonlabour income $y_{i,h}^{NL}$. The household as a whole can have non-labour income $y_{h}^{NL}$. 
-- The household’s endowment (or household budget) is $y_h = \sum_{i \epsilon h} y_{i,h}$. 
-- Each individual i of type t living in a household category g has utility function $u_{t,g}$. There is preference heterogeneity across types and household compositions. The form of the bargaining solution of each household depends on the number and types of members, so that the sharing rule for different household categories must be estimated separately.
-- Household individuals bargain over how to divide resources. Relative bargaining power will in general depend both on (i) market variables such as prices (including wages), and (ii) distribution factors, which enter the household’s optimisation problem only indirectly through the distribution of bargaining power $\pi_{i,h}, i \epsilon h$ and $\zeta_{i,h}$. The vector of variables that affect bargaining power is $z_h$.
 
-## Browning, Chiappori and Weiss (2014): 
-- The problem solved by any collective household, regardless of the underlying bargaining process and outside options, can be represented as an optimisation problem where the maximand is the weighted sum of the members’ utility functions. Each member’s utility function is weighed by their Pareto weight $µ_{i,h} (zh)$.
-- Maximise $\sum_{i \epsilon h} (\mu_{i,h}(z_h) u_{t,g}(c_{i,h}, X_h, l_{i,h}, JT_h, D_h))$. Each person's utility depends on individual consumption of private material goods, all public goods, private leisure, joint leisure, and domestic work. 
+-   An individual $i$ belongs to a household $h$. Each individual has a person type $t$. Households are in the same category $g$ if they have the same number of household members of each type.
+-   Individual-level characteristics: $\pi_{i,h}$
+-   Household-level characteristics: $\zeta_{i,h}$
+-   The household purchases private material goods $c_{i,h}$ and public material goods $X$. Private good $j \epsilon \Omega^c$ has price $p_j$. Public good $j \epsilon \Omega^X$ has price $r_j$.
+-   Each individual has time-endowment normalised to 1.
+-   Four types of time-use: private leisure $l_{i,h}$, joint leisure $jt_{i,h}$, market work $m_{i,h}$ (hours worked, does not enter utility function) and domestic work $d_{i,h}$
+-   Joint leisure and domestic work are inputs to public goods $D = f^D(\mathbf{d})$ and $JT = f^{JT}(\mathbf{jt})$ enjoyed by the household Private leisure $l_{i,h}$ includes leisure activities enjoyed by an individual without the co-presence of other household members. It is therefore a private good, which enters the utility function directly.
+-   $Q_h$ for the vector of public goods including both material and time-use public goods ($X_h$, $JT_h$, $D_h$) and $R_h$ for the associated price vector. $R_h$ includes wages $w_{i,h}$ of each of its members.
+-   Each individual has labour income endowment equal to $w_{i,h}$. An individual’s overall endowment is $y_{i,h} = y_{i,h}^{NL} + w_{i,h}$.
+-   Each member can be endowed with nonlabour income $y_{i,h}^{NL}$. The household as a whole can have non-labour income $y_{h}^{NL}$.
+-   The household’s endowment (or household budget) is $y_h = \sum_{i \epsilon h} y_{i,h}$.
+-   Each individual i of type t living in a household category g has utility function $u_{t,g}$. There is preference heterogeneity across types and household compositions. The form of the bargaining solution of each household depends on the number and types of members, so that the sharing rule for different household categories must be estimated separately.
+-   Household individuals bargain over how to divide resources. Relative bargaining power will in general depend both on (i) market variables such as prices (including wages), and (ii) distribution factors, which enter the household’s optimisation problem only indirectly through the distribution of bargaining power $\pi_{i,h}, i \epsilon h$ and $\zeta_{i,h}$. The vector of variables that affect bargaining power is $z_h$.
 
-## Arduini (2025) household's problem:
-- Stage 1: The household chooses expenditure on market and time-produced (converted to wage units) public goods $R_{h}Q_{h} = \sum_{j \epsilon \Omega^X} r^j X_{h}^j + \sum_{i \epsilon h} w_{i,h} (d_{i,h} + jt_{i,h})$, where $Q_h = (X_h, JT_h, D_h)$, and how to divide the remaining household budget into individual budgets $\rho_{i,h} = (y_h − R_{h}Q_{h}) \eta_{i,h}$. The individual achieves indirect utility $v_{t,g}$ under $\rho_{i,h}$.
+## Browning, Chiappori and Weiss (2014):
+
+-   The problem solved by any collective household, regardless of the underlying bargaining process and outside options, can be represented as an optimisation problem where the maximand is the weighted sum of the members’ utility functions. Each member’s utility function is weighed by their Pareto weight $µ_{i,h} (zh)$.
+-   Maximise $\sum_{i \epsilon h} (\mu_{i,h}(z_h) u_{t,g}(c_{i,h}, X_h, l_{i,h}, JT_h, D_h))$. Each person's utility depends on individual consumption of private material goods, all public goods, private leisure, joint leisure, and domestic work.
+
+## Arduini (2025): household's problem
+
+-   Stage 1: The household chooses expenditure on market and time-produced (converted to wage units) public goods $R_{h}Q_{h} = \sum_{j \epsilon \Omega^X} r^j X_{h}^j + \sum_{i \epsilon h} w_{i,h} (d_{i,h} + jt_{i,h})$, where $Q_h = (X_h, JT_h, D_h)$, and how to divide the remaining household budget into individual budgets $\rho_{i,h} = (y_h − R_{h}Q_{h}) \eta_{i,h}$. The individual achieves indirect utility $v_{t,g}$ under $\rho_{i,h}$.
 
 $$\text{max}_{\rho,X,d,jt} \sum_{i \epsilon h} \mu_{i,h}(z_h) v_{t,g}(\rho_{i,h}, X_h, l_{i,h}, JT_h, D_h)$$
 
@@ -87,52 +91,51 @@ X_{h}^j, \rho_{i,h}, d_{i,h}, jt_{i,h} \leq 0, \newline
 D = f^D(\mathbf{d}),
 JT = f^{JT}(\mathbf{jt})$$
 
-- Sharing rule: determines the share of household budget net of public good expenditure assigned to each member (the individual’s resource share $\eta_{i,h}$)
-- Stage 2: Members decide how to allocate their individual budgets $\rho_{i,h}$ to private expenditure.
+-   Sharing rule: determines the share of household budget net of public good expenditure assigned to each member (the individual’s resource share $\eta_{i,h}$)
+-   Stage 2: Members decide how to allocate their individual budgets $\rho_{i,h}$ to private expenditure.
 
-## Arduini (2025) specification:
-In particular, Cobb-Douglas preferences impose homotheticity, which may seem to strong an assumption for certain goods. It is important to
-note that I do not require the whole utility function to be Cobb-Douglas: more specifically, I require preferences that are Cobb-Douglas over the assignable good and some aggregate good. Therefore, I am imposing homotheticity on the assignable good, but not on other specific goods.
+## Arduini (2025): specification
 
-## Arduini (2025) identifying assumptions:
-- Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure. Everyone, regardless of their type (in a given household category) is assumed to have the same Cobb-Douglas preference parameter for private leisure: $\alpha_{t,g}^l = \alpha_{g}^l$. Preference heterogeneity across types is maintained for all other preference parameters, and across household compositions. Men and women spend
-the same share of their individual second-stage budget on leisure, but will split the remaining budget differently between other private goods.
+In particular, Cobb-Douglas preferences impose homotheticity, which may seem to strong an assumption for certain goods. It is important to note that I do not require the whole utility function to be Cobb-Douglas: more specifically, I require preferences that are Cobb-Douglas over the assignable good and some aggregate good. Therefore, I am imposing homotheticity on the assignable good, but not on other specific goods.
+
+## Arduini (2025): identifying assumptions
+
+-   Private leisure C-D SRAT: the ratio between men and women’s preference parameter for the private assignable good is stable across household compositions. Cubb-Douglas preferences over the private assignable good: homotheticity of private leisure. Everyone, regardless of their type (in a given household category) is assumed to have the same Cobb-Douglas preference parameter for private leisure: $\alpha_{t,g}^l = \alpha_{g}^l$. Preference heterogeneity across types is maintained for all other preference parameters, and across household compositions. Men and women spend the same share of their individual second-stage budget on leisure, but will split the remaining budget differently between other private goods.
 
 Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household (what Arduini calls public good SAP). "With Cobb-Douglas preferences, we can achieve the desired restriction with public good C-D SAP. Under public good C-D SAP, the resource share and Pareto weight coincide. Public good C-D SAP imposes that the sum of all public good preference parameters is the same for all individuals of the same household category g."
 
 Since I wanted to study family-related stuff in the first place, to that end, I think it's worth taking a different look at the role children play in their households. What I originally thought to study were income effects on fertility, and some literature in that subject finds evidence for children being "normal goods" in the sense that fertility increases with income. Would it be reasonable to take the public goods approach, that both parents could allocate resources (time) to "producing the public good" (parenting their children so that they grow up to have characteristics that the family wants as a whole)? btw time spent caring for household children can be for non-own children too?
 
-
-The identification problem we face is that the man’s expenditure on private leisure may be more or less responsive than the woman’s to changes in the household budget for one of two reasons, or a combination of them. The first possibility is that the man receives a larger proportion of the household budget (net of public good expenditure), i.e. he has a higher resource share than the woman. The second possibility is that the man’s preference for private leisure is stronger relative to the woman’s, so that he spends a larger proportion of his individual budget on private leisure. In order to disentangle these two channels, I shut down the preference channel with the identifying assumption, allowing me to identify the
-sharing rule. 
+The identification problem we face is that the man’s expenditure on private leisure may be more or less responsive than the woman’s to changes in the household budget for one of two reasons, or a combination of them. The first possibility is that the man receives a larger proportion of the household budget (net of public good expenditure), i.e. he has a higher resource share than the woman. The second possibility is that the man’s preference for private leisure is stronger relative to the woman’s, so that he spends a larger proportion of his individual budget on private leisure. In order to disentangle these two channels, I shut down the preference channel with the identifying assumption, allowing me to identify the sharing rule.
 
 ## Arduini (2025): estimating
-- An equation for each type of person in the form: 
-$$w_{i,h}l_{i,h} = \alpha_{t,g}^{l} y_h (\eta_{t,g}^0 + \sum_{z} \eta_{t,g}^{z}(z_h - \bar{z})) + \epsilon_{i,h}$$
-- If $z_h$ includes all key characteristics that affect bargaining (or at least all those that are correlated with regressors) then estimates should be unbiased. The errors are negatively correlated within household (with a correlation weaker in magnitude than -1), so that a SURE estimation approach is recommended.
-- Equation for women:
-$$w_{i,h}l_{i,h} = \beta_{f,g}^0 y_h + \sum_{z} \beta_{f,g}^{z} y_h (z_h - \bar{z})) + \epsilon_{i,h}$$
-- Equation for men:
-$$w_{i,h}l_{i,h} = \beta_{m,g}^0 y_h + \sum_{z} \beta_{m,g}^{z} y_h (z_h - \bar{z})) + \epsilon_{i,h}$$
-- Then, $\beta_{t}^0 = \alpha_{t,g}^{l} \eta_{t,g}^0$ and $\beta_{t}^z = \alpha_{t,g}^{l} \eta_{t,g}^z$
-- First, linear SURE regressions of leisure expenditure, one for men and one for women, with the restriction that $β_{f}^z + β_{m}^z = 0$. This is because $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$ and from private leisure C-D SAP and the definition of the linear approximation parameters, $\sum_{t \epsilon h} \beta_{t}^z = \alpha_{t}^{l} \sum_{t \epsilon h} \eta_{t}^z = 0$
-- Next, estimate each type’s average resource share as as $\hat{\eta}_{t}^0 = \frac{\hat{\beta_{t}^0}}{\hat{\beta_{f}^0} + \hat{\beta_{m}^0}}$
-- Next, estimate $\hat{\alpha_{t}^{l}} = \frac{\hat{\beta_{t}^0}}{\hat{\eta}_{t}^0}$, since $\beta_{t}^0 = \alpha_{t}^{l} \eta_{t}^0$
-- Next, estimate $\hat{\eta_{t}^{z}} = \frac{\hat{\beta_{t}^z}}{\hat{\alpha_{t}^{l}}}$, since $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$
-- Armed with the sharing rule, one can estimate individual-specific resource shares in the dataset used for estimation (the time-use dataset in this case): $\hat{\eta_{i,h}} = \hat{\eta}_{t}^0 + \sum_{z} \hat{\eta_{t}^{z}} (z_h - \bar{z})$
+
+-   An equation for each type of person in the form: $$w_{i,h}l_{i,h} = \alpha_{t,g}^{l} y_h (\eta_{t,g}^0 + \sum_{z} \eta_{t,g}^{z}(z_h - \bar{z})) + \epsilon_{i,h}$$
+-   If $z_h$ includes all key characteristics that affect bargaining (or at least all those that are correlated with regressors) then estimates should be unbiased. The errors are negatively correlated within household (with a correlation weaker in magnitude than -1), so that a SURE estimation approach is recommended.
+-   Equation for women: $$w_{i,h}l_{i,h} = \beta_{f,g}^0 y_h + \sum_{z} \beta_{f,g}^{z} y_h (z_h - \bar{z})) + \epsilon_{i,h}$$
+-   Equation for men: $$w_{i,h}l_{i,h} = \beta_{m,g}^0 y_h + \sum_{z} \beta_{m,g}^{z} y_h (z_h - \bar{z})) + \epsilon_{i,h}$$
+-   Then, $\beta_{t}^0 = \alpha_{t,g}^{l} \eta_{t,g}^0$ and $\beta_{t}^z = \alpha_{t,g}^{l} \eta_{t,g}^z$.
+-   First, linear SURE regressions of leisure expenditure, one for men and one for women, with the restriction that $β_{f}^z + β_{m}^z = 0$. This is because $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$ and from private leisure C-D SAP and the definition of the linear approximation parameters, $\sum_{t \epsilon h} \beta_{t}^z = \alpha_{t}^{l} \sum_{t \epsilon h} \eta_{t}^z = 0$.
+-   Next, estimate each type’s average resource share as $\hat{\eta}_{t}^0 = \frac{\hat{\beta_{t}^0}}{\hat{\beta_{f}^0} + \hat{\beta_{m}^0}}$
+-   Next, estimate $\hat{\alpha_{t}^{l}} = \frac{\hat{\beta_{t}^0}}{\hat{\eta}_{t}^0}$, since $\beta_{t}^0 = \alpha_{t}^{l} \eta_{t}^0$.
+-   Next, estimate $\hat{\eta_{t}^{z}} = \frac{\hat{\beta_{t}^z}}{\hat{\alpha_{t}^{l}}}$, since $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$.
+-   Armed with the sharing rule, one can estimate individual-specific resource shares in the dataset used for estimation (the time-use dataset in this case): $\hat{\eta_{i,h}} = \hat{\eta}_{t}^0 + \sum_{z} \hat{\eta_{t}^{z}} (z_h - \bar{z})$.
 
 # ONLY ONE HOUSEHOLD MEMBER COMPLETES THE TIME DIARY IN THE ATUS!! I CANNOT DIRECTLY STUDY WITHIN-HOUSEHOLD SUBSTITUTION
-- I can’t observe whether a female respondent increase in wage causes the husband's childcare to fall. I don't observe the spouse’s full time allocation or the spouse’s private leisure directly
-- In multi-diary data, I would estimate the system by SURE because the unobservables entering the two assignable-good equations share household shocks and are mechanically linked by budget splitting, inducing cross-equation correlation.
-- In ATUS, only one spouse reports a diary, so the two equations are estimated on disjoint household samples and cross-equation covariance is not identified. In the paper, the estimating system is (conceptually) two equations per household, a male assignable-good equation (male leisure expenditure) and a female assignable-good equation (female leisure expenditure) for the same household
-- ATUS does invalidate the specific identification strategy in the paper (the one that uses both spouses’ assignable-good demands in the same household plus within-household adding-up restrictions and SUR correlation).
-- With the ATUS, I do not observe the spouse’s diary outcomes. Rather, I get two different sets of households. This does not invalidate the idea of predicting shares themselves, but what I get is not the same object as the paper’s within-household resource shares.
+
+-   I can’t observe whether a female respondent increase in wage causes the husband's childcare to fall. I don't observe the spouse’s full time allocation or the spouse’s private leisure directly
+-   In multi-diary data, I would estimate the system by SURE because the unobservables entering the two assignable-good equations share household shocks and are mechanically linked by budget splitting, inducing cross-equation correlation.
+-   In ATUS, only one spouse reports a diary, so the two equations are estimated on disjoint household samples and cross-equation covariance is not identified. In the paper, the estimating system is (conceptually) two equations per household, a male assignable-good equation (male leisure expenditure) and a female assignable-good equation (female leisure expenditure) for the same household
+-   ATUS does invalidate the specific identification strategy in the paper (the one that uses both spouses’ assignable-good demands in the same household plus within-household adding-up restrictions and SUR correlation).
+-   With the ATUS, I do not observe the spouse’s diary outcomes. Rather, I get two different sets of households. This does not invalidate the idea of predicting shares themselves, but what I get is not the same object as the paper’s within-household resource shares.
 
 # Find the sharing rule
 
-- State and time dummies: unobserved heterogeneity that we address relates to the individual-specific intercept terms and the common time-varying component of the error term
+-   State and time dummies: unobserved heterogeneity that we address relates to the individual-specific intercept terms and the common time-varying component of the error term
 
 ### Male and female specifications: deviations from average with own sex
+
+I'll have to replace these with the systemfit versions eventually
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
 eq_ownsex = leisure_exp_resp ~ 0 + male:y + female:y + 
@@ -158,6 +161,7 @@ fit_ownsex_r = lm(eq_ownsex_r, data = hh)
 ```
 
 ### Male and female specifications: deviations from average of men AND women
+
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
 eq_bothsex = leisure_exp_resp ~ 0 + male:y + female:y + 
@@ -183,6 +187,7 @@ fit_bothsex_r = lm(eq_bothsex_r, data = hh)
 ```
 
 ### Finding the resource shares
+
 ```{r}
 shares_fit_bothsex = add_shares_from_lm(fit_bothsex, data=hh, dev_type = "all")
 shares_fit_bothsex_r = add_shares_from_lm(fit_bothsex_r, data=hh, dev_type = "all")
@@ -190,42 +195,52 @@ shares_fit_ownsex = add_shares_from_lm(fit_ownsex, data=hh, dev_type = "own")
 shares_fit_ownsex_r = add_shares_from_lm(fit_ownsex_r, data=hh, dev_type = "own")
 ```
 
-### Looking at these objects:
+# Differences between and within sexes...
 
-Notice that the ATUS data really does not fit well with the model. 
+## Some density plots
+-   bargaining power may come from strength relative to spouse or strength relative to other options within your gender. say in 2006 there is a leisure gap when women contribute more to the household. This may result in smaller increases in women’s leisure than if it were men.
+- Notice that the ATUS data really does not fit well with the model...
+
 ```{r}
-ggplot(shares_fit_bothsex) +
-  geom_density(aes(x = shareall_etahat_m, colour = "Male"), linewidth = 1) +
-  geom_density(aes(x = shareall_etahat_f, colour = "Female"), linewidth = 1) +
-  scale_colour_manual(
-    name = NULL,
-    values = c("Male" = "lightblue", "Female" = "pink")
-  ) +
-  labs(
-    x = "Estimated resource share",
-    y = "Density",
-    title = "Distribution of estimated resource shares"
-  ) +
-  theme_minimal()
+plot_share_densities(shares_fit_bothsex, dev_type = "all")
 ```
 
-# To do: notes
+It's worth seeing the women-vs-women/men-vs-men and women-vs-all/men-vs-all comparison though? Doesn't look very different
+Within-sex deviations: bargaining relative to one’s gender peer group
+Across-sex deviations: relative position within the household
+```{r}
+plot_share_densities(shares_fit_ownsex, dev_type = "own")
+```
 
-- now, data cleaning for the UKTUS! or find something else
+## How would households with characteristics $z_h$ be treated by a different sharing rule?
+-   Changes over time: take income and matchings from 2004, and take coefficients from 2024. apply the betas to the observed behaviour of 2024. Would I get different counterfactual leisures?
+- For two periods, I estimate $\beta_t^0 = \alpha_t^\ell \eta_t^0,$, $\beta_t^z = \alpha_t^\ell \eta_t^z$, average resource shares $\hat\eta_t^0 = \frac{\hat\beta_t^0}{\hat\beta_m^0 + \hat\beta_f^0}$, the leisure preference parameter $\hat\alpha_t^\ell = \frac{\hat\beta_t^0}{\hat\eta_t^0}$, and each marginal sharing rule $\hat\eta_t^z = \frac{\hat\beta_t^z}{\hat\alpha_t^\ell}$.
+- So for each year (say 2004 and 2024), I'd get:
+$$\hat\eta_{t,h}^{(2004)} = \hat\eta_t^{0,(2004)} + \sum_z \hat\eta_t^{z,(2004)} (z_h - \bar z), \newline
+\hat\eta_{t,h}^{(2024)} = \hat\eta_t^{0,(2024)} + \sum_z \hat\eta_t^{z,(2024)} (z_h - \bar z)$$
+- Then, why not take households observed in 2004 (their $z_h$), but apply the newer sharing rule:
+$$\hat\eta_{t,h}^{CF} = \hat\eta_t^{0,(2024)} + \sum_z \hat\eta_t^{z,(2024)} (z_h^{2004} - \bar z^{2024})$$
+- I'd want to compare $\hat\eta_{t,h}^{CF} \quad$ and $\quad \hat\eta_{t,h}^{(2004)}$. 
+- If we have $\hat\eta_{f,h}^{CF} > \hat\eta_{f,h}^{(2004)}$ for the observed 2004 household characteristics, the sharing rule has shifted in a way that allocates a larger share of resources to women.
 
-- deviations from averages: compare to other women or other men and women? try both of these. what’s my replacement value? bargaining power may come from strength relative to spouse, but strength relative to other options within your gender. say in 2006 there is a leisure gap when women contribute more to the household, but this may result in smaller increases in women’s leisure than if it were men. tease out whether you’re earning more relative to your husband or relative to other women. two different regressions, and including both in the same regression
+### An example
+- Suppose in 2004: women’s wages relative to men mattered *less* for the sharing rule, i.e. $\eta_f^{w_f}$ is small.
+- In 2024, maybe women’s outside options are stronger, social norms have changed sufficiently, and labour market attachment is different to make $\eta_f^{w_f}$ larger.
+- Applying the 2024 coefficients to 2004 households: even though 2004 women earned less on average, the same relative wage difference would buy them more bargaining power under the 2024 rule.
+- The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
 
-- if women get richer does time spend with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 
-- changes over time: take income and matchings from 2004, and take coefficients from 2024. apply the betas to the observed behaviour of 2024, would i get different counterfactual leisures?
 
-- child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters. (check gender ratios of births in states) I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women using son and daughter ratios(?) as a source of plausible exogeneity.
+# To do:
 
-# Thought jail
+-   data cleaning for the UKTUS! or find something else
+-   if women get richer does time spent with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
+-   child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters. (check gender ratios of births in states) I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women using son and daughter ratios(?) as a source of plausible exogeneity.
+-   if women get richer does time spent with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 
-My project (roughly): What is the impact of women’s control over their earnings (their bargaining power in the home) on their "child-rearing" supply? Using method as in Arduini to find the sharing rule, say who has more bargaining power based on private leisure, and then see if the person with more power spends more or less time on childcare. Developed from literature on the income effects of household fertility choice and intra-household bargaining, I use the American Time Use Survey (ATUS) to extend existing collective household models estimating intra-household inequality. In line with existing methodology, my Identification relies on private assignable goods, goods that cannot be shared between more than one person and are observed to be consumed by only one person in the household. This information is typically found in household expenditure surveys, but such goods are typically durable in the sense that they appear sparingly in expenditure data. To address the resulting power limitations with this approach, I adapt the approach of Arduini (2025) to a setting with parents and children, using private leisure in time use data to estimate bargaining power in the household. I then take this sharing rule to further discussions of childcare provision based on the bargaining power of individual parents. I both estimate and test for heterogeneity of childcare provision. I want to see the differences between male- or female-"dominated" households? Some existing papers use earnings/education differentials as a measure of bargaining power or fertility rates as a way to talk about family planning, but culture and gender roles may play a role in within-household childcare decisions and time spent on childcare is very tractable considering the breadth of time use data available for many countries.
+# thought jail slash random archive
 
-For the purpose of this exercise, I'm not too sure what I want to focus on yet. A good place to start could be nuclear heterosexual households (i.e. two parents, a male partner, a female partner, and children) since I want to look at inequality within the heteronormative household.
+My project (roughly): What is the impact of women’s control over their earnings (their bargaining power in the home) on their "child-rearing" supply? Using method as in Arduini to find the sharing rule, say who has more bargaining power based on private leisure, and then see if the person with more power spends more or less time on childcare. Developed from literature on the income effects of household fertility choice and intra-household bargaining, I use the American Time Use Survey (ATUS) to extend existing collective household models estimating intra-household inequality. In line with existing methodology, my identification relies on private assignable goods, goods that cannot be shared between more than one person and are observed to be consumed by only one person in the household. This information is typically found in household expenditure surveys, but such goods are typically durable in the sense that they appear sparingly in expenditure data. To address the resulting power limitations with this approach, I adapt the approach of Arduini (2025) to a setting with parents and children, using private leisure in time use data to estimate bargaining power in the household. I then take this sharing rule to further discussions of childcare provision based on the bargaining power of individual parents. I both estimate and test for heterogeneity of childcare provision. I want to see the differences between male- or female-"dominated" households? Some existing papers use earnings/education differentials as a measure of bargaining power or fertility rates as a way to talk about family planning, but culture and gender roles may play a role in within-household childcare decisions and time spent on childcare is very tractable considering the breadth of time use data available for many countries.
 
 ## The literature
 
@@ -248,12 +263,6 @@ Calvi (2002): Under some mild assumptions, there exists a monotonic corresponden
 *"We find that children command a reasonably large share of resources – roughly 20 percent for the first child – and that this share rises with the number of children – 5-10 percentage points per additional child. Moreover, fathers command a larger share of resources than mothers, and mothers seem to sacrifice more resources than fathers to their children."*
 
 *"A good is defined to be private if it cannot be shared or consumed jointly by more than one person, and is defined to be assignable if it is consumed by one individual household member that is known to the researcher. Examples could include toys and diapers which are private goods assignable to children, or alcohol and tobacco which are private goods assignable to adults. In our empirical application we use clothing"*
-
-# What I'm doing with data
-
-Household data: By splitting up the dataset by types of observations and then doing an inner merge myself, information collected at the household level can be used to populate the individual level data and vice versa. I think I'll have to construct my own data out of each type of observation because right now they all show up on separate lines. If I separate each type and merge them back together, I can fix this. Individual-level data: I create a dataset with observations for each person. Each household has a distinct household serial number, and all members of the household have the same serial number. I have ages for all household members. Activity and Who data: The ATUS has information about detailed activities and the people present during those activities. It also includes information on time spent taking care of children during those activities (secondary childcare)
-
-Children and parents: I might want to look at a setup similar to DLP where there are father, mother, and child-type. The following activities are of interest:
 
 Childcare-related activities from the ATUS documentation:
 
@@ -525,8 +534,6 @@ People do activities with...
 9998    Blank   
 ```
 
-# Random summary statistics and stuff
-
 ## Weird age gaps?
 
 ```{r}
@@ -543,7 +550,7 @@ hh |>
 
 ## Zeros in leisure and childcare
 
-Something that is supposed to be advantageous about private leisure is that people tend to "consume" it more than other private assignable goods like clothing (which is durable and not purchased as often as one would watch TV). However, it looks like ATUS respondents just don't tend to have a lot of fun. 
+Something that is supposed to be advantageous about private leisure is that people tend to "consume" it more than other private assignable goods like clothing (which is durable and not purchased as often as one would watch TV). However, it looks like ATUS respondents just don't tend to have a lot of fun.
 
 ```{r}
 zeros_leisure_childcare = individual |>
@@ -646,7 +653,9 @@ hh |>
 ```
 
 ## Male/female broad leisure expenditure
+
 There are a few people who regularly work very few hours a week, yet earn a lot. Maybe they are anesthesiologists
+
 ```{r}
 ggplot(hh) +
   # points

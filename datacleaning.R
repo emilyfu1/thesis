@@ -6,7 +6,7 @@ library(haven)
 setwd(Sys.getenv("THESIS_WD"))
 
 # regional wealth (GDP per capita)
-state_gdppc = read.csv("state_gdppc.csv")
+state_gdppc = read.csv("regionalwealth.csv")
 
 # things to help with data cleaning
 topcode_earnweek = 2884.61
@@ -169,14 +169,12 @@ data_activities = data |>
   inner_join(data_who, by = c("YEAR", "SERIAL", "ACTLINE")) |>
   
   # looks like WHOLINE in the who data aligns with LINENO in the individual data
-  # and LINENOW in the who data is the person the activity was performed with 
-  # confusing lmao
-  # rename variables to make merging with individual level data possible
-  rename(LINENO = WHOLINE, activity_done_with = LINENOW)
+  rename(LINENO = LINENOW)
 
 # separating types of hh members
 
 # hetero, working, cohabiting, parents
+# spouse characteristics are needed to calculate deviations
 data_working_parents = data_individual |>
   
   # populate spouse and respondent variables to the household level
@@ -375,120 +373,108 @@ data_working_parents = data_working_parents |>
   inner_join(kids_age_wide, by = c("YEAR", "SERIAL")) |>
   inner_join(kids_age_dist, by = c("YEAR", "SERIAL"))
 
+# respondent-only rows (these are the only people with diaries)
+resp_only = data_working_parents |>
+  filter(is_resp)
+
 # individual level time use for leisure and childcare activities
-activity_summaries = data_working_parents |>
+activity_summaries = resp_only |>
   inner_join(data_activities, by = c("YEAR", "SERIAL", "LINENO")) |>
-  # identify categories
-  mutate(activity_is_leisure = ACTIVITY %in% leisure_actlines,
-         activity_is_leisure_r = ACTIVITY %in% restrict_actlines,
-         activity_is_childcare = ACTIVITY %in% childcare_actlines,
-         activity_private = !(RELATEWU %in% who_private_exclude) &
-           !(RELATEWU %in% who_invalid),
-         activity_excludesspouse = !(RELATEWU %in% who_partner),
-         private_leisure = activity_is_leisure & activity_private,
-         private_leisure_r = activity_is_leisure_r & activity_private) |>
+  mutate(
+    # types of activities
+    activity_is_leisure = ACTIVITY %in% leisure_actlines,
+    activity_is_leisure_r = ACTIVITY %in% restrict_actlines,
+    activity_is_childcare = ACTIVITY %in% childcare_actlines,
+    
+    # private (no relevant household members present)
+    # activities where "who" isn't asked are considered private
+    activity_private = !(RELATEWU %in% who_private_exclude),
+    # spouse not present
+    activity_excludesspouse = !(RELATEWU %in% who_partner),
+    
+    # is private leisure?
+    private_leisure = activity_is_leisure & activity_private,
+    private_leisure_r = activity_is_leisure_r & activity_private) |>
   
-  # collapse to person-level time allocations
+  # find amount of minutes respondent spends for each activity category
   group_by(YEAR, SERIAL, person_id) |>
-  summarise(total_leisure = sum(DURATION_EXT[activity_is_leisure], na.rm=TRUE),
-            total_private_leisure = sum(DURATION_EXT[private_leisure], na.rm=TRUE),
-            total_leisure_r = sum(DURATION_EXT[activity_is_leisure_r], na.rm=TRUE),
-            total_private_leisure_r = sum(DURATION_EXT[private_leisure_r], na.rm=TRUE),
-            # to create the childcare variable, combine activities and secondary
-            # these already contain time spent with children
-            total_childcare_act = sum(DURATION_EXT[activity_is_childcare], na.rm=TRUE),
-            total_childcare_sec = sum(SCC_OWN_LN, na.rm=TRUE),
-            total_childcare = max(total_childcare_act, total_childcare_sec),
-            total_childcare_nospouse = sum(total_childcare[activity_excludesspouse], na.rm=TRUE),
-            .groups="drop")
+  summarise(
+    total_leisure = sum(DURATION_EXT[activity_is_leisure], na.rm = TRUE),
+    total_private_leisure = sum(DURATION_EXT[private_leisure], na.rm = TRUE),
+    total_leisure_r = sum(DURATION_EXT[activity_is_leisure_r], na.rm = TRUE),
+    total_private_leisure_r = sum(DURATION_EXT[private_leisure_r], na.rm = TRUE),
+    
+    total_childcare_act = sum(DURATION_EXT[activity_is_childcare], na.rm = TRUE),
+    total_childcare_sec = sum(SCC_OWN_LN, na.rm = TRUE),
+    total_childcare = max(total_childcare_act, total_childcare_sec),
+    total_childcare_nospouse = sum(DURATION_EXT[activity_is_childcare & 
+                                                  activity_excludesspouse], 
+                                   na.rm = TRUE),
+    .groups = "drop")
+
 
 # check how many zeros are in data for leisure and childcare
-valid_households = activity_summaries |>
+valid_respondents = activity_summaries |>
   mutate(positive_private_leisure = total_private_leisure > 0,
-         positive_private_leisure_r = total_private_leisure_r > 0,
-         positive_nospouse_childcare = total_childcare_nospouse > 0) |>
+         positive_private_leisure_r = total_private_leisure_r > 0) |>
   group_by(YEAR, SERIAL) |>
-  summarise(filtered_household_size = n(),
-            # check if at least one spouse does childcare or has private leisure
-            # or if both spouses do childcare or have private leisure
-            
-            # number of spouses who have non-zero leisure or childcare
-            num_private = sum(positive_private_leisure, na.rm = TRUE),
-            num_private_r = sum(positive_private_leisure_r, na.rm = TRUE),
-            num_childcare = sum(positive_nospouse_childcare, na.rm = TRUE),
-            
-            # number of spouses with zero leisure or childcare
-            num_zero_private = sum(!positive_private_leisure, na.rm = TRUE),
-            num_zero_private_r = sum(!positive_private_leisure_r, na.rm = TRUE),
-            num_zero_childcare = sum(!positive_nospouse_childcare, na.rm = TRUE),
-            
-            # any = at least 1 spouse has positive time use
-            # both = both spouses have positive time use
-            any_zero_private_leisure = num_zero_private >= 1,
-            both_zero_private_leisure = num_zero_private == 2,
-            
-            any_zero_private_leisure_r = num_zero_private_r >= 1,
-            both_zero_private_leisure_r = num_zero_private_r == 2,
-            
-            any_zero_childcare = num_zero_childcare >= 1,
-            both_zero_childcare = num_zero_childcare == 2,
-            
-            .groups="drop") |>
-  # this gets rid of anyone who doesn't have a partner with activity data
-  filter(filtered_household_size == 2)
+  summarise(
+    n_diaries = n(), # one ATUS diary
+    resp_zero_private_leisure = !any(positive_private_leisure, na.rm = TRUE),
+    resp_zero_private_leisure_r = !any(positive_private_leisure_r, na.rm = TRUE),
+    .groups = "drop") |>
+  filter(n_diaries == 1)
 
-# get back to individual-level data
-sharing_est_data = data_working_parents |>
-  inner_join(valid_households, by=c("YEAR","SERIAL")) |>
-  inner_join(activity_summaries, by=c("YEAR","SERIAL","person_id")) |>
+sharing_est_data = resp_only |>
+  inner_join(valid_respondents, by = c("YEAR", "SERIAL")) |>
+  inner_join(activity_summaries, by = c("YEAR", "SERIAL", "person_id")) |>
   
-  # leisure and childcare time use in hours
-  mutate(total_leisure_h = total_leisure / 60,
-         total_private_leisure_h = total_private_leisure / 60,
-         total_leisure_h_r = total_leisure_r / 60,
-         total_private_leisure_h_r = total_private_leisure_r / 60,
-         total_childcare_h = total_childcare / 60,
-         total_childcare_nospouse_h = total_childcare_nospouse / 60,
-         # private leisure expenditure
-         leisure_exp = hrly_wage * total_private_leisure_h,
-         leisure_exp_r = hrly_wage * total_private_leisure_h_r) |>
-  
-  # household-level constructs
-  group_by(YEAR, SERIAL) |>
+  # expenditures
   mutate(
-    # the household budget
-    y = (wage_f + wage_m) * 24,
-
-    # gender-specific leisure expenditure
-    leisure_exp_f = sum(leisure_exp[SEX==2]),
-    leisure_exp_m = sum(leisure_exp[SEX==1]),
-    leisure_exp_f_r = sum(leisure_exp_r[SEX==2]),
-    leisure_exp_m_r = sum(leisure_exp_r[SEX==1]),
+    # private leisure and childcare expenditure in hours
+    total_private_leisure_h = total_private_leisure / 60,
+    total_private_leisure_h_r = total_private_leisure_r / 60,
+    total_childcare_nospouse_h = total_childcare_nospouse / 60,
     
-    # gender-specific childcare
-    total_childcare_nospouse_h_f = sum(total_childcare_nospouse_h[SEX==2]),
-    total_childcare_nospouse_h_m = sum(total_childcare_nospouse_h[SEX==1])) |> 
+    # respondent private leisure and childcare expenditure
+    leisure_exp = hrly_wage * total_private_leisure_h,
+    leisure_exp_r = hrly_wage * total_private_leisure_h_r,
+    childcare_exp = hrly_wage * total_childcare_nospouse_h,
+    
+    # household budget
+    y = (wage_f + wage_m) * 24,
+    
+    # observed private leisure expenditure for the respondent's gender only
+    leisure_exp_m = if_else(SEX == 1, leisure_exp, NA_real_),
+    leisure_exp_f = if_else(SEX == 2, leisure_exp, NA_real_),
+    leisure_exp_m_r = if_else(SEX == 1, leisure_exp_r, NA_real_),
+    leisure_exp_f_r = if_else(SEX == 2, leisure_exp_r, NA_real_),
+    
+    # observed private childcare expenditure for the respondent's gender only
+    childcare_exp_m = if_else(SEX == 1, childcare_exp, NA_real_),
+    childcare_exp_f = if_else(SEX == 2, childcare_exp, NA_real_)) |>
   
-  ungroup() |>
-  
-  # since it's a pooled sample, use deviations from means in a particular year
+  # deviations from means of household-level characteristics
   group_by(YEAR) |>
-  # deviations from mean (mean of own sex in year)
-  mutate(dev_wage_f_only = wage_f - mean(wage_f, na.rm=TRUE),
-         dev_wage_m_only = wage_m - mean(wage_m, na.rm=TRUE),
-         dev_educ_f_only = educ_f - mean(educ_f, na.rm=TRUE),
-         dev_educ_m_only = educ_m - mean(educ_m, na.rm=TRUE)) |> 
-  # deviations from mean (mean of both sexes in year)
-  mutate(dev_wage_f_all = wage_f - mean(hrly_wage, na.rm=TRUE),
-         dev_wage_m_all = wage_m - mean(hrly_wage, na.rm=TRUE),
-         dev_educ_f_all = educ_f - mean(educ_cat, na.rm=TRUE),
-         dev_educ_m_all = educ_m - mean(educ_cat, na.rm=TRUE)) |>
-  # age gap and average age variables
-  mutate(dev_avgage = avgage - mean(avgage, na.rm=TRUE),
-         # here i don't think it matters which age gap, just picked men-women
-         dev_agegap = agegap_m - mean(agegap_m, na.rm=TRUE)) |>
-  # regional wealth
-  mutate(dev_gdppc = gdp_pc_nominal - mean(gdp_pc_nominal)) |>
+  mutate(
+    # within-sex deviations of education and age
+    dev_wage_f_only = wage_f - mean(wage_f, na.rm = TRUE),
+    dev_wage_m_only = wage_m - mean(wage_m, na.rm = TRUE),
+    dev_educ_f_only = educ_f - mean(educ_f, na.rm = TRUE),
+    dev_educ_m_only = educ_m - mean(educ_m, na.rm = TRUE),
+    
+    # deviations of education and age for both sexes (maybe change this to opposite sexes)
+    dev_wage_f_all = wage_f - mean(c(wage_f, wage_m), na.rm = TRUE),
+    dev_wage_m_all = wage_m - mean(c(wage_f, wage_m), na.rm = TRUE),
+    dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
+    dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
+    
+    # deviations of average age of couple and age gap
+    dev_avgage = avgage - mean(avgage, na.rm = TRUE),
+    dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
+    
+    # regional wealth deviation
+    dev_gdppc = gdp_pc_nominal - mean(gdp_pc_nominal, na.rm = TRUE)) |>
   
   ungroup() |>
   
@@ -497,13 +483,18 @@ sharing_est_data = data_working_parents |>
          Bx_dev_wage_m_only = y * dev_wage_m_only,
          Bx_dev_educ_f_only = y * dev_educ_f_only,
          Bx_dev_educ_m_only = y * dev_educ_m_only,
+    
          Bx_dev_wage_f_all = y * dev_wage_f_all,
          Bx_dev_wage_m_all = y * dev_wage_m_all,
          Bx_dev_educ_f_all = y * dev_educ_f_all,
          Bx_dev_educ_m_all = y * dev_educ_m_all,
+    
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc)
+
+males = sharing_est_data |> filter(SEX == 1)
+females = sharing_est_data |> filter(SEX == 2)
 
 # save all the stuff
 write.csv(data_hh,"atus_hh.csv", row.names = FALSE)
@@ -513,3 +504,5 @@ write.csv(data_working_parents,"atus_working_parents_individual.csv",
           row.names = FALSE)
 write.csv(sharing_est_data,"atus_working_parents_act.csv", 
           row.names = FALSE)
+write.csv(males,"atus_working_parents_act_males.csv", row.names = FALSE)
+write.csv(females,"atus_working_parents_act_females.csv", row.names = FALSE)
