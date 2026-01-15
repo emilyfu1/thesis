@@ -1,11 +1,44 @@
 library(tidyverse)
 library(tidycensus)
 library(fredr)
-wd = Sys.getenv("THESIS_WD")
+library(readxl)
 
+# setwd
 setwd(wd)
 
+# actlines and directories
+source("UKTUS_params.R")
+
+# import data and fix column names
+regional_gdp = read_excel(paste0(data_direct, "regionalwealth_all.xlsx"), 
+                          sheet = "Table 5",
+                          skip = 1)[c("Region name", "2000", "2014")]
+names(regional_gdp) = c("dgorpaf", "ngdp_2000", "ngdp_2014")
+
+# nominal GDP in each year
+regional_gdp_2014 = regional_gdp |> select(dgorpaf, ngdp_2014)
+regional_gdp_2000 = regional_gdp|> select(dgorpaf, ngdp_2000)
+
+# population in each year
+regional_pop_2014 = read_excel(paste0(data_direct, "population_2011_2024.xlsx"), 
+                          sheet = "MYE4",
+                          skip = 7)[c("Name", "Mid-2014")]
+names(regional_pop_2014) = c("dgorpaf", "pop_2014")
+regional_pop_2000 = read_excel(paste0(data_direct, "population_2000.xls"), 
+                               sheet = "Mid-2000 Persons")[c("Name", "ALL AGES")]
+names(regional_pop_2014) = c("dgorpaf", "pop_2000")
+
+# make names consistent
+
+
+
+
+################################################################################
+########################## ARCHIVE: US GDP PER CAPITA ##########################
+################################################################################
+
 atus_direct = paste0(wd, "/atus_data/")
+
 source("functions.R")
 
 # built-in state codes + DC
