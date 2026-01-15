@@ -53,4 +53,24 @@ restrict_actlines = c(
   7240, 7241, 7249, 7250, 7251, 7259, # Online communication
   7000)      # Unspecified hobbies, games & computing
 
+childcare_actlines = c(
+  
+  ## --- Direct childcare ---
+  4100,  # Unspecified childcare
+  4110,  # Physical care of children
+  4120,  # Teaching, reading, helping with homework
+  4130,  # Playing with children
+  4140,  # Talking with children
+  4150,  # Accompanying children
+  4160,  # Medical care of children
+  
+  ## --- Childcare as help ---
+  4170,  # Childcare as help
+  4171,  # Physical care of children as help
+  4172,  # Teaching/helping with homework as help
+  4173,  # Playing with children as help
+  4174,  # Talking with children as help
+  4175   # Accompanying children as help
+)
+
 leisure_actlines = c(personal_care_actlines, restrict_actlines)
