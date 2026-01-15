@@ -31,7 +31,7 @@ individual_diaries = data_activities |>
   # household budget: i need to indicate how many days everyone has completed
   # so that i calculate expenditure and budget based on number of days
   mutate(num_diaries_filled = n()) |>
-  arrange(serial, pnum)
+  distinct(serial, pnum, num_diaries_filled)
 
 # finding time use
 activity_summaries = data_activities |>
@@ -244,24 +244,44 @@ data_working_parents = data_individual |>
          total_childcare_exp = hrly_wage * total_childcare,
          nospouse_childcare_exp = hrly_wage * total_childcare_nospouse,
          # individual contribution to household budget
-         y_individual = hrly_wage * 24 * num_diaries_filled)
+         y_individual = hrly_wage * 24 * num_diaries_filled) |>
+  
+  # keep households with under-18 kids
+  filter(kid_age_min < 18)
   
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################
 ################################################################################
 
-data_moms = data_working_parents |>
-  filter(!male) |>
-  
-  # household level gender characteristics:
-  # wage_f, educ_f, uhrsworkt_f, age_f, earn_share_f
-  # wage_m, educ_m, uhrsworkt_m, age_m, earn_share_m
-  # average age of couple and age gap of couple
-
-data_dads = data_working_parents |>
-  filter(male)
+# create gender-specific versions of variables
+vars_to_suffix = c(
+  "hrly_wage", "educ_cat", "HrWkUS", "NetWkly", "DVAge",
+  "total_leisure", "total_leisure_r", "total_private_leisure",
+  "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
+  "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
+  "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
+  "y_individual", "pnum", "spouse_pnum")
 
 # we should get 634 individuals and 634 / 2 households
 sharing_est_data = data_working_parents |>
-  group_by(serial) |>
-  mutate(wage_f = hrly_wage)
+  # letter for creating variable names
+  mutate(sex_tag = if_else(male, "m", "f")) |>
+  select(
+    serial, sex_tag, all_of(vars_to_suffix),
+    # child info (household-level already, duplicated across spouses)
+    num_kids_total, num_kids_male, num_kids_female,
+    kid_age_min, kid_age_max, kid_age_mean,
+    n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
+    n_kid_aged_11_13, n_kid_aged_14_17) |>
+  pivot_wider(
+    id_cols = c(serial, num_kids_total, num_kids_male, num_kids_female,
+                kid_age_min, kid_age_max, kid_age_mean,
+                n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
+                n_kid_aged_11_13, n_kid_aged_14_17),
+    names_from = sex_tag,
+    values_from = all_of(vars_to_suffix),
+    names_sep = "_") 
+
+# deviations from means of household-level characteristics
+# interaction terms
+# regional wealth deviation
