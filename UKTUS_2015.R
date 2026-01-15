@@ -9,14 +9,14 @@ setwd(wd)
 source("UKTUS_actlines.R")
 
 # import data
-data_2015_direct = "/UKDA-8128-stata/stata/stata11_se/"
+uktus_2015_direct = paste0(wd,"/uktus_data/UKDA-8128-stata/stata/stata11_se/")
 
 ################################################################################
 ############################## ACTIVITY-LEVEL DATA #############################
 ################################################################################
 
 # activity level data
-data_activities = read_dta(paste0(wd, data_2015_direct, "uktus15_diary_ep_long.dta"))
+data_activities = read_dta(paste0(uktus_2015_direct, "uktus15_diary_ep_long.dta"))
 
 # find which month to keep in the individual and household data
 # only keep information collected at the same point as the time use data
@@ -90,7 +90,7 @@ activity_summaries = data_activities |>
 ################################################################################
 
 # household data
-data_hh = read_dta(paste0(wd, data_2015_direct, "uktus15_household.dta")) |>
+data_hh = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
   inner_join(diarymonth_households, by = c("serial", "IMonth"))
 
 ################################################################################
@@ -98,7 +98,7 @@ data_hh = read_dta(paste0(wd, data_2015_direct, "uktus15_household.dta")) |>
 ################################################################################
 
 # individual level data
-data_individual = read_dta(paste0(wd, data_2015_direct, "uktus15_individual.dta")) |>
+data_individual = read_dta(paste0(uktus_2015_direct, "uktus15_individual.dta")) |>
   # keep if observation has age, education, sex
   filter(DVAge >= 0, DMSex >= 0) |>
   mutate(male = DMSex == 1, # sex dummy
