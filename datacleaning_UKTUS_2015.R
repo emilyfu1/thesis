@@ -5,11 +5,8 @@ library(haven)
 wd = Sys.getenv("THESIS_WD")
 setwd(wd)
 
-# actlines 
-source("UKTUS_actlines.R")
-
-# import data
-uktus_2015_direct = paste0(wd,"/uktus_data/UKDA-8128-stata/stata/stata11_se/")
+# actlines and directories
+source("UKTUS_params.R")
 
 ################################################################################
 ############################## ACTIVITY-LEVEL DATA #############################
@@ -267,14 +264,15 @@ sharing_est_data = data_working_parents |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
-    serial, sex_tag, all_of(vars_to_suffix),
+    serial, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
     n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
     n_kid_aged_11_13, n_kid_aged_14_17) |>
   pivot_wider(
-    id_cols = c(serial, num_kids_total, num_kids_male, num_kids_female,
+    # keep all the household-level stuff: kids, region, serial
+    id_cols = c(serial, dgorpaf, num_kids_total, num_kids_male, num_kids_female,
                 kid_age_min, kid_age_max, kid_age_mean,
                 n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
                 n_kid_aged_11_13, n_kid_aged_14_17),
@@ -284,4 +282,4 @@ sharing_est_data = data_working_parents |>
 
 # deviations from means of household-level characteristics
 # interaction terms
-# regional wealth deviation
+# regional wealth deviation (dgorpaf)

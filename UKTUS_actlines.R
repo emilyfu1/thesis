@@ -1,3 +1,14 @@
+# setwd
+wd = Sys.getenv("THESIS_WD")
+setwd(wd)
+
+# directories
+data_direct = paste0(wd,"/uktus_data/")
+uktus_2015_direct = paste0(data_direct,"UKDA-4504-stata8_se/stata8_se/")
+uktus_2000_direct = paste0(data_direct,"UKDA-8128-stata/stata/stata11_se/")
+
+# activity codes
+
 personal_care_actlines = c(
   ## --- Personal care, rest, eating ---
   0,        # Unspecified personal care
