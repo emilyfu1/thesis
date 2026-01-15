@@ -28,28 +28,57 @@ individual_diaries = data_activities |>
   # so that i calculate expenditure and budget based on number of days
   mutate(num_diaries_filled = n())
 
+# household data
+data_hh = read_dta(paste0(wd, data_2015_direct, "uktus15_household.dta")) |>
+  inner_join(diarymonth_households, by = c("serial", "IMonth"))
+
 # individual level data
-data_individual = read_dta(paste0(wd, data_2015_direct, "uktus15_individual.dta")) |>
+data_individual = read_dta(paste0(wd, data_2015_direct, "uktus15_individual.dta"))
+
+# relationships in individual data
+all_relationships = data_individual |> 
+  pivot_longer(cols = starts_with("Relate"), 
+               names_to = "relate_var", 
+               values_to = "relation_to_pnum") |> 
+  mutate(relevant_person = as.integer(gsub("Relate", "", relate_var))) |> 
+  select(serial, pnum, relevant_person, relation_to_pnum) |>
+  # filter down to each household size (filter out not applicables)
+  filter(relation_to_pnum > 0) |>
+  
+  # dummy type of relationship
+  mutate(pnum_is_spouse = relation_to_pnum == 1 | relation_to_pnum == 2 | relation_to_pnum == 3,
+         pnum_is_child = relation_to_pnum == 4 | relation_to_pnum == 5 | relation_to_pnum == 6,
+         pnum_is_parent = relation_to_pnum == 8 | relation_to_pnum == 9 | relation_to_pnum == 10)
+
+# parents
+data_working_parents = data_individual |>
+  # keep only diary members and associated information
   inner_join(diarymonth_households, by = c("serial", "pnum", "IMonth")) |>
   # keep only hetero couples, child in household, both earning income
   filter(NumSSex == 0,
          NumCPart == 2 | NumMPart == 2 | NumCivP == 2,
          NumChild > 0, 
-         NetPay > 0)
+         NetWkly > 0,
+         HrWkAc > 0) |>
+  mutate(hrly_wage = NetWkly / HrWkAc, # calculated hourly wages
+         is_resp = pnum == SelPer # find the respondent 
+  )
 
-# household data
-data_hh = read_dta(paste0(wd, data_2015_direct, "uktus15_household.dta")) |>
-  inner_join(diarymonth_households, by = c("serial", "IMonth"))
+# respective kids
 
 # find spouse/partner pairs in data 
 spouse_pairs = data_individual |> 
-  filter(pnum == SelPer) |> # keep only the respondent 
   pivot_longer(cols = starts_with("Relate"), 
                names_to = "relate_var", 
                values_to = "relate_code") |> 
   mutate(related_pnum = as.integer(gsub("Relate", "", relate_var))) |> 
+  # filters for spouses, civil, and cohabiting partners
   filter(relate_code > 0, relate_code < 4) |> 
   select(serial, pnum, related_pnum) |> 
+  # keep only pairs of spouses/partners
+  group_by(serial) |>
+  filter(n() == 2) |>
+  ungroup() |>
   # rename as spouse_pnum 
   rename(spouse_pnum = related_pnum) |> 
   arrange(serial, pnum)
@@ -112,7 +141,5 @@ sharing_est_data = data_individual |>
   # number of diaries
   inner_join(diarymonth_households, by = c("serial", "pnum")) |>
   
-  # get spouses/partners only
-  
-  arrange(serial, pnum)
+
   
