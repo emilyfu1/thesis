@@ -26,11 +26,12 @@ diarymonth_households = data_activities |>
 
 # find time diaries and number of diaries everyone completes
 individual_diaries = data_activities |>
-  distinct(serial, pnum, DiaryDay_Act, KindOfDay) |>
+  distinct(serial, pnum, DiaryDay_Act) |>
   group_by(serial, pnum) |>
   # household budget: i need to indicate how many days everyone has completed
   # so that i calculate expenditure and budget based on number of days
-  mutate(num_diaries_filled = n())
+  mutate(num_diaries_filled = n()) |>
+  arrange(serial, pnum)
 
 # finding time use
 activity_summaries = data_activities |>
@@ -72,15 +73,16 @@ activity_summaries = data_activities |>
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse) |>
   
+  # add up time use in hours
   group_by(serial, pnum) |>
   summarise(
-    total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE),
-    total_private_leisure = sum(eptime[private_leisure], na.rm = TRUE),
-    total_leisure_r = sum(eptime[activity1_is_leisure_r], na.rm = TRUE),
-    total_private_leisure_r = sum(eptime[private_leisure_r], na.rm = TRUE),
+    total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE) / 60,
+    total_private_leisure = sum(eptime[private_leisure], na.rm = TRUE) / 60,
+    total_leisure_r = sum(eptime[activity1_is_leisure_r], na.rm = TRUE) / 60,
+    total_private_leisure_r = sum(eptime[private_leisure_r], na.rm = TRUE) / 60,
     
-    total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE),
-    total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE),
+    total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
+    total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE) / 60,
     .groups = "drop")
 
 ################################################################################
@@ -97,7 +99,7 @@ data_hh = read_dta(paste0(wd, data_2015_direct, "uktus15_household.dta")) |>
 
 # individual level data
 data_individual = read_dta(paste0(wd, data_2015_direct, "uktus15_individual.dta")) |>
-  # keep if observation has age and sex
+  # keep if observation has age, education, sex
   filter(DVAge >= 0, DMSex >= 0) |>
   mutate(male = DMSex == 1, # sex dummy
          is_resp = pnum == SelPer, # indicate respondent
@@ -200,10 +202,9 @@ spouse_pairs = all_relationships |>
 data_working_parents = data_individual |>
   # keep only hetero couples with child in household
   filter(NumSSex == 0, NumChild > 0) |>
-  # calculated hourly wages
-  mutate(hrly_wage = NetWkly / HrWkAc) |> # find the respondent 
   
   # show number of diaries and only keep diary month
+  inner_join(individual_diaries, by = c("serial", "pnum")) |>
   inner_join(diarymonth_households, by = c("serial", "pnum", "IMonth")) |>
   # merge with time use
   inner_join(activity_summaries, by = c("serial", "pnum")) |>
@@ -217,17 +218,48 @@ data_working_parents = data_individual |>
   inner_join(spouse_pairs, by = c("serial", "pnum")) |>
 
   group_by(serial) |>
+  
   # i'll keep people who are usually working since we have december data
-  # but calculate wage based on actual hours worked
   filter(all(NetWkly > 0), all(HrWkUS > 0)) |>
   
-  # also, only keep couples who both have time diaries (filter after inner join)
-  filter(n() == 2) |>
-  ungroup()
+  # check for couples who both have time diaries (filter after both joins)
+  mutate(spouse_present = spouse_pnum %in% pnum) |>
+
+  ungroup() |> 
+  
+  # only keep couples who both have time diaries (filter after both joins)
+  filter(spouse_present) |>
+  
+  # indicate whether someone is the spouse
+  mutate(is_spouse = !is_resp) |>
+  
+  # individual expenditure calculated using time use
+  mutate(hrly_wage = NetWkly / HrWkUS, # calculated hourly wages
+         
+         # leisure and childcare expenditure
+         total_leisure_exp = hrly_wage * total_leisure,
+         total_leisure_exp_r = hrly_wage * total_leisure_r,
+         private_leisure_exp = hrly_wage * total_private_leisure,
+         private_leisure_exp_r = hrly_wage * total_private_leisure_r,
+         total_childcare_exp = hrly_wage * total_childcare,
+         nospouse_childcare_exp = hrly_wage * total_childcare_nospouse,
+         # individual contribution to household budget
+         y_individual = hrly_wage * 24 * num_diaries_filled)
   
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################
 ################################################################################
+
+data_moms = data_working_parents |>
+  filter(!male) |>
+  
+  # household level gender characteristics:
+  # wage_f, educ_f, uhrsworkt_f, age_f, earn_share_f
+  # wage_m, educ_m, uhrsworkt_m, age_m, earn_share_m
+  # average age of couple and age gap of couple
+
+data_dads = data_working_parents |>
+  filter(male)
 
 # we should get 634 individuals and 634 / 2 households
 sharing_est_data = data_working_parents |>
