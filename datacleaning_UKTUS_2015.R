@@ -2,7 +2,6 @@ library(tidyverse)
 library(haven)
 
 # setwd
-wd = Sys.getenv("THESIS_WD")
 setwd(wd)
 
 # actlines and directories
