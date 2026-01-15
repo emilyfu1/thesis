@@ -2,11 +2,14 @@
 library(ipumsr)
 library(tidyverse)
 library(haven)
+wd = Sys.getenv("THESIS_WD")
 
-setwd(Sys.getenv("THESIS_WD"))
+setwd(wd)
+
+atus_direct = paste0(wd, "/atus_data/")
 
 # regional wealth (GDP per capita)
-state_gdppc = read.csv("regionalwealth.csv")
+state_gdppc = read.csv(paste0(atus_direct, "regionalwealth_US.csv"))
 
 # things to help with data cleaning
 topcode_earnweek = 2884.61
@@ -497,12 +500,12 @@ males = sharing_est_data |> filter(SEX == 1)
 females = sharing_est_data |> filter(SEX == 2)
 
 # save all the stuff
-write.csv(data_hh,"atus_hh.csv", row.names = FALSE)
-write.csv(data_individual,"atus_individuals.csv", row.names = FALSE)
-write.csv(data_kids,"atus_kids.csv", row.names = FALSE)
-write.csv(data_working_parents,"atus_working_parents_individual.csv", 
+write.csv(data_hh, paste0(atus_direct, "atus_hh.csv"), row.names = FALSE)
+write.csv(data_individual, paste0(atus_direct, "atus_individuals.csv"), row.names = FALSE)
+write.csv(data_kids, paste0(atus_direct, "atus_kids.csv"), row.names = FALSE)
+write.csv(data_working_parents, paste0(atus_direct, "atus_working_parents_individual.csv"), 
           row.names = FALSE)
-write.csv(sharing_est_data,"atus_working_parents_act.csv", 
+write.csv(sharing_est_data, paste0(atus_direct, "atus_working_parents_act.csv"), 
           row.names = FALSE)
-write.csv(males,"atus_working_parents_act_males.csv", row.names = FALSE)
-write.csv(females,"atus_working_parents_act_females.csv", row.names = FALSE)
+write.csv(males, paste0(atus_direct, "atus_working_parents_act_males.csv"), row.names = FALSE)
+write.csv(females, paste0(atus_direct, "atus_working_parents_act_females.csv"), row.names = FALSE)

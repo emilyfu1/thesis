@@ -1,8 +1,12 @@
 library(tidyverse)
-setwd(Sys.getenv("THESIS_WD"))
+wd = Sys.getenv("THESIS_WD")
+
+setwd(wd)
+
+atus_direct = paste0(wd, "/atus_data/")
 
 # import data
-sharing_est_data = read.csv("atus_working_parents_act.csv")
+sharing_est_data = read.csv(paste0(atus_direct, "atus_working_parents_act.csv"))
 
 # household level (since now there's a proper separate variable for each member)
 sharing_est_data_collapse = sharing_est_data |>
@@ -53,5 +57,5 @@ sharing_est_data_collapse = sharing_est_data |>
     Bx_dev_gdppc)
 
 # save
-write.csv(sharing_est_data_collapse,"atus_working_parents_act_collapse.csv", 
+write.csv(sharing_est_data_collapse, paste0(atus_direct, "atus_working_parents_act_collapse.csv"), 
           row.names = FALSE)

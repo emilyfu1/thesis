@@ -1,7 +1,11 @@
 library(tidyverse)
 library(tidycensus)
 library(fredr)
-setwd(Sys.getenv("THESIS_WD"))
+wd = Sys.getenv("THESIS_WD")
+
+setwd(wd)
+
+atus_direct = paste0(wd, "/atus_data/")
 source("functions.R")
 
 # built-in state codes + DC
@@ -46,5 +50,5 @@ state_gdppc = bind_rows(pop_long, gdp_long) |>
   inner_join(state_fips_crosswalk, by=c("state"))
 
 # save
-write.csv(state_gdppc,"regionalwealth.csv", 
+write.csv(state_gdppc,paste0(atus_direct, "regionalwealth_US.csv"), 
           row.names = FALSE)
