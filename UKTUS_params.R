@@ -186,6 +186,34 @@ eqns_between = list(male = eq_m_between, female = eq_f_between)
 eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
 
 ################################################################################
+######### Male and female specifications: deviations from opposite sex #########
+################################################################################
+
+# leisure including eating, drinking, washing, spirituality, volunteering
+
+# men
+eq_m_opposite = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# women
+eq_f_opposite = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# relaxing, socialising, sport, entertainment, and hobbies only
+
+# men
+eq_m_r_opposite = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# women
+eq_f_r_opposite = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# list of regressions
+eqns_opposite = list(male = eq_m_opposite, female = eq_f_opposite)
+eqns_r_opposite = list(male = eq_m_r_opposite, female = eq_f_r_opposite)
+
+################################################################################
 ######################## MATRIX OF RESTRICTIONS FOR SUR ########################
 ################################################################################
 
@@ -193,21 +221,25 @@ regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
                 "Bx_dev_educ_f_only", "Bx_dev_educ_m_only",
                 "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
 
-theta_names_within = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
-                       "theta_age", "theta_agegap", "theta_regwealth")
-
-modReg_within = make_regMat(regressors = regs_within,
-                            theta_names = theta_names_within)
-
 regs_between = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
                  "Bx_dev_educ_f_all", "Bx_dev_educ_m_all",
                  "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
 
-theta_names_between = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
-                        "theta_age", "theta_agegap", "theta_regwealth")
+regs_opposite = c("Bx_dev_wage_f_opp", "Bx_dev_wage_m_opp",
+                  "Bx_dev_educ_f_opp", "Bx_dev_educ_m_opp",
+                  "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
+
+theta_names_single = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
+                       "theta_age", "theta_agegap", "theta_regwealth")
+
+modReg_within = make_regMat(regressors = regs_within,
+                            theta_names = theta_names_single)
 
 modReg_between = make_regMat(regressors = regs_between,
-                             theta_names = theta_names_between)
+                             theta_names = theta_names_single)
+
+modReg_opposite = make_regMat(regressors = regs_opposite,
+                              theta_names = theta_names_single)
 
 regs_both = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
               "Bx_dev_educ_f_all", "Bx_dev_educ_m_all",
