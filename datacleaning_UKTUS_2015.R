@@ -199,8 +199,8 @@ spouse_pairs = all_relationships |>
 
 # parents
 data_working_parents = data_individual |>
-  # keep only hetero couples with child in household
-  filter(NumSSex == 0, NumChild > 0) |>
+  # keep only hetero couples with child in household, valid education
+  filter(NumSSex == 0, NumChild > 0, !is.na(educ)) |>
   
   # show number of diaries and only keep diary month
   inner_join(individual_diaries, by = c("serial", "pnum")) |>
