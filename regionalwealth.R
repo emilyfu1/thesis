@@ -10,7 +10,11 @@ source("UKTUS_params.R")
 # setwd
 setwd(wd)
 
-# import data and fix column names
+################################################################################
+############################### UK GDP PER CAPITA ##############################
+################################################################################
+
+####################### import data and fix column names  ######################
 
 # nominal GDP
 regional_gdp = read_excel(paste0(data_direct, "regionalwealth_all.xlsx"), 
@@ -73,7 +77,7 @@ regional_pop_2000 = regional_pop_2000 |>
   slice_max(pop_2000, n = 1, with_ties = FALSE) |>
   ungroup()
 
-# get nominal gdps per capita
+########################## get nominal gdps per capita #########################
 regionalwealth_2014 = regional_gdp_2014 |>
   inner_join(regional_pop_2014, by = c("dgorpaf")) |>
   # nominal gdp is in millions
