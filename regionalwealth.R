@@ -14,7 +14,7 @@ setwd(wd)
 ############################### UK GDP PER CAPITA ##############################
 ################################################################################
 
-####################### import data and fix column names  ######################
+################################ UK nominal GDP ################################
 
 # nominal GDP
 regional_gdp = read_excel(paste0(data_direct, "regionalwealth_all.xlsx"), 
@@ -47,7 +47,7 @@ regional_gdp_2000 = regional_gdp[c("dgorpaf", "ngdp_2000")] |>
   slice_max(ngdp_2000, n = 1, with_ties = FALSE) |>
   ungroup()
 
-# population in each year
+################################ UK population #################################
 
 regional_pop_2014 = read_excel(paste0(data_direct, "population_2011_2024.xlsx"), 
                           sheet = "MYE4",
@@ -68,8 +68,8 @@ regional_pop_2000 = read_excel(paste0(data_direct, "population_2000.xls"),
 names(regional_pop_2000) = c("dgorpaf", "pop_2000")
 regional_pop_2000 = regional_pop_2000 |>
   # make names consistent
-  filter(dgorpaf %in% region_names) |>
   mutate(dgorpaf = toupper(trimws(dgorpaf)),
+         dgorpaf = if_else(dgorpaf == "EASTERN", "EAST", dgorpaf),
          pop_2000 = as.numeric(pop_2000)) |>
   filter(dgorpaf %in% region_names) |>
   # get rid of smaller regions that share a name
@@ -78,10 +78,12 @@ regional_pop_2000 = regional_pop_2000 |>
   ungroup()
 
 ########################## get nominal gdps per capita #########################
+
 regionalwealth_2014 = regional_gdp_2014 |>
   inner_join(regional_pop_2014, by = c("dgorpaf")) |>
   # nominal gdp is in millions
   mutate(ngdppc_2014 = ngdp_2014 * 1e6 / pop_2014)
+  
 
 regionalwealth_2000 = regional_gdp_2000 |>
   inner_join(regional_pop_2000, by = c("dgorpaf")) |>
