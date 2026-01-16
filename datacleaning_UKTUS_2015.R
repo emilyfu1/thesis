@@ -107,7 +107,7 @@ data_individual = read_dta(paste0(uktus_2015_direct, "uktus15_individual.dta")) 
          # Category 2: is equivalent to an undergraduate degree or higher. 
          # Category 1: end-of-school diplomas e.g. A levels, IBDP
          # Category 0: is anything less than that e.g. GSCEs
-         educ_cat = case_when(
+         educ = case_when(
            # Category 2: degree or higher
            HiQual %in% c(1, 2, 7, 8) ~ 2,
            
@@ -233,17 +233,17 @@ data_working_parents = data_individual |>
   mutate(is_spouse = !is_resp) |>
   
   # individual expenditure calculated using time use
-  mutate(hrly_wage = NetWkly / HrWkUS, # calculated hourly wages
+  mutate(wage = NetWkly / HrWkUS, # calculated hourly wages
          
          # leisure and childcare expenditure
-         total_leisure_exp = hrly_wage * total_leisure,
-         total_leisure_exp_r = hrly_wage * total_leisure_r,
-         private_leisure_exp = hrly_wage * total_private_leisure,
-         private_leisure_exp_r = hrly_wage * total_private_leisure_r,
-         total_childcare_exp = hrly_wage * total_childcare,
-         nospouse_childcare_exp = hrly_wage * total_childcare_nospouse,
+         total_leisure_exp = wage * total_leisure,
+         total_leisure_exp_r = wage * total_leisure_r,
+         private_leisure_exp = wage * total_private_leisure,
+         private_leisure_exp_r = wage * total_private_leisure_r,
+         total_childcare_exp = wage * total_childcare,
+         nospouse_childcare_exp = wage * total_childcare_nospouse,
          # individual contribution to household budget
-         y_individual = hrly_wage * 24 * num_diaries_filled) |>
+         y_individual = wage * 24 * num_diaries_filled) |>
   
   # keep households with under-18 kids
   filter(kid_age_min < 18)
@@ -254,7 +254,7 @@ data_working_parents = data_individual |>
 
 # create gender-specific versions of variables
 vars_to_suffix = c(
-  "hrly_wage", "educ_cat", "HrWkUS", "NetWkly", "DVAge",
+  "wage", "educ", "HrWkUS", "NetWkly", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
@@ -267,7 +267,7 @@ sharing_est_data = data_working_parents |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
-    serial, sex_tag, dgorpaf, all_of(vars_to_suffix),
+    serial, sex_tag, dgorpaf, Income, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
@@ -275,7 +275,8 @@ sharing_est_data = data_working_parents |>
     n_kid_aged_11_13, n_kid_aged_14_17) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
-    id_cols = c(serial, dgorpaf, num_kids_total, num_kids_male, num_kids_female,
+    id_cols = c(serial, dgorpaf, num_kids_total, Income, 
+                num_kids_male, num_kids_female,
                 kid_age_min, kid_age_max, kid_age_mean,
                 n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
                 n_kid_aged_11_13, n_kid_aged_14_17),
@@ -283,6 +284,14 @@ sharing_est_data = data_working_parents |>
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
   inner_join(regionalwealth_2014, by = c("dgorpaf")) |>
+  
+  # fill in annual income, household budget, average age, age gap
+  mutate(income_annual = if_else(Income > 0, # treat don't know and refused
+                                 Income * 12,
+                                 (NetWkly_f + NetWkly_f)*52),
+         y = y_individual_f + y_individual_m,
+         avgage = (DVAge_f + DVAge_m)/2,
+         agegap_m = DVAge_m - DVAge_f) |>
   
   # deviations from means of household-level characteristics
   mutate(
@@ -298,12 +307,18 @@ sharing_est_data = data_working_parents |>
     dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
     dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
     
+    # deviations of education and age from opposite sex
+    dev_wage_f_opp = wage_f - mean(wage_m, na.rm = TRUE),
+    dev_wage_m_opp = wage_m - mean(wage_f, na.rm = TRUE),
+    dev_educ_f_opp = educ_f - mean(educ_m, na.rm = TRUE),
+    dev_educ_m_opp = educ_m - mean(educ_f, na.rm = TRUE),
+    
     # deviations of average age of couple and age gap
     dev_avgage = avgage - mean(avgage, na.rm = TRUE),
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    ) |>
+    dev_gdppc = income_annual - ngdppc_2014) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
@@ -315,6 +330,11 @@ sharing_est_data = data_working_parents |>
          Bx_dev_wage_m_all = y * dev_wage_m_all,
          Bx_dev_educ_f_all = y * dev_educ_f_all,
          Bx_dev_educ_m_all = y * dev_educ_m_all,
+         
+         Bx_dev_wage_f_opp = y * dev_wage_f_opp,
+         Bx_dev_wage_m_opp = y * dev_wage_m_opp,
+         Bx_dev_educ_f_opp = y * dev_educ_f_opp,
+         Bx_dev_educ_m_opp = y * dev_educ_m_opp,
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
