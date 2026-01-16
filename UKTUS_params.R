@@ -12,7 +12,7 @@ region_codes = new.env()
 region_codes$"NORTH EAST" = 1
 region_codes$"NORTH WEST" = 2
 region_codes$"YORKSHIRE AND THE HUMBER" = 3
-region_codes$"East Midlands" = 4
+region_codes$"EAST MIDLANDS" = 4
 region_codes$"WEST MIDLANDS" = 5
 region_codes$"EAST OF ENGLAND" = 6
 region_codes$"LONDON" = 7
@@ -21,6 +21,7 @@ region_codes$"SOUTH WEST" = 10
 region_codes$"WALES" = 11
 region_codes$"SCOTLAND" = 12
 region_codes$"NORTHERN IRELAND" = 13
+region_names = ls(region_codes)
 
 # activity codes
 
