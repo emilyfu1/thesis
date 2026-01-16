@@ -14,7 +14,8 @@ region_codes$"NORTH WEST" = 2
 region_codes$"YORKSHIRE AND THE HUMBER" = 3
 region_codes$"EAST MIDLANDS" = 4
 region_codes$"WEST MIDLANDS" = 5
-region_codes$"EAST OF ENGLAND" = 6
+region_codes$"EAST" = 6
+region_codes$"EASTERN" = 6
 region_codes$"LONDON" = 7
 region_codes$"SOUTH EAST" = 8
 region_codes$"SOUTH WEST" = 10
@@ -22,6 +23,7 @@ region_codes$"WALES" = 11
 region_codes$"SCOTLAND" = 12
 region_codes$"NORTHERN IRELAND" = 13
 region_names = ls(region_codes)
+region_map = unlist(as.list(region_codes), use.names = TRUE)
 
 # activity codes
 

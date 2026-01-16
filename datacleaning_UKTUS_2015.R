@@ -1,11 +1,14 @@
 library(tidyverse)
 library(haven)
 
-# setwd
-setwd(wd)
-
 # actlines and directories
 source("UKTUS_params.R")
+
+# regional wealth
+source("regionalwealth.R")
+
+# setwd
+setwd(wd)
 
 ################################################################################
 ############################## ACTIVITY-LEVEL DATA #############################
@@ -260,6 +263,7 @@ vars_to_suffix = c(
 
 # we should get 634 individuals and 634 / 2 households
 sharing_est_data = data_working_parents |>
+  zap_labels() |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
@@ -277,8 +281,44 @@ sharing_est_data = data_working_parents |>
                 n_kid_aged_11_13, n_kid_aged_14_17),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
-    names_sep = "_") 
+    names_sep = "_") |>
+  inner_join(regionalwealth_2014, by = c("dgorpaf")) |>
+  
+  # deviations from means of household-level characteristics
+  mutate(
+    # within-sex deviations of education and age
+    dev_wage_f_only = wage_f - mean(wage_f, na.rm = TRUE),
+    dev_wage_m_only = wage_m - mean(wage_m, na.rm = TRUE),
+    dev_educ_f_only = educ_f - mean(educ_f, na.rm = TRUE),
+    dev_educ_m_only = educ_m - mean(educ_m, na.rm = TRUE),
+    
+    # deviations of education and age for both sexes (maybe change this to opposite sexes)
+    dev_wage_f_all = wage_f - mean(c(wage_f, wage_m), na.rm = TRUE),
+    dev_wage_m_all = wage_m - mean(c(wage_f, wage_m), na.rm = TRUE),
+    dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
+    dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
+    
+    # deviations of average age of couple and age gap
+    dev_avgage = avgage - mean(avgage, na.rm = TRUE),
+    dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
+    
+    # deviation of household from regional wealth 
+    ) |>
+  
+  # interaction terms
+  mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
+         Bx_dev_wage_m_only = y * dev_wage_m_only,
+         Bx_dev_educ_f_only = y * dev_educ_f_only,
+         Bx_dev_educ_m_only = y * dev_educ_m_only,
+         
+         Bx_dev_wage_f_all = y * dev_wage_f_all,
+         Bx_dev_wage_m_all = y * dev_wage_m_all,
+         Bx_dev_educ_f_all = y * dev_educ_f_all,
+         Bx_dev_educ_m_all = y * dev_educ_m_all,
+         
+         Bx_dev_avgage = y * dev_avgage,
+         Bx_dev_agegap = y * dev_agegap,
+         Bx_dev_gdppc = y * dev_gdppc)
 
-# deviations from means of household-level characteristics
-# interaction terms
-# regional wealth deviation (dgorpaf)
+
+
