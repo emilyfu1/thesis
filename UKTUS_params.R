@@ -1,3 +1,6 @@
+# import functions
+source("functions.R")
+
 # setwd
 wd = Sys.getenv("THESIS_WD")
 setwd(wd)
@@ -25,7 +28,9 @@ region_codes$"NORTHERN IRELAND" = 13
 region_names = ls(region_codes)
 region_map = unlist(as.list(region_codes), use.names = TRUE)
 
-# activity codes
+################################################################################
+################################ ACTIVITY CODES ################################
+################################################################################
 
 personal_care_actlines = c(
   ## --- Personal care, rest, eating ---
@@ -103,3 +108,117 @@ childcare_actlines = c(
 )
 
 leisure_actlines = c(personal_care_actlines, restrict_actlines)
+
+################################################################################
+################################## TABLE STUFF #################################
+################################################################################
+
+rows_within = c("y" = "Budget",
+                "Bx_dev_wage_f_only" = "Budget * dev. fem. hourly pay",
+                "Bx_dev_wage_m_only" = "Budget * dev. mal. hourly pay",
+                "Bx_dev_educ_f_only" = "Budget * dev. fem. qualification",
+                "Bx_dev_educ_m_only" = "Budget * dev. mal. qualification",
+                "Bx_dev_avgage" = "Budget * dev. average age",
+                "Bx_dev_agegap" = "Budget * dev. age gap")
+
+rows_between = c("y" = "Budget",
+                 "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
+                 "Bx_dev_wage_m_all" = "Budget * dev. all hourly pay",
+                 "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
+                 "Bx_dev_educ_m_all" = "Budget * dev. all qualification",
+                 "Bx_dev_avgage" = "Budget * dev. average age",
+                 "Bx_dev_agegap" = "Budget * dev. age gap")
+
+################################################################################
+##### Male and female specifications: deviations from average with own sex #####
+################################################################################
+
+# leisure including eating, drinking, washing, spirituality, volunteering
+
+# men
+eq_m_within = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# women
+eq_f_within = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# relaxing, socialising, sport, entertainment, and hobbies only
+
+# men
+eq_m_r_within = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# women
+eq_f_r_within = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# list of regressions
+eqns_within = list(male = eq_m_within, female = eq_f_within)
+eqns_r_within = list(male = eq_m_r_within, female = eq_f_r_within)
+
+################################################################################
+### Male and female specifications: deviations from average of men AND women ###
+################################################################################
+
+# leisure including eating, drinking, washing, spirituality, volunteering
+
+# men
+eq_m_between = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# women
+eq_f_between = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# relaxing, socialising, sport, entertainment, and hobbies only
+
+# men
+eq_m_r_between = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# women
+eq_f_r_between = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
+
+# list of regressions
+eqns_between = list(male = eq_m_between, female = eq_f_between)
+eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
+
+################################################################################
+######################## MATRIX OF RESTRICTIONS FOR SUR ########################
+################################################################################
+
+regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
+                "Bx_dev_educ_f_only", "Bx_dev_educ_m_only",
+                "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
+
+theta_names_within = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
+                       "theta_age", "theta_agegap", "theta_regwealth")
+
+modReg_within = make_regMat(regressors = regs_within,
+                            theta_names = theta_names_within)
+
+regs_between = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
+                 "Bx_dev_educ_f_all", "Bx_dev_educ_m_all",
+                 "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
+
+theta_names_between = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
+                        "theta_age", "theta_agegap", "theta_regwealth")
+
+modReg_between = make_regMat(regressors = regs_between,
+                             theta_names = theta_names_between)
+
+regs_both = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
+              "Bx_dev_educ_f_all", "Bx_dev_educ_m_all",
+              "Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
+              "Bx_dev_educ_f_only", "Bx_dev_educ_m_only",
+              "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
+
+theta_names_both = c("theta_wf_between", "theta_wm_between", "theta_ef_between", 
+                     "theta_em_between", "theta_wf_within", "theta_wm_within", 
+                     "theta_ef_within", "theta_em_within", "theta_age", 
+                     "theta_agegap", "theta_regwealth")
+
+modReg_both = make_regMat(regressors = regs_both,
+                          theta_names = theta_names_both)
