@@ -48,7 +48,8 @@ for (i in 1:num_slots) {
 }
 
 # import data
-data_activities_wide = read_dta(paste0(uktus_2000_direct, "diary_data_8.dta"))
+data_activities_2000_wide = read_dta(paste0(uktus_2000_direct, 
+                                            "diary_data_8.dta"))
 
 id_vars = c("sn1", "sn2","sn3","sn4","dyear","dmonth","dday","ddayofwk","dtype")
 slot_regex = "^(act1|act2|wher|wit\\d+)_\\d{3}$"
@@ -59,7 +60,7 @@ timeuse_vars = c(act1_names, act2_names, wher_names, wit0_names,
 
 columns_to_keep = c(id_vars, timeuse_vars)
 
-data_activities = data_activities_wide |>
+data_activities_2000_long = data_activities_2000_wide |>
   zap_labels() |>
   select(all_of(columns_to_keep)) |>
   pivot_longer(
@@ -72,20 +73,11 @@ data_activities = data_activities_wide |>
               values_from = value) |>
   # each interval is 10 minutes long
   mutate(eptime = 10) |>
-  rename(serial = sn2, pnum = sn3, DiaryDay_Act = ddayofwk, IMonth = dmonth, 
+  rename(serial = sn2, pnum = sn3, DiaryDay_Act = sn4, IMonth = dmonth, 
          IYear = dyear, whatdoing = act1, What_Oth1 = act2)
 
-# find which month to keep in the individual and household data
 # only keep information collected at the same point as the time use data
-diarymonth_households = data_activities |>
-  distinct(serial, pnum, IMonth) |>
-  arrange(serial, pnum)
+diarymonth_households_2000 = unique_interview_months(data_activities_2000_long)
 
 # find time diaries and number of diaries everyone completes
-individual_diaries = data_activities |>
-  distinct(serial, pnum, DiaryDay_Act) |>
-  group_by(serial, pnum) |>
-  # household budget: i need to indicate how many days everyone has completed
-  # so that i calculate expenditure and budget based on number of days
-  mutate(num_diaries_filled = n()) |>
-  distinct(serial, pnum, num_diaries_filled)
+individual_diaries_2000 = unique_interview_diaries(data_activities_2000_long)

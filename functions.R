@@ -15,6 +15,26 @@ fetch_fred_series = function(series_id) {
   fredr(series_id = series_id) |>
     transmute(date, value)}
 
+# find which month to keep in the individual and household data
+unique_interview_months = function(data) {
+  diarymonth_households = data |>
+    distinct(serial, pnum, IMonth) |>
+    arrange(serial, pnum)
+  return(diarymonth_households)
+}
+
+# find time diaries and number of diaries everyone completes
+unique_interview_diaries = function(data) {
+  individual_diaries = data |>
+    distinct(serial, pnum, DiaryDay_Act) |>
+    group_by(serial, pnum) |>
+    # household budget: i need to indicate how many days everyone has completed
+    # so that i calculate expenditure and budget based on number of days
+    mutate(num_diaries_filled = n()) |>
+    distinct(serial, pnum, num_diaries_filled)
+  return(individual_diaries)
+}
+
 # matrix of restrictions for SUREs
 make_regMat = function(regressors, theta_names,
                        y_names = c("male_y", "female_y"),

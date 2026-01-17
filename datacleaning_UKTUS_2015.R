@@ -15,25 +15,16 @@ setwd(wd)
 ################################################################################
 
 # activity level data
-data_activities = read_dta(paste0(uktus_2015_direct, "uktus15_diary_ep_long.dta"))
+data_activities_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_diary_ep_long.dta"))
 
-# find which month to keep in the individual and household data
 # only keep information collected at the same point as the time use data
-diarymonth_households = data_activities |>
-  distinct(serial, pnum, IMonth) |>
-  arrange(serial, pnum)
+diarymonth_households_2015 = unique_interview_months(data_activities_2015)
 
 # find time diaries and number of diaries everyone completes
-individual_diaries = data_activities |>
-  distinct(serial, pnum, DiaryDay_Act) |>
-  group_by(serial, pnum) |>
-  # household budget: i need to indicate how many days everyone has completed
-  # so that i calculate expenditure and budget based on number of days
-  mutate(num_diaries_filled = n()) |>
-  distinct(serial, pnum, num_diaries_filled)
+individual_diaries_2015 = unique_interview_diaries(data_activities_2015)
 
 # finding time use
-activity_summaries = data_activities |>
+activity_summaries_2015 = data_activities_2015 |>
   select(serial, pnum, daynum, IMonth, IYear, eptime, whatdoing, What_Oth1,
          What_Oth2, What_Oth3, WithAlone, WithSpouse, WithChild, WithOther) |>
   
@@ -67,7 +58,7 @@ activity_summaries = data_activities |>
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              activity3_is_childcare),
+                              activity3_is_childcare | WithChild == 1),
     
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse) |>
@@ -89,7 +80,7 @@ activity_summaries = data_activities |>
 ################################################################################
 
 # household data
-data_hh = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
+data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
   inner_join(diarymonth_households, by = c("serial", "IMonth"))
 
 ################################################################################
@@ -97,7 +88,8 @@ data_hh = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
 ################################################################################
 
 # individual level data
-data_individual = read_dta(paste0(uktus_2015_direct, "uktus15_individual.dta")) |>
+data_individual_2015 = read_dta(paste0(uktus_2015_direct, 
+                                       "uktus15_individual.dta")) |>
   # keep if observation has age, education, sex
   filter(DVAge >= 0, DMSex >= 0) |>
   mutate(male = DMSex == 1, # sex dummy
@@ -123,7 +115,7 @@ data_individual = read_dta(paste0(uktus_2015_direct, "uktus15_individual.dta")) 
            TRUE ~ NA_real_))
 
 # relationships in individual data
-all_relationships = data_individual |> 
+all_relationships_2015 = data_individual_2015 |> 
   pivot_longer(cols = starts_with("Relate"), 
                names_to = "relate_var", 
                values_to = "relation_to_pnum") |> 
@@ -140,7 +132,7 @@ all_relationships = data_individual |>
 ################################### Children ###################################
 
 # find all children in data with sex and age (includes adult kids)
-data_kids = all_relationships |>
+data_kids_2015 = all_relationships_2015 |>
   filter(pnum_is_child) |>
   # get identifiers
   distinct(serial, pnum) |>
@@ -149,7 +141,7 @@ data_kids = all_relationships |>
   select(serial, pnum, DVAge, DMSex)
 
 # how many kids of each sex
-kids_counts = data_kids |>
+kids_counts_2015 = data_kids_2015 |>
   group_by(serial) |>
   summarise(num_kids_total = n(),
             num_kids_male = sum(DMSex == 1, na.rm = TRUE),
@@ -157,7 +149,7 @@ kids_counts = data_kids |>
             .groups = "drop")
 
 # kid age distribution
-kids_age_dist = data_kids |>
+kids_age_dist_2015 = data_kids_2015 |>
   group_by(serial) |>
   summarise(kid_age_min  = min(DVAge, na.rm = TRUE),
             kid_age_max  = max(DVAge, na.rm = TRUE),
@@ -173,7 +165,7 @@ kids_age_dist = data_kids |>
          n_kid_aged_3_5, n_kid_aged_6_10, n_kid_aged_11_13, n_kid_aged_14_17)
 
 # get ages of each kid
-kids_age_wide = data_kids |>
+kids_age_wide_2015 = data_kids_2015 |>
   arrange(serial, desc(DVAge)) |>
   group_by(serial) |>
   mutate(kid_index = row_number()) |>
@@ -186,7 +178,7 @@ kids_age_wide = data_kids |>
 ############################## Parents and couples #############################
 
 # find spouse/partner pairs in data
-spouse_pairs = all_relationships |> 
+spouse_pairs_2015 = all_relationships_2015 |> 
   filter(pnum_is_spouse) |> 
   distinct(serial, pnum, relevant_person) |> 
   # keep only pairs of spouses/partners
@@ -198,23 +190,23 @@ spouse_pairs = all_relationships |>
   arrange(serial, pnum)
 
 # parents
-data_working_parents = data_individual |>
+data_working_parents_2015 = data_individual_2015 |>
   # keep only hetero couples with child in household, valid education
   filter(NumSSex == 0, NumChild > 0, !is.na(educ)) |>
   
   # show number of diaries and only keep diary month
-  inner_join(individual_diaries, by = c("serial", "pnum")) |>
-  inner_join(diarymonth_households, by = c("serial", "pnum", "IMonth")) |>
+  inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
+  inner_join(diarymonth_households_2015, by = c("serial", "pnum", "IMonth")) |>
   # merge with time use
-  inner_join(activity_summaries, by = c("serial", "pnum")) |>
+  inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
   
   # merge kid information 
-  inner_join(kids_counts, by = c("serial")) |>
-  inner_join(kids_age_dist, by = c("serial")) |>
-  inner_join(kids_age_wide, by = c("serial")) |>
+  inner_join(kids_counts_2015, by = c("serial")) |>
+  inner_join(kids_age_dist_2015, by = c("serial")) |>
+  inner_join(kids_age_wide_2015, by = c("serial")) |>
   
   # identify couples
-  inner_join(spouse_pairs, by = c("serial", "pnum")) |>
+  inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
 
   group_by(serial) |>
   
@@ -262,7 +254,7 @@ vars_to_suffix = c(
   "y_individual", "pnum", "spouse_pnum")
 
 # we should get 634 individuals and 634 / 2 households
-sharing_est_data = data_working_parents |>
+sharing_est_data_2015 = data_working_parents_2015 |>
   zap_labels() |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
