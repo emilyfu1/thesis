@@ -35,77 +35,46 @@ region_map = unlist(as.list(region_codes), use.names = TRUE)
 personal_care_actlines = c(
   ## --- Personal care, rest, eating ---
   0,        # Unspecified personal care
+  10,       # Unspecified sleep
   110, 111, # Sleep; Sleep in bed not asleep
+  120,      # Sleep: Sick in bed
   210,      # Eating
-  5310)     # Resting - time out
+  5310,     # Resting - time out
+  310,      # Other personal care: Wash and dress
+  300,      # Other personal care: Unspecified other personal care
+  390      # Other personal care: Other specified personal care
+  )
 
-restrict_actlines = c(  
-  
-  ## --- Social life & visits ---
-  5120,     # Visiting and receiving visitors
-  5130,     # Celebrations
-  5190,     # Other specified social life
-  5100,     # Unspecified social life
-  5000,     # Unspecified social life and entertainment
-  
-  ## --- Media: TV, video, radio, music ---
-  8210, 8211, 8219,   # TV watching
-  8220, 8221, 8222, 8229, # Video watching
-  8300, 8310, 8311, 8312, 8319, # Radio & music
-  8000,     # Unspecified mass media
-  
-  ## --- Arts, culture, hobbies ---
-  5200,     # Unspecified entertainment & culture
-  5210,     # Cinema
-  5220, 5221, 5222, 5223, 5224, 5225, 5229, # Theatre, concerts, live music
-  5230,     # Art exhibitions and museums
-  5290, 5291, 5292, 5293, 5294, 5295, 5299, # Cultural visits
-  7100, 7110, 7111, 7112, 7119, # Visual arts
-  7120, 7121, 7129, # Performing arts
-  7130, 7140, # Literary & other arts
-  7150, 7160, # Hobbies, collecting
-  7190,     # Other specified arts and hobbies
-  
-  ## --- Games ---
-  7300, 7310, 7320, 7321, 7322, 7329, 7330, 7390, # Games & play
-  
-  ## --- Sports & physical exercise ---
-  6000,     # Unspecified sports & outdoor activities
-  6100,     # Unspecified physical exercise
-  6110, 6111, 6119, # Walking & hiking
-  6120,     # Jogging and running
-  6130, 6131, 6132, # Biking, skiing, skating
-  6140, 6141, 6142, 6143, 6144, 6149, # Ball games
-  6150,     # Gymnastics
-  6160,     # Fitness
-  6170, 6171, 6179, # Water sports
-  6190,     # Other physical exercise
-  6310, 6311, # Sports-related activities
-  
-  ## --- Computing & online leisure ---
-  7230, 7231, 7239, # Information searching
-  7240, 7241, 7249, 7250, 7251, 7259, # Online communication
-  7000)      # Unspecified hobbies, games & computing
+restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
+                      8211, 7190, 6170, 8219, 8221, 8222, 6179, 
+                      8229, 6190, 5190, 7241, 5200, 7249, 7251,
+                      5210, 1120, 5220, 5221, 5222, 5223, 5225,
+                      8300, 5229, 8311, 5245, 8319, 5250, 7300,
+                      7320, 7321, 7329, 6171, 6310, 6311, 8220,
+                      5290, 5291, 7340, 5293, 5294, 5299, 1220,
+                      6144, 4300, 7390, 1310, 9510, 5295, 9520,
+                      9440, 7230, 9600, 9610, 9630, 7240, 3531,
+                      9710, 9720, 3615, 9820, 5224, 5230, 8310,
+                      4390, 8320, 7129, 8312, 8000, 7310, 7000,
+                      8212, 6000, 5000, 7322, 8110, 8120, 7100,
+                      7110, 7111, 7112, 7330, 7119, 7120, 7121, 
+                      6100, 7130, 6110, 6111, 7140, 6119, 6120,
+                      5100, 7150, 6312, 6130, 6131, 6132, 6142,
+                      5110, 7160, 9210, 6140, 6141, 8190, 6143,
+                      3330)
 
+# childcare values
 childcare_actlines = c(
-  
-  ## --- Direct childcare ---
-  4100,  # Unspecified childcare
-  4110,  # Physical care of children
-  4120,  # Teaching, reading, helping with homework
-  4130,  # Playing with children
-  4140,  # Talking with children
-  4150,  # Accompanying children
-  4160,  # Medical care of children
-  
-  ## --- Childcare as help ---
-  4170,  # Childcare as help
-  4171,  # Physical care of children as help
-  4172,  # Teaching/helping with homework as help
-  4173,  # Playing with children as help
-  4174,  # Talking with children as help
-  4175   # Accompanying children as help
-)
+  9230, # Travel escorting to/ from education
+  9380, # Travel escorting a child (other than education)
+  3800, # Unspecified childcare
+  3810, # Unspecified physical care & supervision of a child
+  3811, # Feeding the child
+  3819, # Other and unspecified physical care & supervision of a child
+  3820, # Teaching the child
+  3830, # Reading, playing and talking with child
+  3840, # Accompanying child
+  3890) # Other specified childcare
 
 leisure_actlines = c(personal_care_actlines, restrict_actlines)
 
