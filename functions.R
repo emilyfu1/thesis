@@ -54,10 +54,10 @@ make_regMat = function(regressors, theta_names,
 
 add_shares_from_lm = function(fit, data,
                               dev_type,
-                              male_prefix = "male:",
-                              female_prefix = "female:",
-                              y_term_m = "male:y",
-                              y_term_f = "y:female",
+                              male_prefix = "male_",
+                              female_prefix = "female_",
+                              y_term_m = "male_y",
+                              y_term_f = "female_y",
                               clamp01 = FALSE,
                               prefix_out = "share") {
   dev_map_ownsex = c("Bx_dev_wage_f_only" = "dev_wage_f_only",
@@ -74,15 +74,27 @@ add_shares_from_lm = function(fit, data,
                       "Bx_dev_avgage" = "dev_avgage",
                       "Bx_dev_agegap" = "dev_agegap",
                       "Bx_dev_gdppc" = "dev_gdppc")
+  dev_map_oppositesex = c("Bx_dev_wage_f_opp" = "dev_wage_f_opp",
+                          "Bx_dev_wage_m_opp" = "dev_wage_m_opp",
+                           "Bx_dev_educ_f_opp" = "dev_educ_f_opp",
+                           "Bx_dev_educ_m_opp" = "dev_educ_m_opp",
+                           "Bx_dev_avgage" = "dev_avgage",
+                           "Bx_dev_agegap" = "dev_agegap",
+                           "Bx_dev_gdppc" = "dev_gdppc")
   
   if (dev_type == "own") {
     dev_map = dev_map_ownsex
-  } else {
+  } else if (dev_type == "all") {
     dev_map = dev_map_bothsex
+  } else if (dev_type == "opp") {
+    dev_map = dev_map_oppositesex
   }
   
   coefficients = fit$coefficients
   nm = names(coefficients)
+  
+  # print(coefficients)
+  # print(nm)
   
   betahat0_m = unname(coefficients[y_term_m])
   betahat0_f = unname(coefficients[y_term_f])
@@ -90,6 +102,9 @@ add_shares_from_lm = function(fit, data,
   # find average resource share for men and women
   etahat0_m = betahat0_m / sum_betahat0_mf
   etahat0_f = betahat0_f / sum_betahat0_mf
+  
+  # print(etahat0_m)
+  # print(etahat0_f)
   
   # the cobb doublas preference parameter is given by beta0_t / eta_t
   # but this is just sum_beta0_mf
@@ -124,7 +139,7 @@ add_shares_from_lm = function(fit, data,
   }
   
   # add outputs
-  addcols = data
+  addcols = data[c("serial")]
   addcols[[paste0(prefix_out, dev_type, "_etahat0_m")]] = etahat0_m
   addcols[[paste0(prefix_out, dev_type, "_etahat0_f")]] = etahat0_f
   addcols[[paste0(prefix_out, dev_type, "_alphahat_l")]] = alphahat_l
@@ -138,7 +153,8 @@ plot_share_densities = function(data,
                                 dev_type,
                                 prefix = "share",
                                 bw = "nrd0",
-                                alpha = 0.5) {
+                                alpha = 0.5,
+                                restrict_leisure = TRUE) {
   
   # construct column names
   col_m = paste0(prefix, dev_type, "_etahat_m")
@@ -153,14 +169,28 @@ plot_share_densities = function(data,
     dplyr::mutate(sex = dplyr::case_when(sex == col_m ~ "Male",
                                          sex == col_f ~ "Female"))
   
+  # leisure excluding sleep and personal care
+  if (restrict_leisure == FALSE) {
+    label = "Estimated resource shares"
+  } else {
+    label = "Estimated resource shares (excluding personal care and sleep)"
+  }
+  
+  # label 
+  if (dev_type == "opp") {
+    dev_label = "opposite"
+  } else {
+    dev_label = dev_type
+  }
+  
   ggplot(plot_data, aes(x = share, fill = sex, colour = sex)) +
     geom_density(alpha = alpha, bw = bw, linewidth = 1) +
     labs(
-      x = "Estimated resource share",
+      x = paste0(label, " (using )", dev_label, "-sex deviations)", sep = ""),
       y = "Density",
       fill = NULL,
       colour = NULL,
-      title = paste("Estimated resource shares (", dev_type, "-sex deviations)", sep = "")
+      title = label
     ) +
     theme_minimal() +
     theme(
