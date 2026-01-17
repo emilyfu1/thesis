@@ -33,12 +33,15 @@ activity_summaries_2015 = data_activities_2015 |>
     activity1_is_leisure = whatdoing %in% leisure_actlines,
     activity1_is_leisure_r = whatdoing %in% restrict_actlines,
     activity1_is_childcare = whatdoing %in% childcare_actlines,
-    activity2_is_leisure = What_Oth2 %in% leisure_actlines,
-    activity2_is_leisure_r = What_Oth2 %in% restrict_actlines,
-    activity2_is_childcare = What_Oth2 %in% childcare_actlines,
-    activity3_is_leisure = What_Oth3 %in% leisure_actlines,
-    activity3_is_leisure_r = What_Oth3 %in% restrict_actlines,
-    activity3_is_childcare = What_Oth3 %in% childcare_actlines,
+    activity2_is_leisure = What_Oth1 %in% leisure_actlines,
+    activity2_is_leisure_r = What_Oth1 %in% restrict_actlines,
+    activity2_is_childcare = What_Oth1 %in% childcare_actlines,
+    activity3_is_leisure = What_Oth2 %in% leisure_actlines,
+    activity3_is_leisure_r = What_Oth2 %in% restrict_actlines,
+    activity3_is_childcare = What_Oth2 %in% childcare_actlines,
+    activity4_is_leisure = What_Oth3 %in% leisure_actlines,
+    activity4_is_leisure_r = What_Oth3 %in% restrict_actlines,
+    activity4_is_childcare = What_Oth3 %in% childcare_actlines,
     
     # private (no relevant household members present)
     # activities where "who" isn't asked are considered private
@@ -48,9 +51,9 @@ activity_summaries_2015 = data_activities_2015 |>
     
     # general: is leisure?
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
-                             activity3_is_leisure),
+                             activity3_is_leisure | activity4_is_leisure),
     activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
-                               activity3_is_leisure_r),
+                               activity3_is_leisure_r | activity4_is_leisure),
     
     # general: is private leisure?
     private_leisure = activity_is_leisure & activity_private,
@@ -58,7 +61,8 @@ activity_summaries_2015 = data_activities_2015 |>
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              activity3_is_childcare | WithChild == 1),
+                              activity3_is_childcare | activity4_is_childcare | 
+                              WithChild == 1),
     
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse) |>
@@ -68,7 +72,7 @@ activity_summaries_2015 = data_activities_2015 |>
   summarise(
     total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE) / 60,
     total_private_leisure = sum(eptime[private_leisure], na.rm = TRUE) / 60,
-    total_leisure_r = sum(eptime[activity1_is_leisure_r], na.rm = TRUE) / 60,
+    total_leisure_r = sum(eptime[activity_is_leisure_r], na.rm = TRUE) / 60,
     total_private_leisure_r = sum(eptime[private_leisure_r], na.rm = TRUE) / 60,
     
     total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
