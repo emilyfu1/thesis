@@ -188,12 +188,6 @@ eq_f_r_opposite = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_w
 eqns_opposite = list(male = eq_m_opposite, female = eq_f_opposite)
 eqns_r_opposite = list(male = eq_m_r_opposite, female = eq_f_r_opposite)
 
-################################ All regressions ###############################
-
-specs = list(within = list(eq = eqns_within, eq_r = eqns_r_within, R = modReg_within),
-             between = list(eq = eqns_between, eq_r = eqns_r_between, R = modReg_between),
-             opposite = list(eq = eqns_opposite, eq_r = eqns_r_opposite, R = modReg_opposite))
-
 ######################## MATRIX OF RESTRICTIONS FOR SUR ########################
 
 regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
@@ -233,3 +227,9 @@ theta_names_both = c("theta_wf_between", "theta_wm_between", "theta_ef_between",
 
 modReg_both = make_regMat(regressors = regs_both,
                           theta_names = theta_names_both)
+
+################################ All regressions ###############################
+
+specs = list(within = list(eq = eqns_within, eq_r = eqns_r_within, R = modReg_within),
+             between = list(eq = eqns_between, eq_r = eqns_r_between, R = modReg_between),
+             opposite = list(eq = eqns_opposite, eq_r = eqns_r_opposite, R = modReg_opposite))

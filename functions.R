@@ -1,6 +1,5 @@
 library(tidyverse)
 library(stringr)
-setwd(Sys.getenv("THESIS_WD"))
 
 ################################## Activities ##################################
 
@@ -154,14 +153,6 @@ make_regMat = function(regressors, theta_names,
     }
   
   regMat
-}
-
-run_SUR = function(eqns, data, R = NULL) {
-  if (is.null(R)) {
-    systemfit(eqns, method = "SUR", data = data)
-  } else {
-    systemfit(eqns, method = "SUR", data = data, restrict.regMat = R)
-  }
 }
 
 # calculate resource shares with sharing rule

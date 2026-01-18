@@ -1,16 +1,32 @@
+library(tidyverse)
 library(systemfit)
 
 # actlines and directories
 source("UKTUS_params.R")
 
-# import data (saves time running code)
-sharing_est_data_2015 = read_csv(paste0(data_direct, 
-                                        "sharing_est_data_2015.csv"))
-sharing_est_data_2000 = read_csv(paste0(data_direct, 
-                                        "sharing_est_data_2000.csv"))
+# functions
+source("functions.R")
 
 # setwd
 setwd(wd)
+
+# import data (saves time running code)
+sharing_est_data_2015 = read_csv(paste0(data_direct, 
+                                        "sharing_est_data_2015.csv"),
+                                 show_col_types = FALSE)
+sharing_est_data_2000 = read_csv(paste0(data_direct, 
+                                        "sharing_est_data_2000.csv"),
+                                 show_col_types = FALSE)
+
+
+# run a single regression
+get_SUR_output = function(eqns, data, R = NULL) {
+  if (is.null(R)) {
+    systemfit(eqns, method = "SUR", data = data)
+  } else {
+    systemfit(eqns, method = "SUR", data = data, restrict.regMat = R)
+  }
+}
 
 # all my data
 mydata = list(
@@ -25,12 +41,12 @@ results = imap(mydata, \(dat, dname) {
   imap(specs, \(sp, sname) {
     list(
       unres = list(
-        broad = run_SUR(sp$eq, dat, R = NULL),
-        restr = run_SUR(sp$eq_r, dat, R = NULL)
+        broad = get_SUR_output(sp$eq, dat, R = NULL),
+        restr = get_SUR_output(sp$eq_r, dat, R = NULL)
       ),
       res = list(
-        broad = run_SUR(sp$eq, dat, R = sp$R),
-        restr = run_SUR(sp$eq_r, dat, R = sp$R)))
+        broad = get_SUR_output(sp$eq, dat, R = sp$R),
+        restr = get_SUR_output(sp$eq_r, dat, R = sp$R)))
   })
 })
 
