@@ -213,7 +213,7 @@ data_working_parents_2015 = data_individual_2015 |>
 ################################################################################
 
 # create gender-specific versions of variables
-vars_to_suffix = c(
+vars_to_suffix_2015 = c(
   "wage", "educ", "HrWkUS", "NetWkly", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
@@ -226,7 +226,7 @@ sharing_est_data_2015 = data_working_parents_2015 |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
-    serial, sex_tag, dgorpaf, Income, all_of(vars_to_suffix),
+    serial, sex_tag, dgorpaf, Income, all_of(vars_to_suffix_2015),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
@@ -240,7 +240,7 @@ sharing_est_data_2015 = data_working_parents_2015 |>
                 n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
                 n_kid_aged_11_13, n_kid_aged_14_17),
     names_from = sex_tag,
-    values_from = all_of(vars_to_suffix),
+    values_from = all_of(vars_to_suffix_2015),
     names_sep = "_") |>
   inner_join(regionalwealth_2014, by = c("dgorpaf")) |>
   

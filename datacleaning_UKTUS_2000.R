@@ -173,17 +173,18 @@ data_individual_2000 = read_dta(paste0(uktus_2000_direct,
   mutate(serial = as.integer(paste0(sn2, "0", sn1))) |>
   
   rename(pnum = sn3, IMonth = hmonth, IYear = hyear, DMSex = isex,
-         DVAge = iage) |>
+         DVAge = iage, dgorpaf = gorpaf) |>
   
-  # only keep diary month
-  # inner_join(diarymonth_households_2015, by = c("serial", "pnum", "IMonth")) |>
+  # make region codes align with 2015 data
+  mutate(dgorpaf = if_else(dgorpaf >= 9, dgorpaf + 1, dgorpaf)) |>
+  
+  # make gender and respondent dummies
+  mutate(is_resp = pnum == hrp_per,
+         male = DMSex == 1) |>
   
   # keep if observation has age, sex
   filter(DMSex != 3, DVAge >= 0) |>
-  mutate(male = DMSex == 1, # sex dummy
-         is_resp = pnum == 1, # person 1 is always respondent
-         
-         # Highest qualification obtained, simplified into three categories. 
+  mutate(# Highest qualification obtained, simplified into three categories. 
          # Category 2: is equivalent to an undergraduate degree or higher. 
          # Category 1: end-of-school diplomas e.g. A levels, IBDP
          # Category 0: is anything less than that e.g. GSCEs
@@ -214,6 +215,211 @@ kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
 
 ############################## Parents and couples #############################
 
+spouse_pairs_2000 = find_spouse_pairs(all_relationships_2000)
+
+# pay band midpoints
+q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 7000)
+
+# parents
+data_working_parents_2000 = data_individual_2000 |>
+  
+  # keep only hetero couples with child in household, valid education
+  filter(hhtype4 %in% c(4,5,7,8), !is.na(educ)) |>
+  
+  # show number of diaries and only keep diary month
+  inner_join(individual_diaries_2000, by = c("serial", "pnum")) |>
+  # merge with time use
+  inner_join(activity_summaries_2000, by = c("serial", "pnum")) |>
+  
+  # merge kid information 
+  inner_join(kids_counts_2000, by = c("serial")) |>
+  inner_join(kids_age_dist_2000, by = c("serial")) |>
+  inner_join(kids_age_wide_2000, by = c("serial")) |>
+  
+  # identify couples
+  inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
+  
+  # dealing with all different wage/hours related variables  
+  
+  # prepare working hours stuff
+  mutate(
+    weekly_hours = case_when(
+      q14b == 2 & q14c > 0 ~ q14c,
+      q14b == 1 & q14d > 0 ~ q14d + if_else(q14e > 0, q14e, 0),
+      TRUE ~ NA_real_)) |> 
+  
+  # for employees
+  mutate(
+    weekly_pay = if_else(
+      q7 == 1 & q10 >= 0,
+      pay_to_weekly(q10, q11),
+      NA_real_),
+    hourly_wage_emp = weekly_pay / weekly_hours,
+    pay_banded = if_else(q10 < 0 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
+    weekly_pay_banded = pay_to_weekly(pay_banded, q11),
+    hourly_wage_emp_banded = if_else(
+      is.na(hourly_wage_emp),
+      weekly_pay_banded / weekly_hours,
+      hourly_wage_emp)) |>
+  
+  # for self employed
+  mutate(
+    hourly_earnings_selfemp =
+      if_else(
+        q7 == 2 & q13c > 0 & weekly_hours > 0,
+        q13c / (4.333 * weekly_hours),
+        NA_real_)) |>
+  
+  # source of wage
+  mutate(
+    wage_source = case_when(
+      !is.na(hourly_wage_emp) ~ "employee_exact",
+      !is.na(hourly_wage_emp_banded) ~ "employee_banded",
+      !is.na(hourly_earnings_selfemp) ~ "self_employed",
+      TRUE ~ NA_character_)) |>
+  
+  # combine wages
+  mutate(
+    weekly_pay = case_when(
+      wage_source == "employee_exact" ~ weekly_pay,
+      wage_source == "employee_banded" ~ weekly_pay_banded,
+      wage_source == "self_employed" ~ q13c / 4.333,
+      TRUE ~ NA_real_),
+    wage = case_when(
+      wage_source == "employee_exact" ~ hourly_wage_emp,
+      wage_source == "employee_banded" ~ hourly_wage_emp_banded,
+      wage_source == "self_employed" ~ hourly_earnings_selfemp,
+      TRUE ~ NA_real_)) |>
+  
+  # combine working hours
+  mutate(
+    # clean hours pieces
+    q14c_c = if_else(q14c > 0, as.numeric(q14c), NA_real_),
+    q14d_c = if_else(q14d > 0, as.numeric(q14d), NA_real_),
+    q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),  # overtime default 0
+    q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
+    
+    weekly_hours_usual = case_when(
+      q14b == 2 ~ q14c_c,                    # no overtime
+      q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
+      TRUE ~ NA_real_
+    )) |>
+  
+  group_by(serial) |>
+  
+  # keep any households where both people are captured by this hourly wage
+  filter(!is.na(wage)) |>
+  
+  # check for couples who both have time diaries (filter after both joins)
+  mutate(spouse_present = spouse_pnum %in% pnum) |>
+  
+  ungroup() |> 
+  
+  # only keep couples who both have time diaries (filter after both joins)
+  filter(spouse_present) |>
+  
+  # indicate whether someone is the spouse
+  mutate(is_spouse = !is_resp) |>
+  
+  # individual expenditure calculated using time use
+  mutate(# leisure and childcare expenditure
+         total_leisure_exp = wage * total_leisure,
+         total_leisure_exp_r = wage * total_leisure_r,
+         private_leisure_exp = wage * total_private_leisure,
+         private_leisure_exp_r = wage * total_private_leisure_r,
+         total_childcare_exp = wage * total_childcare,
+         nospouse_childcare_exp = wage * total_childcare_nospouse,
+         # individual contribution to household budget
+         y_individual = wage * 24 * num_diaries_filled) |>
+  
+  # keep households with under-18 kids
+  filter(kid_age_min < 18)
+
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################
 ################################################################################
+
+vars_to_suffix_2000 = c(
+  "wage", "educ", "weekly_pay", "weekly_hours_usual", "DVAge",
+  "total_leisure", "total_leisure_r", "total_private_leisure",
+  "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
+  "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
+  "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
+  "y_individual", "pnum", "spouse_pnum")
+
+sharing_est_data_2000 = data_working_parents_2000 |>
+  zap_labels() |>
+  # letter for creating variable names
+  mutate(sex_tag = if_else(male, "m", "f")) |>
+  select(
+    serial, sex_tag, dgorpaf, all_of(vars_to_suffix_2000),
+    # child info (household-level already, duplicated across spouses)
+    num_kids_total, num_kids_male, num_kids_female,
+    kid_age_min, kid_age_max, kid_age_mean,
+    n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
+    n_kid_aged_11_13, n_kid_aged_14_17) |>
+  pivot_wider(
+    # keep all the household-level stuff: kids, region, serial
+    id_cols = c(serial, dgorpaf, num_kids_total, 
+                num_kids_male, num_kids_female,
+                kid_age_min, kid_age_max, kid_age_mean,
+                n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
+                n_kid_aged_11_13, n_kid_aged_14_17),
+    names_from = sex_tag,
+    values_from = all_of(vars_to_suffix_2000),
+    names_sep = "_") |>
+  inner_join(regionalwealth_2000, by = c("dgorpaf")) |>
+  
+  # fill in annual income, household budget, average age, age gap
+  mutate(income_annual = (weekly_pay_f + weekly_pay_m)*52,
+         y = y_individual_f + y_individual_m,
+         avgage = (DVAge_f + DVAge_m)/2,
+         agegap_m = DVAge_m - DVAge_f) |>
+  
+  # deviations from means of household-level characteristics
+  mutate(
+    # within-sex deviations of education and age
+    dev_wage_f_only = wage_f - mean(wage_f, na.rm = TRUE),
+    dev_wage_m_only = wage_m - mean(wage_m, na.rm = TRUE),
+    dev_educ_f_only = educ_f - mean(educ_f, na.rm = TRUE),
+    dev_educ_m_only = educ_m - mean(educ_m, na.rm = TRUE),
+    
+    # deviations of education and age for both sexes (maybe change this to opposite sexes)
+    dev_wage_f_all = wage_f - mean(c(wage_f, wage_m), na.rm = TRUE),
+    dev_wage_m_all = wage_m - mean(c(wage_f, wage_m), na.rm = TRUE),
+    dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
+    dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
+    
+    # deviations of education and age from opposite sex
+    dev_wage_f_opp = wage_f - mean(wage_m, na.rm = TRUE),
+    dev_wage_m_opp = wage_m - mean(wage_f, na.rm = TRUE),
+    dev_educ_f_opp = educ_f - mean(educ_m, na.rm = TRUE),
+    dev_educ_m_opp = educ_m - mean(educ_f, na.rm = TRUE),
+    
+    # deviations of average age of couple and age gap
+    dev_avgage = avgage - mean(avgage, na.rm = TRUE),
+    dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
+    
+    # deviation of household from regional wealth 
+    dev_gdppc = income_annual - ngdppc_2000) |>
+  
+  # interaction terms
+  mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
+         Bx_dev_wage_m_only = y * dev_wage_m_only,
+         Bx_dev_educ_f_only = y * dev_educ_f_only,
+         Bx_dev_educ_m_only = y * dev_educ_m_only,
+         
+         Bx_dev_wage_f_all = y * dev_wage_f_all,
+         Bx_dev_wage_m_all = y * dev_wage_m_all,
+         Bx_dev_educ_f_all = y * dev_educ_f_all,
+         Bx_dev_educ_m_all = y * dev_educ_m_all,
+         
+         Bx_dev_wage_f_opp = y * dev_wage_f_opp,
+         Bx_dev_wage_m_opp = y * dev_wage_m_opp,
+         Bx_dev_educ_f_opp = y * dev_educ_f_opp,
+         Bx_dev_educ_m_opp = y * dev_educ_m_opp,
+         
+         Bx_dev_avgage = y * dev_avgage,
+         Bx_dev_agegap = y * dev_agegap,
+         Bx_dev_gdppc = y * dev_gdppc)
+

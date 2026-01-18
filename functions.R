@@ -86,6 +86,36 @@ find_kid_ages_wide = function(data) {
   return(kids_age_wide)
 }
 
+################################# Working hours ################################
+
+pay_to_weekly = function(pay, period) {
+  case_when(
+    period == 1 ~ pay,             # week
+    period == 2 ~ pay / 2,          # two weeks
+    period == 3 ~ pay / 4,          # four weeks
+    period == 4 ~ pay / 4.333,      # calendar month
+    period == 5 ~ pay / 52,         # year
+    TRUE ~ NA_real_
+  )
+}
+
+############################## Parents and couples #############################
+
+# find spouse/partner pairs in data
+find_spouse_pairs = function(relationships_data) {
+  spouse_pairs = relationships_data |> 
+    filter(pnum_is_spouse) |> 
+    distinct(serial, pnum, relevant_person) |> 
+    # keep only pairs of spouses/partners
+    group_by(serial) |>
+    filter(n() == 2) |>
+    ungroup() |>
+    # rename as spouse_pnum 
+    rename(spouse_pnum = relevant_person) |> 
+    arrange(serial, pnum)
+  
+  return(spouse_pairs)
+}
 
 ################################## Regressions #################################
 # matrix of restrictions for SUREs
