@@ -247,7 +247,20 @@ add_shares_from_lm = function(fit, data,
   addcols[[paste0(prefix_out, dev_type, "_etahat_m")]] = etahat_m_h
   addcols[[paste0(prefix_out, dev_type, "_etahat_f")]] = etahat_f_h
   
-  return (addcols)
+  # return both the augmented data AND the parameters used
+  return(list(
+    data = addcols,
+    params = list(
+      dev_type = dev_type,
+      dev_map = dev_map,
+      betahat0_m = betahat0_m,
+      betahat0_f = betahat0_f,
+      etahat0_m = etahat0_m,
+      etahat0_f = etahat0_f,
+      alphahat_l = alphahat_l,
+      etahat_z_m = etahat_z_m,
+      etahat_z_f = etahat_z_f)
+  ))
 }
 
 ################################### Plotting ###################################

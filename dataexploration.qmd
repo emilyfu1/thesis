@@ -183,10 +183,10 @@ print(make_sysfit_kable_df(fit_res_within_merged, rows_within))
 - Why would the inequality be so much more drastic when including personal care?
 ```{r echo=FALSE, fig.width=5, fig.height=5}
 
-narrowleisure_shares = plot_share_densities(shares_fit_ownsex_r_merged, 
+narrowleisure_shares = plot_share_densities(shares_fit_ownsex_r_merged$data, 
                                             dev_type = "own")
 
-broadleisure_shares = plot_share_densities(shares_fit_ownsex_merged, 
+broadleisure_shares = plot_share_densities(shares_fit_ownsex_merged$data, 
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
@@ -226,10 +226,10 @@ print(combined_plot)
 ### Comparing the two years:
 - In general, the 2015 sharing rule applied to the 2000 data provides a much narrower distribution for (necessarily) both sexes, and is less unequal. Most estimated shares still fall within the unit interval.
 ```{r}
-counterfactual_shares = plot_share_densities(counterfactual_r_within, 
+counterfactual_shares = plot_share_densities(counterfactual_r_within$data, 
                                             dev_type = "own")
 
-broadleisure_shares = plot_share_densities(shares_fit_ownsex_r_2000, 
+broadleisure_shares = plot_share_densities(shares_fit_ownsex_r_2000$data, 
                                            dev_type = "own")
 
 combined_plot =
