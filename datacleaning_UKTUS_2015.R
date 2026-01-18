@@ -85,7 +85,7 @@ activity_summaries_2015 = data_activities_2015 |>
 
 # household data
 data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
-  inner_join(diarymonth_households, by = c("serial", "IMonth"))
+  inner_join(diarymonth_households_2015, by = c("serial", "IMonth"))
 
 ################################################################################
 ############################ INDIVIDUAL-LEVEL DATA #############################
@@ -94,7 +94,9 @@ data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
 # individual level data
 data_individual_2015 = read_dta(paste0(uktus_2015_direct, 
                                        "uktus15_individual.dta")) |>
-  # keep if observation has age, education, sex
+  # only keep diary month
+  inner_join(diarymonth_households_2015, by = c("serial", "pnum", "IMonth")) |>
+  # keep if observation has age, sex
   filter(DVAge >= 0, DMSex >= 0) |>
   mutate(male = DMSex == 1, # sex dummy
          is_resp = pnum == SelPer, # indicate respondent
@@ -136,21 +138,11 @@ all_relationships_2015 = data_individual_2015 |>
 ################################### Children ###################################
 
 # find all children in data with sex and age (includes adult kids)
-data_kids_2015 = all_relationships_2015 |>
-  filter(pnum_is_child) |>
-  # get identifiers
-  distinct(serial, pnum) |>
-  # get individual characteristics
-  inner_join(data_individual, by = c("serial", "pnum")) |>
-  select(serial, pnum, DVAge, DMSex)
+data_kids_2015 = find_kids(relationships_data = all_relationships_2015, 
+                           individual_data = data_individual_2015)
 
 # how many kids of each sex
-kids_counts_2015 = data_kids_2015 |>
-  group_by(serial) |>
-  summarise(num_kids_total = n(),
-            num_kids_male = sum(DMSex == 1, na.rm = TRUE),
-            num_kids_female = sum(DMSex == 2, na.rm = TRUE),
-            .groups = "drop")
+kids_counts_2000 = count_kids(data_kids_2000)
 
 # kid age distribution
 kids_age_dist_2015 = data_kids_2015 |>
@@ -200,7 +192,6 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # show number of diaries and only keep diary month
   inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
-  inner_join(diarymonth_households_2015, by = c("serial", "pnum", "IMonth")) |>
   # merge with time use
   inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
   

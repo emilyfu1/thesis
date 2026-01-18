@@ -2,18 +2,7 @@ library(tidyverse)
 library(stringr)
 setwd(Sys.getenv("THESIS_WD"))
 
-# significance stars
-stars = function(p) {
-  if (p < 0.001) return("***")
-  if (p < 0.01) return("**")
-  if (p < 0.05) return("*")
-  if (p < 0.1) return(".")
-  return("")}
-
-# import data
-fetch_fred_series = function(series_id) {
-  fredr(series_id = series_id) |>
-    transmute(date, value)}
+################################## Activities ##################################
 
 # find which month to keep in the individual and household data
 unique_interview_months = function(data) {
@@ -35,6 +24,35 @@ unique_interview_diaries = function(data) {
   return(individual_diaries)
 }
 
+################################### Children ###################################
+
+# find kids in data
+find_kids = function(relationships_data, individual_data) {
+  # find all children in data with sex and age (includes adult kids)
+  data_kids = relationships_data |>
+    filter(pnum_is_child) |>
+    # get identifiers
+    distinct(serial, pnum) |>
+    # get individual characteristics
+    inner_join(individual_data, by = c("serial", "pnum")) |>
+    select(serial, pnum, DVAge, DMSex)
+  
+  return(data_kids)
+}
+
+# cound number of children by sex
+count_kids = function(data) {
+  num_kids = data |>
+    group_by(serial) |>
+    summarise(num_kids_total = n(),
+              num_kids_male = sum(DMSex == 1, na.rm = TRUE),
+              num_kids_female = sum(DMSex == 2, na.rm = TRUE),
+              .groups = "drop")
+  return(num_kids)
+}
+
+
+################################## Regressions #################################
 # matrix of restrictions for SUREs
 make_regMat = function(regressors, theta_names,
                        y_names = c("male_y", "female_y"),
@@ -169,6 +187,8 @@ add_shares_from_lm = function(fit, data,
   return (addcols)
 }
 
+################################### Plotting ###################################
+
 plot_share_densities = function(data,
                                 dev_type,
                                 prefix = "share",
@@ -218,3 +238,18 @@ plot_share_densities = function(data,
       plot.title = element_text(face = "bold")
     )
 }
+
+# significance stars
+stars = function(p) {
+  if (p < 0.001) return("***")
+  if (p < 0.01) return("**")
+  if (p < 0.05) return("*")
+  if (p < 0.1) return(".")
+  return("")}
+
+########################## Archive: import FRED data ###########################
+
+# import data
+fetch_fred_series = function(series_id) {
+  fredr(series_id = series_id) |>
+    transmute(date, value)}
