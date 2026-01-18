@@ -152,66 +152,66 @@ $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g
 ### No restrictions on coefficients: deviations from average with own sex
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_unres_within = systemfit(eqns_within, method = "SUR", data = sharing_est_data)
+fit_unres_within = systemfit(eqns_within, method = "SUR", data = sharing_est_data_2015)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_unres_r_within = systemfit(eqns_r_within, method = "SUR", data = sharing_est_data)
+fit_unres_r_within = systemfit(eqns_r_within, method = "SUR", data = sharing_est_data_2015)
 ```
 
 ### No restrictions on coefficients: deviations from average of men AND women
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_unres_between = systemfit(eqns_between, method = "SUR", data = sharing_est_data)
+fit_unres_between = systemfit(eqns_between, method = "SUR", data = sharing_est_data_2015)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_unres_r_between = systemfit(eqns_r_between, method = "SUR", data = sharing_est_data)
+fit_unres_r_between = systemfit(eqns_r_between, method = "SUR", data = sharing_est_data_2015)
 ```
 
 ### No restrictions on coefficients: deviations from average of opposite sex
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_unres_opposite = systemfit(eqns_opposite, method = "SUR", data = sharing_est_data)
+fit_unres_opposite = systemfit(eqns_opposite, method = "SUR", data = sharing_est_data_2015)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_unres_r_opposite = systemfit(eqns_opposite, method = "SUR", data = sharing_est_data)
+fit_unres_r_opposite = systemfit(eqns_opposite, method = "SUR", data = sharing_est_data_2015)
 ```
 
 ### Restricted coefficients, deviations from average with own sex
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_res_within = systemfit(eqns_within, method = "SUR", data = sharing_est_data,
+fit_res_within = systemfit(eqns_within, method = "SUR", data = sharing_est_data_2015,
                            restrict.regMat = modReg_within)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_res_r_within = systemfit(eqns_r_within, method = "SUR", data = sharing_est_data, 
+fit_res_r_within = systemfit(eqns_r_within, method = "SUR", data = sharing_est_data_2015, 
                              restrict.regMat = modReg_within)
 ```
 
 ### Restricted coefficients, deviations from average of men AND women
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_res_between = systemfit(eqns_between, method = "SUR", data = sharing_est_data,
+fit_res_between = systemfit(eqns_between, method = "SUR", data = sharing_est_data_2015,
                             restrict.regMat = modReg_between)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_res_r_between = systemfit(eqns_r_between, method = "SUR", data = sharing_est_data,
+fit_res_r_between = systemfit(eqns_r_between, method = "SUR", data = sharing_est_data_2015,
                               restrict.regMat = modReg_between)
 ```
 
 ### Restricted coefficients, deviations from average of opposite sex
 ```{r}
 # leisure including eating, drinking, washing, spirituality, volunteering
-fit_res_opposite = systemfit(eqns_opposite, method = "SUR", data = sharing_est_data,
+fit_res_opposite = systemfit(eqns_opposite, method = "SUR", data = sharing_est_data_2015,
                              restrict.regMat = modReg_opposite)
 # relaxing, socialising, sport, entertainment, and hobbies only
-fit_res_r_opposite = systemfit(eqns_r_opposite, method = "SUR", data = sharing_est_data,
+fit_res_r_opposite = systemfit(eqns_r_opposite, method = "SUR", data = sharing_est_data_2015,
                                restrict.regMat = modReg_opposite)
 ```
 
 ### Finding the resource shares
 
 ```{r echo=FALSE}
-shares_fit_bothsex = add_shares_from_lm(fit_res_between, data=sharing_est_data, dev_type = "all")
-shares_fit_bothsex_r = add_shares_from_lm(fit_res_r_between, data=sharing_est_data, dev_type = "all")
-shares_fit_ownsex = add_shares_from_lm(fit_res_within, data=sharing_est_data, dev_type = "own")
-shares_fit_ownsex_r = add_shares_from_lm(fit_res_r_within, data=sharing_est_data, dev_type = "own")
-shares_fit_oppsex = add_shares_from_lm(fit_res_opposite, data=sharing_est_data, dev_type = "opp")
-shares_fit_oppsex_r = add_shares_from_lm(fit_res_r_opposite, data=sharing_est_data, dev_type = "opp")
+shares_fit_bothsex = add_shares_from_lm(fit_res_between, data=sharing_est_data_2015, dev_type = "all")
+shares_fit_bothsex_r = add_shares_from_lm(fit_res_r_between, data=sharing_est_data_2015, dev_type = "all")
+shares_fit_ownsex = add_shares_from_lm(fit_res_within, data=sharing_est_data_2015, dev_type = "own")
+shares_fit_ownsex_r = add_shares_from_lm(fit_res_r_within, data=sharing_est_data_2015, dev_type = "own")
+shares_fit_oppsex = add_shares_from_lm(fit_res_opposite, data=sharing_est_data_2015, dev_type = "opp")
+shares_fit_oppsex_r = add_shares_from_lm(fit_res_r_opposite, data=sharing_est_data_2015, dev_type = "opp")
 ```
 
 # Differences between and within sexes: a closer look at distribution factors

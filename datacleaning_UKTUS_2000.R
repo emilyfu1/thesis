@@ -299,7 +299,7 @@ data_working_parents_2000 = data_individual_2000 |>
     q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),  # overtime default 0
     q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
     
-    HrWkAc = case_when(
+    HrWkUS = case_when(
       q14b == 2 ~ q14c_c,                    # no overtime
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
       TRUE ~ NA_real_

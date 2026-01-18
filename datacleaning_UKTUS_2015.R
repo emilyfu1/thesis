@@ -175,7 +175,7 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # based on actual hours worked
   filter(all(NetWkly > 0 | SENetPay > 0), 
-         all(HrWkAc > 0 | SEHrWkAc > 0)) |>
+         all(HrWkUS > 0 | SEHrWkUs > 0)) |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -190,10 +190,10 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # combine different wage sources:
   mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
-  mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc / 4.33)) |>
+  mutate(HrWkUS = if_else(HrWkUS > 0, HrWkUS, SEHrWkUs / 4.33)) |>
   
   # individual expenditure calculated using time use
-  mutate(wage = NetWkly / HrWkAc, # calculated hourly wages
+  mutate(wage = NetWkly / HrWkUS, # calculated hourly wages
          
          # leisure and childcare expenditure
          total_leisure_exp = wage * total_leisure,
@@ -211,15 +211,6 @@ data_working_parents_2015 = data_individual_2015 |>
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################
 ################################################################################
-
-# create gender-specific versions of variables
-vars_to_suffix = c(
-  "wage", "educ", "HrWkAc", "NetWkly", "DVAge",
-  "total_leisure", "total_leisure_r", "total_private_leisure",
-  "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
-  "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
-  "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
-  "y_individual", "pnum", "spouse_pnum")
 
 sharing_est_data_2015 = data_working_parents_2015 |>
   zap_labels() |>
