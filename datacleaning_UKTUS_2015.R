@@ -242,6 +242,7 @@ sharing_est_data_2015 = data_working_parents_2015 |>
          y = y_individual_f + y_individual_m,
          avgage = (DVAge_f + DVAge_m)/2,
          agegap_m = DVAge_m - DVAge_f) |>
+  select(!Income) |>
   
   # deviations from means of household-level characteristics
   mutate(
