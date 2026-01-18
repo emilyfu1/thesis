@@ -250,16 +250,16 @@ data_working_parents_2000 = data_individual_2000 |>
   
   # for employees
   mutate(
-    weekly_pay = if_else(
+    NetWkly = if_else(
       q7 == 1 & q10 >= 0,
       pay_to_weekly(q10, q11),
       NA_real_),
-    hourly_wage_emp = weekly_pay / weekly_hours,
+    hourly_wage_emp = NetWkly / weekly_hours,
     pay_banded = if_else(q10 < 0 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
-    weekly_pay_banded = pay_to_weekly(pay_banded, q11),
+    NetWkly_banded = pay_to_weekly(pay_banded, q11),
     hourly_wage_emp_banded = if_else(
       is.na(hourly_wage_emp),
-      weekly_pay_banded / weekly_hours,
+      NetWkly_banded / weekly_hours,
       hourly_wage_emp)) |>
   
   # for self employed
@@ -280,9 +280,9 @@ data_working_parents_2000 = data_individual_2000 |>
   
   # combine wages
   mutate(
-    weekly_pay = case_when(
-      wage_source == "employee_exact" ~ weekly_pay,
-      wage_source == "employee_banded" ~ weekly_pay_banded,
+    NetWkly = case_when(
+      wage_source == "employee_exact" ~ NetWkly,
+      wage_source == "employee_banded" ~ NetWkly_banded,
       wage_source == "self_employed" ~ q13c / 4.333,
       TRUE ~ NA_real_),
     wage = case_when(
@@ -299,7 +299,7 @@ data_working_parents_2000 = data_individual_2000 |>
     q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),  # overtime default 0
     q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
     
-    weekly_hours_usual = case_when(
+    HrWkAc = case_when(
       q14b == 2 ~ q14c_c,                    # no overtime
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
       TRUE ~ NA_real_
@@ -339,20 +339,12 @@ data_working_parents_2000 = data_individual_2000 |>
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################
 ################################################################################
 
-vars_to_suffix_2000 = c(
-  "wage", "educ", "weekly_pay", "weekly_hours_usual", "DVAge",
-  "total_leisure", "total_leisure_r", "total_private_leisure",
-  "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
-  "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
-  "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
-  "y_individual", "pnum", "spouse_pnum")
-
 sharing_est_data_2000 = data_working_parents_2000 |>
   zap_labels() |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
-    serial, sex_tag, dgorpaf, all_of(vars_to_suffix_2000),
+    serial, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
@@ -366,12 +358,12 @@ sharing_est_data_2000 = data_working_parents_2000 |>
                 n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
                 n_kid_aged_11_13, n_kid_aged_14_17),
     names_from = sex_tag,
-    values_from = all_of(vars_to_suffix_2000),
+    values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
   inner_join(regionalwealth_2000, by = c("dgorpaf")) |>
   
   # fill in annual income, household budget, average age, age gap
-  mutate(income_annual = (weekly_pay_f + weekly_pay_m)*52,
+  mutate(income_annual = (NetWkly_f + NetWkly_m)*52,
          y = y_individual_f + y_individual_m,
          avgage = (DVAge_f + DVAge_m)/2,
          agegap_m = DVAge_m - DVAge_f) |>

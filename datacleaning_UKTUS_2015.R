@@ -173,9 +173,9 @@ data_working_parents_2015 = data_individual_2015 |>
 
   group_by(serial) |>
   
-  # i'll keep people who are usually working since we have december data
+  # based on actual hours worked
   filter(all(NetWkly > 0 | SENetPay > 0), 
-         all(HrWkUS > 0 | SEHrWkUs > 0)) |>
+         all(HrWkAc > 0 | SEHrWkAc > 0)) |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -190,10 +190,10 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # combine different wage sources:
   mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
-  mutate(HrWkUS = if_else(HrWkUS > 0, HrWkUS, SEHrWkUs / 4.33)) |>
+  mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc / 4.33)) |>
   
   # individual expenditure calculated using time use
-  mutate(wage = NetWkly / HrWkUS, # calculated hourly wages
+  mutate(wage = NetWkly / HrWkAc, # calculated hourly wages
          
          # leisure and childcare expenditure
          total_leisure_exp = wage * total_leisure,
@@ -213,8 +213,8 @@ data_working_parents_2015 = data_individual_2015 |>
 ################################################################################
 
 # create gender-specific versions of variables
-vars_to_suffix_2015 = c(
-  "wage", "educ", "HrWkUS", "NetWkly", "DVAge",
+vars_to_suffix = c(
+  "wage", "educ", "HrWkAc", "NetWkly", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
@@ -226,7 +226,7 @@ sharing_est_data_2015 = data_working_parents_2015 |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
-    serial, sex_tag, dgorpaf, Income, all_of(vars_to_suffix_2015),
+    serial, sex_tag, dgorpaf, Income, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
@@ -240,7 +240,7 @@ sharing_est_data_2015 = data_working_parents_2015 |>
                 n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
                 n_kid_aged_11_13, n_kid_aged_14_17),
     names_from = sex_tag,
-    values_from = all_of(vars_to_suffix_2015),
+    values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
   inner_join(regionalwealth_2014, by = c("dgorpaf")) |>
   

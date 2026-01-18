@@ -28,6 +28,14 @@ region_codes$"NORTHERN IRELAND" = 13
 region_names = ls(region_codes)
 region_map = unlist(as.list(region_codes), use.names = TRUE)
 
+vars_to_suffix = c(
+  "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
+  "total_leisure", "total_leisure_r", "total_private_leisure",
+  "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
+  "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
+  "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
+  "y_individual", "pnum", "spouse_pnum")
+
 ################################################################################
 ################################ ACTIVITY CODES ################################
 ################################################################################
