@@ -179,7 +179,8 @@ print(make_sysfit_kable_df(fit_unres_within_merged, rows_within))
 print(make_sysfit_kable_df(fit_res_within_merged, rows_within))
 ```
 
-- Basically, there's more of a difference when we change the definition of leisure. When we include personal care and sleep, there's a lot more of an even split on average. Here are some density plots that show this. Most, but not all, estimates fall within the unit interval.
+- Basically, there's more of a difference when we change the definition of leisure. When we exclude personal care and sleep, there's a lot more of an even split on average. Here are some density plots that show this. Most, but not all, estimates fall within the unit interval.
+- Why would the inequality be so much more drastic when including personal care?
 ```{r echo=FALSE, fig.width=5, fig.height=5}
 
 narrowleisure_shares = plot_share_densities(shares_fit_ownsex_r_merged, 
@@ -223,6 +224,7 @@ print(combined_plot)
 -   The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
 
 ### Comparing the two years:
+- In general, the 2015 sharing rule applied to the 2000 data provides a much narrower distribution for (necessarily) both sexes, and is less unequal. Most estimated shares still fall within the unit interval.
 ```{r}
 counterfactual_shares = plot_share_densities(counterfactual_r_within, 
                                             dev_type = "own")
