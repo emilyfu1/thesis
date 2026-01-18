@@ -118,6 +118,7 @@ find_spouse_pairs = function(relationships_data) {
 }
 
 ################################## Regressions #################################
+
 # matrix of restrictions for SUREs
 make_regMat = function(regressors, theta_names,
                        y_names = c("male_y", "female_y"),
@@ -155,6 +156,15 @@ make_regMat = function(regressors, theta_names,
   regMat
 }
 
+run_SUR = function(eqns, data, R = NULL) {
+  if (is.null(R)) {
+    systemfit(eqns, method = "SUR", data = data)
+  } else {
+    systemfit(eqns, method = "SUR", data = data, restrict.regMat = R)
+  }
+}
+
+# calculate resource shares with sharing rule
 add_shares_from_lm = function(fit, data,
                               dev_type,
                               male_prefix = "male_",

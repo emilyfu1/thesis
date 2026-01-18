@@ -107,8 +107,10 @@ rows_between = c("y" = "Budget",
                  "Bx_dev_agegap" = "Budget * dev. age gap")
 
 ################################################################################
-##### Male and female specifications: deviations from average with own sex #####
+################################# Regressions! #################################
 ################################################################################
+
+##### Male and female specifications: deviations from average with own sex #####
 
 # leisure including eating, drinking, washing, spirituality, volunteering
 
@@ -134,9 +136,7 @@ eq_f_r_within = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wa
 eqns_within = list(male = eq_m_within, female = eq_f_within)
 eqns_r_within = list(male = eq_m_r_within, female = eq_f_r_within)
 
-################################################################################
 ### Male and female specifications: deviations from average of men AND women ###
-################################################################################
 
 # leisure including eating, drinking, washing, spirituality, volunteering
 
@@ -162,9 +162,7 @@ eq_f_r_between = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wa
 eqns_between = list(male = eq_m_between, female = eq_f_between)
 eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
 
-################################################################################
 ######### Male and female specifications: deviations from opposite sex #########
-################################################################################
 
 # leisure including eating, drinking, washing, spirituality, volunteering
 
@@ -190,9 +188,13 @@ eq_f_r_opposite = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_w
 eqns_opposite = list(male = eq_m_opposite, female = eq_f_opposite)
 eqns_r_opposite = list(male = eq_m_r_opposite, female = eq_f_r_opposite)
 
-################################################################################
+################################ All regressions ###############################
+
+specs = list(within = list(eq = eqns_within, eq_r = eqns_r_within, R = modReg_within),
+             between = list(eq = eqns_between, eq_r = eqns_r_between, R = modReg_between),
+             opposite = list(eq = eqns_opposite, eq_r = eqns_r_opposite, R = modReg_opposite))
+
 ######################## MATRIX OF RESTRICTIONS FOR SUR ########################
-################################################################################
 
 regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
                 "Bx_dev_educ_f_only", "Bx_dev_educ_m_only",
