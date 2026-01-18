@@ -179,7 +179,7 @@ print(make_sysfit_kable_df(fit_unres_within_merged, rows_within))
 print(make_sysfit_kable_df(fit_res_within_merged, rows_within))
 ```
 
-- Basically, there's more of a difference when we change the definition of leisure. When we include personal care and sleep, there's a lot more of an even split on average. Here are some density plots that show this. Most estimates fall within the unit interval.
+- Basically, there's more of a difference when we change the definition of leisure. When we include personal care and sleep, there's a lot more of an even split on average. Here are some density plots that show this. Most, but not all, estimates fall within the unit interval.
 ```{r echo=FALSE, fig.width=5, fig.height=5}
 
 narrowleisure_shares = plot_share_densities(shares_fit_ownsex_r_merged, 
@@ -202,13 +202,6 @@ combined_plot =
 print(combined_plot)
 ```
 
-```{r echo=FALSE}
-plot_share_densities(shares_fit_bothsex_merged, dev_type = "all")
-
-plot_share_densities(shares_fit_oppsex_merged, dev_type = "opp")
-```
-
-
 ## How would households with characteristics $z_h$ be treated by a different sharing rule?
 
 -   Changes over time: take income and matchings from 2000, and take coefficients from 2015. apply the betas to the observed behaviour of 2015. Would I get different counterfactual leisures?
@@ -229,10 +222,37 @@ plot_share_densities(shares_fit_oppsex_merged, dev_type = "opp")
 -   Applying the 2015 coefficients to 2000 households: even though 2000 women earned less on average, the same relative wage difference would buy them more bargaining power under the 2015 rule.
 -   The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
 
-### 
+### Comparing the two years:
+```{r}
+counterfactual_shares = plot_share_densities(counterfactual_r_within, 
+                                            dev_type = "own")
+
+broadleisure_shares = plot_share_densities(shares_fit_ownsex_r_2000, 
+                                           dev_type = "own")
+
+combined_plot =
+  narrowleisure_shares + broadleisure_shares +
+  plot_layout(nrow = 2) +
+  plot_annotation(
+    title = "Estimated resource shares, 2000",
+    subtitle = "Using 2015 sharing rule (above) and 2000 sharing rule (below)",
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(size = 11)))
+      
+print(combined_plot)
+```
+- Also, I should make a plot similar to Table 3, but comparing the marginal contributions in 2000 with those from the 2015 sharing rule.
+```{r}
+# blah blah blah
+```
+
+## Some discussion on childcare expenditure
+- Conditional on total number of children, the sex composition of children is plausibly exogenous. Using this, how do resource shares translate into childcare behaviour? In a similar way to the leisure expenditure definition, I found childcare expenditure in the time-use data based on the household member's time allocation and their hourly wage. 
 
 # To do:
-
+- table of marginal effects
+- table showing how Female resource shares vary with wages
 -   if women get richer does time spent with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 -   child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters. (check gender ratios of births in states) I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women using son and daughter ratios(?) as a source of plausible exogeneity.
 -   if women get richer does time spent with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
