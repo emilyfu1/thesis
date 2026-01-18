@@ -208,6 +208,10 @@ data_kids_2000 = find_kids(relationships_data = all_relationships_2000,
 
 kids_counts_2000 = count_kids(data_kids_2000)
 
+kids_age_dist_2000 = find_kid_ages(data_kids_2000)
+
+kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
+
 ############################## Parents and couples #############################
 
 ################################################################################

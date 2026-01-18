@@ -142,34 +142,13 @@ data_kids_2015 = find_kids(relationships_data = all_relationships_2015,
                            individual_data = data_individual_2015)
 
 # how many kids of each sex
-kids_counts_2000 = count_kids(data_kids_2000)
+kids_counts_2015 = count_kids(data_kids_2015)
 
 # kid age distribution
-kids_age_dist_2015 = data_kids_2015 |>
-  group_by(serial) |>
-  summarise(kid_age_min  = min(DVAge, na.rm = TRUE),
-            kid_age_max  = max(DVAge, na.rm = TRUE),
-            kid_age_mean = mean(DVAge, na.rm = TRUE),
-            
-            n_kid_aged_0_2 = sum(DVAge <= 2, na.rm = TRUE),
-            n_kid_aged_3_5 = sum(DVAge >= 3  & DVAge <= 5, na.rm = TRUE),
-            n_kid_aged_6_10 = sum(DVAge >= 6  & DVAge <= 10, na.rm = TRUE),
-            n_kid_aged_11_13  = sum(DVAge >= 11 & DVAge <= 13, na.rm = TRUE),
-            n_kid_aged_14_17 = sum(DVAge >= 14 & DVAge <= 17, na.rm = TRUE),
-            .groups = "drop") |>
-  select(serial, kid_age_min, kid_age_max, kid_age_mean, n_kid_aged_0_2,
-         n_kid_aged_3_5, n_kid_aged_6_10, n_kid_aged_11_13, n_kid_aged_14_17)
+kids_age_dist_2015 = find_kid_ages(data_kids_2015)
 
 # get ages of each kid
-kids_age_wide_2015 = data_kids_2015 |>
-  arrange(serial, desc(DVAge)) |>
-  group_by(serial) |>
-  mutate(kid_index = row_number()) |>
-  ungroup() |>
-  select(serial, kid_index, DVAge) |>
-  pivot_wider(names_from = kid_index,
-              values_from = DVAge,
-              names_prefix = "age_of_kid_")
+kids_age_wide_2015 = find_kid_ages_wide(data_kids_2015)
 
 ############################## Parents and couples #############################
 

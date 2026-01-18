@@ -51,6 +51,41 @@ count_kids = function(data) {
   return(num_kids)
 }
 
+# get age distribution of children
+find_kid_ages = function(data) {
+  kids_age_dist = data |>
+    group_by(serial) |>
+    summarise(kid_age_min  = min(DVAge, na.rm = TRUE),
+              kid_age_max  = max(DVAge, na.rm = TRUE),
+              kid_age_mean = mean(DVAge, na.rm = TRUE),
+              
+              n_kid_aged_0_2 = sum(DVAge <= 2, na.rm = TRUE),
+              n_kid_aged_3_5 = sum(DVAge >= 3  & DVAge <= 5, na.rm = TRUE),
+              n_kid_aged_6_10 = sum(DVAge >= 6  & DVAge <= 10, na.rm = TRUE),
+              n_kid_aged_11_13  = sum(DVAge >= 11 & DVAge <= 13, na.rm = TRUE),
+              n_kid_aged_14_17 = sum(DVAge >= 14 & DVAge <= 17, na.rm = TRUE),
+              .groups = "drop") |>
+    select(serial, kid_age_min, kid_age_max, kid_age_mean, n_kid_aged_0_2,
+           n_kid_aged_3_5, n_kid_aged_6_10, n_kid_aged_11_13, n_kid_aged_14_17)
+  
+  return(kids_age_dist)
+}
+
+# all ages of children
+find_kid_ages_wide = function(data) {
+  kids_age_wide = data |>
+    arrange(serial, desc(DVAge)) |>
+    group_by(serial) |>
+    mutate(kid_index = row_number()) |>
+    ungroup() |>
+    select(serial, kid_index, DVAge) |>
+    pivot_wider(names_from = kid_index,
+                values_from = DVAge,
+                names_prefix = "age_of_kid_")
+  
+  return(kids_age_wide)
+}
+
 
 ################################## Regressions #################################
 # matrix of restrictions for SUREs
