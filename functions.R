@@ -244,9 +244,6 @@ add_shares_from_lm = function(fit, data,
   
   # add outputs
   addcols = data[c("serial")]
-  addcols[[paste0(prefix_out, dev_type, "_etahat0_m")]] = etahat0_m
-  addcols[[paste0(prefix_out, dev_type, "_etahat0_f")]] = etahat0_f
-  addcols[[paste0(prefix_out, dev_type, "_alphahat_l")]] = alphahat_l
   addcols[[paste0(prefix_out, dev_type, "_etahat_m")]] = etahat_m_h
   addcols[[paste0(prefix_out, dev_type, "_etahat_f")]] = etahat_f_h
   
@@ -255,6 +252,7 @@ add_shares_from_lm = function(fit, data,
 
 ################################### Plotting ###################################
 
+# kernel density plots
 plot_share_densities = function(data,
                                 dev_type,
                                 prefix = "share",
@@ -268,18 +266,18 @@ plot_share_densities = function(data,
   
   # reshape to long for ggplot
   plot_data = data |>
-    dplyr::select(all_of(c(col_m, col_f))) |>
-    tidyr::pivot_longer(cols = everything(),
+    select(all_of(c(col_m, col_f))) |>
+    pivot_longer(cols = everything(),
                         names_to = "sex",
                         values_to = "share") |>
-    dplyr::mutate(sex = dplyr::case_when(sex == col_m ~ "Male",
-                                         sex == col_f ~ "Female"))
+    mutate(sex = case_when(sex == col_m ~ "Male",
+                           sex == col_f ~ "Female"))
   
   # leisure excluding sleep and personal care
   if (restrict_leisure == FALSE) {
-    label = "Estimated resource shares"
+    label = "Including personal care and sleep"
   } else {
-    label = "Estimated resource shares (excluding personal care and sleep)"
+    label = "Excluding personal care and sleep"
   }
   
   # label 
@@ -291,18 +289,10 @@ plot_share_densities = function(data,
   
   ggplot(plot_data, aes(x = share, fill = sex, colour = sex)) +
     geom_density(alpha = alpha, bw = bw, linewidth = 1) +
-    labs(
-      x = paste0(label, " (using )", dev_label, "-sex deviations)", sep = ""),
-      y = "Density",
-      fill = NULL,
-      colour = NULL,
-      title = label
-    ) +
-    theme_minimal() +
-    theme(
-      legend.position = "top",
-      plot.title = element_text(face = "bold")
-    )
+    labs(fill = NULL,
+         colour = NULL,
+         title = label) +
+    theme_minimal()
 }
 
 # significance stars
@@ -312,6 +302,66 @@ stars = function(p) {
   if (p < 0.05) return("*")
   if (p < 0.1) return(".")
   return("")}
+
+# get estimated coefficients
+get_sysfit_stats = function(fit, coef_name) {
+  b = fit$coefficients[coef_name]
+  
+  # If coefficient is missing (e.g., dropped), return NAs cleanly
+  if (is.na(b) || length(b) == 0) {
+    return(list(est = NA_real_, se = NA_real_, p = NA_real_))
+  }
+  
+  V = fit$coefCov
+  se = sqrt(V[coef_name, coef_name])
+  
+  # get p value
+  z = b / se
+  p = 2 * (1 - pnorm(abs(z)))
+  
+  list(est = unname(b), se = unname(se), p = unname(p))
+}
+
+# create dataframe with estimated coefficients
+make_sysfit_kable_df = function(fit, row_map,
+                                male_prefix = "male_",
+                                female_prefix = "female_",
+                                digits = 3) {
+  
+  fmt_num = function(x) {
+    if (is.na(x)) return("")
+    formatC(x, format = "g", digits = digits)
+  }
+  
+  fmt_cell = function(est, se, p) {
+    if (is.na(est) || is.na(se) || is.na(p)) return("")
+    paste0(fmt_num(est), stars(p), " (", fmt_num(se), ")")
+  }
+  
+  out = tibble(
+    term = unname(row_map),
+    male = NA_character_,
+    female = NA_character_
+  )
+  
+  base_terms = names(row_map)
+  # print(base_terms)
+  
+  for (i in seq_along(base_terms)) {
+    t = base_terms[i]
+    
+    m_name = paste0(male_prefix, t)
+    f_name = paste0(female_prefix, t)
+    
+    m = get_sysfit_stats(fit, m_name)
+    f = get_sysfit_stats(fit, f_name)
+    
+    out$male[i]   = fmt_cell(m$est, m$se, m$p)
+    out$female[i] = fmt_cell(f$est, f$se, f$p)
+  }
+  
+  out
+}
 
 ########################## Archive: import FRED data ###########################
 
