@@ -84,8 +84,7 @@ activity_summaries_2015 = data_activities_2015 |>
 ################################################################################
 
 # household data
-data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
-  inner_join(diarymonth_households_2015, by = c("serial", "IMonth"))
+data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta"))
 
 ################################################################################
 ############################ INDIVIDUAL-LEVEL DATA #############################
@@ -94,8 +93,6 @@ data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
 # individual level data
 data_individual_2015 = read_dta(paste0(uktus_2015_direct, 
                                        "uktus15_individual.dta")) |>
-  # only keep diary month
-  inner_join(diarymonth_households_2015, by = c("serial", "pnum", "IMonth")) |>
   # keep if observation has age, sex
   filter(DVAge >= 0, DMSex >= 0) |>
   mutate(male = DMSex == 1, # sex dummy
@@ -153,16 +150,7 @@ kids_age_wide_2015 = find_kid_ages_wide(data_kids_2015)
 ############################## Parents and couples #############################
 
 # find spouse/partner pairs in data
-spouse_pairs_2015 = all_relationships_2015 |> 
-  filter(pnum_is_spouse) |> 
-  distinct(serial, pnum, relevant_person) |> 
-  # keep only pairs of spouses/partners
-  group_by(serial) |>
-  filter(n() == 2) |>
-  ungroup() |>
-  # rename as spouse_pnum 
-  rename(spouse_pnum = relevant_person) |> 
-  arrange(serial, pnum)
+spouse_pairs_2015 = find_spouse_pairs(all_relationships_2015)
 
 # parents
 data_working_parents_2015 = data_individual_2015 |>
@@ -171,6 +159,7 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # show number of diaries and only keep diary month
   inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
+  inner_join(diarymonth_households_2015, by = c("serial", "pnum")) |>
   # merge with time use
   inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
   
@@ -185,7 +174,8 @@ data_working_parents_2015 = data_individual_2015 |>
   group_by(serial) |>
   
   # i'll keep people who are usually working since we have december data
-  filter(all(NetWkly > 0), all(HrWkUS > 0)) |>
+  filter(all(NetWkly > 0 | SENetPay > 0), 
+         all(HrWkUS > 0 | SEHrWkUs > 0)) |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -197,6 +187,10 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
+  
+  # combine different wage sources:
+  mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
+  mutate(HrWkUS = if_else(HrWkUS > 0, HrWkUS, SEHrWkUs / 4.33)) |>
   
   # individual expenditure calculated using time use
   mutate(wage = NetWkly / HrWkUS, # calculated hourly wages
@@ -227,7 +221,6 @@ vars_to_suffix = c(
   "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
   "y_individual", "pnum", "spouse_pnum")
 
-# we should get 634 individuals and 634 / 2 households
 sharing_est_data_2015 = data_working_parents_2015 |>
   zap_labels() |>
   # letter for creating variable names
