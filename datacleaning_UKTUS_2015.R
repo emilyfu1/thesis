@@ -246,38 +246,38 @@ sharing_est_data_2015 = data_working_parents_2015 |>
   
   mutate(
     # household budget
-    y = y * deflator_2000,
-    y_individual_m = y_individual_m * deflator_2000,
-    y_individual_f = y_individual_f * deflator_2000,
+    y = y * deflator_2014,
+    y_individual_m = y_individual_m * deflator_2014,
+    y_individual_f = y_individual_f * deflator_2014,
     
     # wages
-    NetWkly_m = NetWkly_m * deflator_2000,
-    NetWkly_f = NetWkly_f * deflator_2000,
-    wage_m = wage_m * deflator_2000,
-    wage_f = wage_f * deflator_2000,
+    NetWkly_m = NetWkly_m * deflator_2014,
+    NetWkly_f = NetWkly_f * deflator_2014,
+    wage_m = wage_m * deflator_2014,
+    wage_f = wage_f * deflator_2014,
     
     # leisure expenditure
-    total_leisure_exp_m = total_leisure_exp_m * deflator_2000,
-    total_leisure_exp_f = total_leisure_exp_f * deflator_2000,
+    total_leisure_exp_m = total_leisure_exp_m * deflator_2014,
+    total_leisure_exp_f = total_leisure_exp_f * deflator_2014,
     
-    total_leisure_exp_r_m = total_leisure_exp_r_m * deflator_2000,
-    total_leisure_exp_r_f = total_leisure_exp_r_f * deflator_2000,
+    total_leisure_exp_r_m = total_leisure_exp_r_m * deflator_2014,
+    total_leisure_exp_r_f = total_leisure_exp_r_f * deflator_2014,
     
-    private_leisure_exp_m = private_leisure_exp_m * deflator_2000,
-    private_leisure_exp_m = private_leisure_exp_m * deflator_2000,
+    private_leisure_exp_m = private_leisure_exp_m * deflator_2014,
+    private_leisure_exp_m = private_leisure_exp_m * deflator_2014,
     
-    private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2000,
-    private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2000,
+    private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2014,
+    private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2014,
     
     # childcare
-    total_childcare_exp_m = total_childcare_exp_m * deflator_2000,
-    total_childcare_exp_f = total_childcare_exp_f * deflator_2000,
+    total_childcare_exp_m = total_childcare_exp_m * deflator_2014,
+    total_childcare_exp_f = total_childcare_exp_f * deflator_2014,
     
-    nospouse_childcare_exp_m = nospouse_childcare_exp_m * deflator_2000,
-    nospouse_childcare_exp_f = nospouse_childcare_exp_f * deflator_2000,
+    nospouse_childcare_exp_m = nospouse_childcare_exp_m * deflator_2014,
+    nospouse_childcare_exp_f = nospouse_childcare_exp_f * deflator_2014,
     
     # regional wealth
-    income_annual = income_annual * deflator_2000) |>
+    income_annual = income_annual * deflator_2014) |>
   
   # deviations from means of household-level characteristics
   mutate(
