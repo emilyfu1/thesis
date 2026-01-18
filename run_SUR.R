@@ -12,9 +12,9 @@ setwd(wd)
 
 # import data (saves time running code)
 data_2015 = read_csv(paste0(data_direct, 
-                                        "data_2015.csv"))
+                                        "sharing_est_data_2015.csv"))
 data_2000 = read_csv(paste0(data_direct, 
-                                        "data_2000.csv"))
+                                        "sharing_est_data_2000.csv"))
 
 data_merged = bind_rows(data_2000 |> mutate(sample = "2000"),
                                data_2015 |> mutate(sample = "2015"))
@@ -195,3 +195,4 @@ shares_fit_oppsex_r_2000 = add_shares_from_lm(fit_res_r_opposite_2000, data=data
 
 ############################ Counterfactual analysis ###########################
 
+counterfactual_r_within = shares_fit_ownsex_r_2000 = add_shares_from_lm(fit_res_r_within_2015, data=data_2000, dev_type = "own")

@@ -288,7 +288,8 @@ plot_share_densities = function(data,
   }
   
   ggplot(plot_data, aes(x = share, fill = sex, colour = sex)) +
-    geom_density(alpha = alpha, bw = bw, linewidth = 1) +
+    geom_density(alpha = alpha, bw = bw, linewidth = 1, na.rm=TRUE) +
+    scale_x_continuous(limits = c(0,1)) |
     labs(fill = NULL,
          colour = NULL,
          title = label) +
