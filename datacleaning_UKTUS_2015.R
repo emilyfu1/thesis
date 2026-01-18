@@ -190,7 +190,7 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # combine different wage sources:
   mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
-  mutate(HrWkUS = if_else(HrWkUS > 0, HrWkUS, SEHrWkUs / 4.33)) |>
+  mutate(HrWkUS = if_else(HrWkUS > 0, HrWkUS, SEHrWkUs)) |>
   
   # individual expenditure calculated using time use
   mutate(wage = NetWkly / HrWkUS, # calculated hourly wages
@@ -290,5 +290,6 @@ sharing_est_data_2015 = data_working_parents_2015 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc)
 
+write_csv(sharing_est_data_2015, paste0(data_direct, "sharing_est_data_2015.csv"))
 
 

@@ -415,3 +415,4 @@ sharing_est_data_2000 = data_working_parents_2000 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc)
 
+write_csv(sharing_est_data_2000, paste0(data_direct, "sharing_est_data_2000.csv"))
