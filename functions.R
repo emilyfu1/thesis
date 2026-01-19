@@ -385,45 +385,48 @@ make_sysfit_kable_df = function(fit, row_map,
 }
 
 # table of marginal effects
-make_fem_share_impact_table = function(res,
-                                        data,
-                                        rows_map,
-                                        mean_sd_vars = list(
-                                          wage_m = "wage_m",
-                                          wage_f = "wage_f",
-                                          avgage = "avgage",
-                                          agegap = "agegap",
-                                          annual_income = "annual_income",  # your regional wealth proxy
-                                          educ_m = "educ_m",
-                                          educ_f = "educ_f"
-                                        ),
-                                        units = list(
-                                          wage_gbp = 1,          # +£1 hourly wage
-                                          age_years = 10,        # +10 years
-                                          income_gbp = 5000,     # +£5000 annual income / regional wealth
-                                          educ_levels = 1        # +1 education level
-                                        ),
-                                        pretty_names = c(
-                                          wage_m = "Male wage (2024 GBP)",
-                                          wage_f = "Female wage (2024 GBP)",
-                                          avgage = "Average age of couple",
-                                          agegap = "Age gap (male - female)",
-                                          annual_income = "Regional wealth p.c. (2024 GBP)",
-                                          educ_m = "Male qualifications (0/1/2)",
-                                          educ_f = "Female qualifications (0/1/2)"
-                                        ),
-                                        dev_term_for = list(
-                                          # map “table variable” -> which dev_* term drives the share rule
-                                          wage_m = "dev_wage_m_only",
-                                          wage_f = "dev_wage_f_only",
-                                          avgage = "dev_avgage",
-                                          agegap = "dev_agegap",
-                                          annual_income = "dev_gdppc",
-                                          educ_m = "dev_educ_m_only",
-                                          educ_f = "dev_educ_f_only"
-                                        ),
-                                        clamp01 = FALSE) {
-  stopifnot(is.list(res), !is.null(res$params), !is.null(res$params$dev_map))
+marginal_impacts = function(res, data, rows_map) {
+  
+  # local variables
+  
+  mean_sd_vars = list(wage_m = "wage_m",
+                      wage_f = "wage_f",
+                      avgage = "avgage",
+                      agegap = "agegap_m",
+                      rgdppc = "rgdppc",
+                      educ_m = "educ_m",
+                      educ_f = "educ_f")
+  
+  units = list(wage_gbp = 1,          # +£1 hourly wage
+               age_years = 10,        # +10 years
+               income_gbp = 5000,     # +£5000 annual income / regional wealth
+               educ_levels = 1)       # +1 education level
+  
+  pretty_names = c(wage_m = "Male wage (2024 GBP)",
+                   wage_f = "Female wage (2024 GBP)",
+                   avgage = "Average age of couple",
+                   agegap = "Age gap (male - female)",
+                   rgdppc = "Regional wealth p.c. (2024 GBP)",
+                   educ_m = "Male qualifications (0/1/2)",
+                   educ_f = "Female qualifications (0/1/2)")
+  
+  # map “table variable” -> which dev_* term drives the share rule
+  dev_term_for = list(wage_m = "dev_wage_m_only",
+                      wage_f = "dev_wage_f_only",
+                      avgage = "dev_avgage",
+                      agegap = "dev_agegap",
+                      rgdppc = "dev_gdppc",
+                      educ_m = "dev_educ_m_only",
+                      educ_f = "dev_educ_f_only")
+  
+  # lazy ahh way of adding columns
+  impact_units = c(wage_m = "£1 per hour",
+                   wage_f = "£1 per hour",
+                   avgage = "10 years",
+                   agegap = "10 years",
+                   educ_m = "1 qualification level",
+                   educ_f = "1 qualification level",
+                   rgdppc = "£5,000")
   
   params = res$params
   
@@ -435,14 +438,11 @@ make_fem_share_impact_table = function(res,
   bx_for_dev = setNames(names(dev_map), unname(dev_map))
   
   # convenience: compute means/sds for “raw variables”
-  msd = tibble(
-    key = names(mean_sd_vars),
-    var = unname(mean_sd_vars)
-  ) |>
-    mutate(
-      mean = map_dbl(var, ~ mean(data[[.x]], na.rm = TRUE)),
-      sd   = map_dbl(var, ~ stats::sd(data[[.x]], na.rm = TRUE))
-    )
+  msd = tibble(key = names(mean_sd_vars),
+               var = unname(mean_sd_vars)) |>
+    mutate(mean = map_dbl(var, ~ mean(data[[.x]], na.rm = TRUE)),
+           sd = map_dbl(var, ~ sd(data[[.x]], na.rm = TRUE)))
+  # print(msd)
   
   # build impacts row-by-row
   out = msd |>
@@ -458,21 +458,19 @@ make_fem_share_impact_table = function(res,
       # (sd of dev_col, NOT sd of the raw variable)
       sd_dev = map_dbl(dev_col, ~ {
         if (is.na(.x) || !.x %in% names(data)) return(NA_real_)
-        sd(data[[.x]], na.rm = TRUE)
-      }),
-      impact_1sd_on_fem_share = theta_f * sd_dev
-    ) |>
+        sd(data[[.x]], na.rm = TRUE)}),
+      impact_1sd_fshare = theta_f * sd_dev) |>
     mutate(
+      unit_level_impact = coalesce(impact_units[key], key), 
       # “impact of …” custom units column
-      impact_of = case_when(
+      level_impact_fshare = case_when(
         key %in% c("wage_m", "wage_f") ~ theta_f * units$wage_gbp,
         key %in% c("avgage", "agegap") ~ theta_f * units$age_years,
-        key == "annual_income" ~ theta_f * units$income_gbp,
+        key == "rgdppc" ~ theta_f * units$income_gbp,
         key %in% c("educ_m", "educ_f") ~ theta_f * units$educ_levels,
-        TRUE ~ NA_real_
-      )
-    ) |>
-    select(variable, mean, sd, impact_1sd_on_fem_share, impact_of)
+        TRUE ~ NA_real_)) |>
+    select(variable, mean, sd, unit_level_impact, 
+           impact_1sd_fshare, level_impact_fshare)
   
   return(out)
 }
