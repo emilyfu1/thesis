@@ -208,7 +208,10 @@ data_working_parents_2015 = data_individual_2015 |>
          y_individual = wage * 24 * num_diaries_filled) |>
   
   # keep households with under-18 kids
-  filter(kid_age_min < 18)
+  filter(kid_age_min < 18) |>
+  
+  # for the really weirdly high owners, will filter them out
+  # because their
   
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################

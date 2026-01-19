@@ -195,4 +195,4 @@ shares_fit_oppsex_r_2000 = add_shares_from_lm(fit_res_r_opposite_2000, data=data
 
 ############################ Counterfactual analysis ###########################
 
-counterfactual_r_within = shares_fit_ownsex_r_2000 = add_shares_from_lm(fit_res_r_within_2015, data=data_2000, dev_type = "own")
+counterfactual_within = add_shares_from_lm(fit_res_within_2015, data=data_2000, dev_type = "own")
