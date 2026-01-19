@@ -301,12 +301,19 @@ plot_share_densities = function(data,
   }
   
   ggplot(plot_data, aes(x = share, fill = sex, colour = sex)) +
-    geom_density(alpha = alpha, bw = bw, linewidth = 1, na.rm=TRUE) +
-    scale_x_continuous(limits = c(0,1)) |
-    labs(fill = NULL,
-         colour = NULL,
-         title = label) +
-    theme_minimal()
+    geom_density(alpha = alpha, bw = bw, linewidth = 1, na.rm = TRUE) +
+    labs(
+      x = "Estimated resource share",
+      y = "Density",
+      fill = NULL,
+      colour = NULL,
+      title = label) +
+    xlim(0, 1) +
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      plot.title = element_text(face = "bold")
+    )
 }
 
 # significance stars
@@ -376,6 +383,102 @@ make_sysfit_kable_df = function(fit, row_map,
   
   out
 }
+
+# table of marginal effects
+make_fem_share_impact_table = function(res,
+                                        data,
+                                        rows_map,
+                                        mean_sd_vars = list(
+                                          wage_m = "wage_m",
+                                          wage_f = "wage_f",
+                                          avgage = "avgage",
+                                          agegap = "agegap",
+                                          annual_income = "annual_income",  # your regional wealth proxy
+                                          educ_m = "educ_m",
+                                          educ_f = "educ_f"
+                                        ),
+                                        units = list(
+                                          wage_gbp = 1,          # +£1 hourly wage
+                                          age_years = 10,        # +10 years
+                                          income_gbp = 5000,     # +£5000 annual income / regional wealth
+                                          educ_levels = 1        # +1 education level
+                                        ),
+                                        pretty_names = c(
+                                          wage_m = "Male wage (2024 GBP)",
+                                          wage_f = "Female wage (2024 GBP)",
+                                          avgage = "Average age of couple",
+                                          agegap = "Age gap (male - female)",
+                                          annual_income = "Regional wealth p.c. (2024 GBP)",
+                                          educ_m = "Male qualifications (0/1/2)",
+                                          educ_f = "Female qualifications (0/1/2)"
+                                        ),
+                                        dev_term_for = list(
+                                          # map “table variable” -> which dev_* term drives the share rule
+                                          wage_m = "dev_wage_m_only",
+                                          wage_f = "dev_wage_f_only",
+                                          avgage = "dev_avgage",
+                                          agegap = "dev_agegap",
+                                          annual_income = "dev_gdppc",
+                                          educ_m = "dev_educ_m_only",
+                                          educ_f = "dev_educ_f_only"
+                                        ),
+                                        clamp01 = FALSE) {
+  stopifnot(is.list(res), !is.null(res$params), !is.null(res$params$dev_map))
+  
+  params = res$params
+  
+  # etahat_z_f is named by Bx_* terms; dev_map maps Bx_* -> dev_* column name
+  theta_f_by_Bx = params$etahat_z_f
+  dev_map = params$dev_map  # named vector: Bx_term -> dev_col
+  
+  # invert dev_map to go from dev_col -> Bx_term
+  bx_for_dev = setNames(names(dev_map), unname(dev_map))
+  
+  # convenience: compute means/sds for “raw variables”
+  msd = tibble(
+    key = names(mean_sd_vars),
+    var = unname(mean_sd_vars)
+  ) |>
+    mutate(
+      mean = map_dbl(var, ~ mean(data[[.x]], na.rm = TRUE)),
+      sd   = map_dbl(var, ~ stats::sd(data[[.x]], na.rm = TRUE))
+    )
+  
+  # build impacts row-by-row
+  out = msd |>
+    mutate(
+      variable = coalesce(pretty_names[key], key),
+      
+      # which deviation term corresponds to this row?
+      dev_col = map_chr(key, ~ dev_term_for[[.x]] %||% NA_character_),
+      bx_term = bx_for_dev[dev_col],
+      theta_f = unname(theta_f_by_Bx[bx_term]),
+      
+      # impact of 1 SD increase in the deviation term on female share
+      # (sd of dev_col, NOT sd of the raw variable)
+      sd_dev = map_dbl(dev_col, ~ {
+        if (is.na(.x) || !.x %in% names(data)) return(NA_real_)
+        sd(data[[.x]], na.rm = TRUE)
+      }),
+      impact_1sd_on_fem_share = theta_f * sd_dev
+    ) |>
+    mutate(
+      # “impact of …” custom units column
+      impact_of = case_when(
+        key %in% c("wage_m", "wage_f") ~ theta_f * units$wage_gbp,
+        key %in% c("avgage", "agegap") ~ theta_f * units$age_years,
+        key == "annual_income" ~ theta_f * units$income_gbp,
+        key %in% c("educ_m", "educ_f") ~ theta_f * units$educ_levels,
+        TRUE ~ NA_real_
+      )
+    ) |>
+    select(variable, mean, sd, impact_1sd_on_fem_share, impact_of)
+  
+  return(out)
+}
+
+`%||%` = function(x, y) if (!is.null(x)) x else y
+
 
 ########################## Archive: import FRED data ###########################
 
