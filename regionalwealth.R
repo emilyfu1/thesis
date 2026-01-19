@@ -38,28 +38,28 @@ names(regional_gdp) = c("dgorpaf_name", "ngdp_2000", "ngdp_2014")
 
 # nominal GDP in each year
 
-regional_gdp_2014 = regional_gdp[c("dgorpaf_name", "ngdp_2014")] |> 
+regional_gdp_2014 = regional_gdp |> 
   select(dgorpaf_name, ngdp_2014) |>
   # make names consistent
   mutate(dgorpaf_name = toupper(trimws(dgorpaf_name)),
-         ngdp_2014 = as.numeric(ngdp_2014)) |>
+         ngdp = as.numeric(ngdp_2014)) |>
   filter(dgorpaf_name %in% region_names)  |>
   # get rid of smaller regions that share a name
   group_by(dgorpaf_name) |>
-  slice_max(ngdp_2014, n = 1, with_ties = FALSE) |>
+  slice_max(ngdp, n = 1, with_ties = FALSE) |>
   ungroup() |>
   # get corresponding value
   mutate(dgorpaf = unname(region_map[dgorpaf_name]))
 
-regional_gdp_2000 = regional_gdp[c("dgorpaf_name", "ngdp_2000")] |> 
+regional_gdp_2000 = regional_gdp |> 
   select(dgorpaf_name, ngdp_2000) |>
   # make names consistent
   mutate(dgorpaf_name = toupper(trimws(dgorpaf_name)),
-         ngdp_2000 = as.numeric(ngdp_2000)) |>
+         ngdp = as.numeric(ngdp_2000)) |>
   filter(dgorpaf_name %in% region_names) |>
   # get rid of smaller regions that share a name
   group_by(dgorpaf_name) |>
-  slice_max(ngdp_2000, n = 1, with_ties = FALSE) |>
+  slice_max(ngdp, n = 1, with_ties = FALSE) |>
   ungroup() |>
   mutate(dgorpaf = unname(region_map[dgorpaf_name]))
 
@@ -69,6 +69,7 @@ regional_pop_2014 = read_excel(paste0(data_direct, "population_2011_2024.xlsx"),
                           sheet = "MYE4",
                           skip = 7)[c("Name", "Mid-2014")]
 names(regional_pop_2014) = c("dgorpaf_name", "pop_2014")
+
 regional_pop_2014 = regional_pop_2014 |>
   # make names consistent
   mutate(dgorpaf_name = toupper(trimws(dgorpaf_name)),
@@ -97,19 +98,19 @@ regional_pop_2000 = regional_pop_2000 |>
 ########################## get nominal gdps per capita #########################
 
 regionalwealth_2014 = regional_gdp_2014 |>
-  select(dgorpaf, ngdp_2014) |>
+  select(dgorpaf, ngdp) |>
   inner_join(regional_pop_2014, by = c("dgorpaf")) |>
   # nominal gdp is in millions
-  mutate(ngdppc_2014 = ngdp_2014 * 1e6 / pop_2014) |>
+  mutate(ngdppc = ngdp * 1e6 / pop_2014) |>
   # deflate
-  mutate(rgdppc_2014 = ngdppc_2014 * deflator_2014) |>
-  select(dgorpaf, rgdppc_2014)
+  mutate(rgdppc = ngdppc * deflator_2014) |>
+  select(dgorpaf, rgdppc)
   
 regionalwealth_2000 = regional_gdp_2000 |>
-  select(dgorpaf, ngdp_2000) |>
+  select(dgorpaf, ngdp) |>
   inner_join(regional_pop_2000, by = c("dgorpaf")) |>
   # nominal gdp is in millions
-  mutate(ngdppc_2000 = ngdp_2000 * 1e6 / pop_2000) |>
+  mutate(ngdppc = ngdp * 1e6 / pop_2000) |>
   # deflate
-  mutate(rgdppc_2000 = ngdppc_2000 * deflator_2000) |>
-  select(dgorpaf, rgdppc_2000)
+  mutate(rgdppc = ngdppc * deflator_2000) |>
+  select(dgorpaf, rgdppc)

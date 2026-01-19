@@ -308,7 +308,7 @@ data_working_parents_2000 = data_individual_2000 |>
   group_by(serial) |>
   
   # keep any households where both people are captured by this hourly wage
-  filter(!is.na(wage)) |>
+  filter(all(wage > 0)) |>
   # deciding to keep employees only
   # filter(wage_source == "employee_exact") |>
   
@@ -431,7 +431,7 @@ sharing_est_data_2000 = data_working_parents_2000 |>
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    dev_gdppc = income_annual - rgdppc_2000) |>
+    dev_gdppc = income_annual - rgdppc) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,

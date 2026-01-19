@@ -170,21 +170,24 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # identify couples
   inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
+  
+  # combine different wage sources:
+  mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
+  mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc)) |>
+  mutate(wage = NetWkly / HrWkAc) |>
 
   group_by(serial) |>
   
-  # based on actual hours worked
-  # filter(all(NetWkly > 0 | SENetPay > 0), 
-  #        all(HrWkUS > 0 | SEHrWkUs > 0)) |>
-  # filter(all(NetWkly > 0), all(HrWkUS > 0)) |>
-  
-  # filter(all(NetWkly > 0), all(HrWkAc > 0)) |>
+  # keep any households where both people are captured by this hourly wage
   filter(all(NetWkly > 0 | SENetPay > 0), 
          all(HrWkUS > 0 | SEHrWkAc > 0)) |>
+  filter(all(wage > 0)) |>
+  # deciding to keep employees only
+  # filter(wage_source == "employee_exact") |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
-
+  
   ungroup() |> 
   
   # only keep couples who both have time diaries (filter after both joins)
@@ -193,14 +196,8 @@ data_working_parents_2015 = data_individual_2015 |>
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
   
-  # combine different wage sources:
-  mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
-  mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc)) |>
-  
   # individual expenditure calculated using time use
-  mutate(wage = NetWkly / HrWkAc, # calculated hourly wages
-         
-         # leisure and childcare expenditure
+  mutate(# leisure and childcare expenditure
          total_leisure_exp = wage * total_leisure,
          total_leisure_exp_r = wage * total_leisure_r,
          private_leisure_exp = wage * total_private_leisure,
@@ -309,7 +306,7 @@ sharing_est_data_2015 = data_working_parents_2015 |>
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    dev_gdppc = income_annual - rgdppc_2014) |>
+    dev_gdppc = income_annual - rgdppc) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
