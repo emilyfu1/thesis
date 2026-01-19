@@ -40,7 +40,7 @@ options(digits=4)
 
 ## Brief summary of setup in Arduini (2025):
 
--   An individual $i$ belongs to a household $h$. Each individual has a person type $t$. Households are in the same category $g$ if they have the same number of household members of each type. For instance, one household category would be one that contains a wife $t=1$, a husband $t=2$, and children $t=3$.
+-   An individual $i$ belongs to a household $h$. Each individual has a person type $t$. Households are in the same category $g$ if they have the same number of household members of each type. For instance, one household category would be one that contains a wife $t=1$, a husband $t=2$, and children $t=3$*.
 -   Individual-level characteristics: $\pi_{i,h}$
 -   Household-level characteristics: $\zeta_{i,h}$
 -   The household purchases private material goods $c_{i,h}$ and public material goods $X$. Private good $j \epsilon \Omega^c$ has price $p_j$. Public good $j \epsilon \Omega^X$ has price $r_j$.
@@ -98,7 +98,8 @@ JT = f^{JT}(\mathbf{jt})$$
 -   What she needs: The variation in assignable good expenditure with household budget is taken to be informative about how household budget is split between individual members’ second stage budgets. This relies on the strong assumption that men and women have the same preference parameter for the assignable good, or else that we already know the preference parameters of men and women, e.g. from singles data.
 -   When using private leisure as the assignable good, this should not be interpreted as assuming that expenditure on any specific material good is split between members in the same manner as leisure. Men and women have a similar preference parameter for private leisure specifically. This means that, if they have the same wages and the same individual budget, then they will have the same hours of private leisure.
 
-$$u_{t,g} = \sum_{j \epsilon \Omega^c} (\alpha_{t,g}^{cj} \ln{(c_{i,h}^j)}) + \sum_{j \epsilon \Omega^X} (\alpha_{t,g}^{Xj} \ln{(X_{h}^j)}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Tst,g} \ln{(jt_{s,h})}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Dst,g} \ln{(d_{s,h})})$$ - Resource shares are equal to Pareto weights scaled by a composite preference parameter. For instance, a significant effect of wages on the sharing rule implies that Pareto weights vary with wages
+$$u_{t,g} = \sum_{j \epsilon \Omega^c} (\alpha_{t,g}^{cj} \ln{(c_{i,h}^j)}) + \sum_{j \epsilon \Omega^X} (\alpha_{t,g}^{Xj} \ln{(X_{h}^j)}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Tst,g} \ln{(jt_{s,h})}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Dst,g} \ln{(d_{s,h})})$$ 
+- Resource shares are equal to Pareto weights scaled by a composite preference parameter. For instance, a significant effect of wages on the sharing rule implies that Pareto weights vary with wages
 
 ### Private leisure C-D SRAT:
 
@@ -116,7 +117,7 @@ $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g
 ## Arduini (2025): estimating
 
 -   Resource shares will generally depend on household budget, prices (including wages of all household members) and Pareto weights of household members: $\eta_{i,h}(y_h, p, r, w_h, µ_h)$.
--   Recall that Pareto weights µh are an unknown function of a vector of variables zh that determine relative bargaining power in the household, and that the collective model does not pin down a specific bargaining solution. Since zh in general includes the other variables which affect $\eta_{i,h}$, we can write $\eta_{i,h}(z_h)$
+-   Recall that Pareto weights $\mu_h$ are an unknown function of a vector of variables zh that determine relative bargaining power in the household, and that the collective model does not pin down a specific bargaining solution. Since $z_h$ in general includes the other variables which affect $\eta_{i,h}$, we can write $\eta_{i,h}(z_h)$
 -   To estimate resource shares by linear regression, we linearly approximate them: $$\eta_{i,h} = \eta_{i,h}^0 + \sum_{z} \eta_{t,g}^{z} (z_h - \bar{z})$$
 -   $\eta_{i,h}^0$ is the average resource share of a type (living in a specific household category). By definition, $\sum_{t \epsilon h} \eta_{t,g}^0 = 1$. For instance, a higher-than-average wage for the woman might increase the woman’s resource share, so that she would have a higher-than-average-for-women resource share.
 -   $\eta_{t,g}^{z}$ captures the impact on sharing of a household’s characteristic $z_h$ deviating from the sample average $(z_h - \bar{z})$
@@ -139,6 +140,14 @@ $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g
 -   Private leisure C-D SRAT rules out distribution factors (wages, education, demographics, etc.) changing relative tastes for leisure between men and women, and household composition or bargaining environment altering how much men vs women intrinsically value leisure.
 -   Public goods C-D SAP says individuals may differ in how much they care about the public good, but the total weight placed on public goods is fixed for a given household type (e.g. heterosexual couples with children).
 
+## *What are children?
+- Generally, people take the approach of considering children as public goods or modelling them as individual members with their own preferences (like in the Dunbar, Lewbel, and Pendakur papers using expenditure data).
+- The main limitation of private leisure is that its price is only known for those who work, for whom it coincides with the observed wage. For non-participants like children, the price of time is higher than their (unobserved) wage and we would have to estimate that in order to use time-use data to identify sharing. In the Arduini paper, she focuses on working couples and leaves this extension for future work. However, I think children are even more complicated than non-working adults.
+- The way I'm estimating the resource shares suggests that children themselves don't exist as household members in their own right, since the estimated shares add up to one for the male and female spouse/partners, and so falls under the public goods that each spouse/partner provides. I think one of the limitations of child-specific data in general, whether on time use or expenditure of goods in the strict sense, is that children may not have a lot of control over how they spend their time even without parents or other household members present (e.g. specified break times in school). So not only do children not earn wages, they don't even have a reliable way to enforce their own preferences.
+- If I had a third equation linked to a child-assignable good, I'd use $\eta_m + \eta_f + \eta_c = 1$
+- Parents presumably get enjoyment and returns out of parenting and spending time with their children. This is even the case for child-specific activities like homework and a child's private leisure, since children benefit developmentally from them and parents then benefit from this development. I think it would be really challenging to come up with a) a private assignable good and b) a shadow price of private leisure for children. 
+- This line of thinking could be extended to anyone's private leisure or even anyone's clothing. If one spouse takes assignable time for private leisure and this gives them something nice to talk about with the other, or if one spouse likes it when the other wears new clothing, then neither are really private.
+
 # ONLY ONE HOUSEHOLD MEMBER COMPLETES THE TIME DIARY IN THE ATUS!! I CANNOT DIRECTLY STUDY WITHIN-HOUSEHOLD SUBSTITUTION
 
 -   I can’t observe whether a female respondent increase in wage causes the husband's childcare to fall. I don't observe the spouse’s full time allocation or the spouse’s private leisure directly
@@ -146,9 +155,6 @@ $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g
 -   In ATUS, only one spouse reports a diary, so the two equations are estimated on disjoint household samples and cross-equation covariance is not identified. In the paper, the estimating system is (conceptually) two equations per household, a male assignable-good equation (male leisure expenditure) and a female assignable-good equation (female leisure expenditure) for the same household
 -   ATUS does invalidate the specific identification strategy in the paper (the one that uses both spouses’ assignable-good demands in the same household plus within-household adding-up restrictions and SUR correlation).
 -   With the ATUS, I do not observe the spouse’s diary outcomes. Rather, I get two different sets of households. This does not invalidate the idea of predicting shares themselves, but what I get is not the same object as the paper’s within-household resource shares.
-
-# The public good of childcare, children as public goods themselves
-- The way I'm estimating the resource shares kind of suggests that children themselves don't exist as their own household members. In fact, there are limited child time diaries in the UKTUS
 
 # Finding the sharing rule
 
@@ -179,7 +185,7 @@ print(make_sysfit_kable_df(fit_res_between_merged, rows_between))
 print(make_sysfit_kable_df(fit_res_opposite_merged, rows_opposite))
 ```
 
-- Also, here's a bit of comparison with the unconstrained SURE regressions and they are pretty similar:
+- Also, here's a bit of comparison with the unconstrained SURE regressions. I find the magnitudes of coefficients are similar across the two equations
 ```{r}
 # without coefficient restrictions
 print(make_sysfit_kable_df(fit_unres_within_merged, rows_within))
@@ -230,7 +236,7 @@ print(combined_plot)
 -   The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
 
 ### Comparing the two years:
-- In general, the 2015 sharing rule applied to the 2000 data provides a slightly narrower distribution for (necessarily) both sexes. Most estimated shares still fall within the unit interval.
+- In general, the 2015 sharing rule applied to the 2000 data provides a narrower distribution for (necessarily) both sexes. Most estimated shares still fall within the unit interval.
 ```{r, fig.width=5, fig.height=8}
 counterfactual_shares = plot_share_densities(counterfactual_within$data, 
                                             dev_type = "own")
@@ -242,7 +248,7 @@ combined_plot =
   narrowleisure_shares + broadleisure_shares +
   plot_layout(nrow = 2) +
   plot_annotation(
-    title = "Estimated resource shares, 2000",
+    title = "Estimated resource shares in the 2000 UKTUS",
     subtitle = "Using 2015 sharing rule (above) and 2000 sharing rule (below)",
     theme = theme(
       plot.title = element_text(face = "bold", size = 14),
@@ -253,8 +259,8 @@ print(combined_plot)
 - Here are some plots with the marginal contributions of each household characteristic to the estimated sharing rule. This one is for the merged data (2000 and 2015). Predictably, women’s resource shares are higher in households with high female hourly pay and low male hourly pay. These effects are about equal in magnitude! 
 - An increase in the age gap in the direction I've specified has a negative effect on the female resource share. 
 - What's interesting is that the education effects are kind of the opposite of what was found for the couples without children. Increasing male education has a small positive effect and increasing female education has a relatively larger negative effect. 
-- Being in a wealthier region generally means female resource shares are smaller...
-- 
+- Being in a wealthier region generally means female resource shares are smaller. 
+- The only ones that are statistically significant are the wage coefficients though, and the wage effects are consistent across both years.
 ```{r}
 marginal_impacts_merged = marginal_impacts(shares_fit_ownsex_r_merged, 
                                            data_merged, rows_within)
@@ -273,24 +279,36 @@ kable(marginal_impacts_2000) |>
   kable_styling("striped", full_width = F)
 ```
 
-- We see that opposite education effect in the 2015 data, where female education has a negative impact on female resource shares and male education has a negative impact on male resource shares. I don't really know why this would happen, but in a setting with children, increasing your educational attainment means delaying having a child, spending less time with your child once you do have one, or maybe both. This is true for both parents, but especially for mothers as they're the ones who actually have to give birth and stuff
+- We see that opposite education effect in the 2015 data, where female education has a negative impact on female resource shares and male education has a negative impact on male resource shares. This is statistically significant, unlike in the 2000 data. I don't really know why this would happen, but in a setting with children, increasing your educational attainment means delaying having a child, spending less time with your child once you do have one, or maybe both. This is true for both parents, but especially for mothers as they're the ones who actually have to give birth and stuff. Also, because takeup for educational attainment has been growing faster for females than males, the returns to female education could be lower (since females are increasing their educational attainment yet facing a comparatively unchanging group of potential matches)
 ```{r}
 marginal_impacts_2015 = marginal_impacts(shares_fit_ownsex_r_2015, 
                                          data_2015, rows_within)
 kable(marginal_impacts_2015) |>
   kable_styling("striped", full_width = F)
 ```
-- By the way, the wage standard deviations are very high because there are some extremely high earners in the data (or people who have high earnings but work few hours). 
+- By the way, the wage standard deviations are very high because there are some extremely high earners in the data (or people who have high earnings but work few hours). Something else I'll do is to remove these people and see what my estimates are afterwards.
+- Just to be clear, here is the regression output for the two years separately: 
+```{r}
+# without coefficient restrictions
+print(make_sysfit_kable_df(fit_res_within_2000, rows_within))
+# with coefficient restrictions
+print(make_sysfit_kable_df(fit_res_within_2015, rows_within))
+```
 
 ## Some discussion on childcare expenditure
 - Conditional on total number of children, the sex composition of children is plausibly exogenous. Using this, how do resource shares translate into childcare behaviour? In a similar way to the leisure expenditure definition, I found childcare expenditure in the time-use data based on the household member's time allocation and their hourly wage. 
+- Sex ratios at birth in the United Kingdom, 2017 to 2021 (ONS, 2023): This analysis finds evidence of a statistically significant imbalance in the ratio of males to females at birth for children of Indian ethnicity after 2 or more previous births, in England and Wales for the period of 2017 to 2021. This may indicate that sex selective abortions are taking place. If so, it is estimated that approximately 400 sex selective abortions may have taken place to female foetuses over the 5 year period from 2017 to 2021. No other evidence suggesting sex selective abortions occurring in the United Kingdom over the period 2017 to 2021 has been found in this analysis.
+
+```{r}
+# how much childcare data do we have
+nrow(data_activities_2015 |> filter(DVAge < 18) |> distinct(serial, pnum))
+nrow(data_activities_2000_long |> filter(age < 18) |> distinct(serial, pnum))
+```
 
 # To do:
-- table of marginal effects
-- table showing how Female resource shares vary with wages
+- table showing how female resource shares vary with wages
 -   if women get richer does time spent with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 -   child gender differences: having boys vs girls (this is plausibly exogenous) and some results in literature find that men tend to want to spend time with sons but not daughters. (check gender ratios of births in states) I think one way to do this would be to use the plausible (at least in an American context) exogeneity of having more sons versus more daughters in the household. Ultimately, I think I want to find the predicted resource shares using the sharing rule and the SURE regressions and then find the effect of resource shares on childcare provision for men and women using son and daughter ratios(?) as a source of plausible exogeneity.
--   if women get richer does time spent with child increase or decrease? extra dollar with woman’s wage = more time with baby for the woman and maybe less time for the man? would it be the other way around for the man? if both household members have the same wage increase, does it mean the woman will still be the one taking care of the kid or will there be a shift
 
 # thought jail slash random archive
 
@@ -300,13 +318,11 @@ My project (roughly): What is the impact of women’s control over their earning
 
 Literature on household inequality generally tends to and focuses on working couples *without* children, or models them as public goods. \[Arduini (2024)\]\[https://ifs.org.uk/sites/default/files/2025-05/WP202517-Estimating-intra-household-sharing-from-time-use-data.pdf\] uses the concept of private leisure time (time spent on leisure activities without other members of the household present) to estimate intra-household sharing. She defines the "assignable good", which is a private good. These parts are useful:
 
-*"The main limitation of private leisure is that its price is only known for those who work, for whom it coincides with the observed wage. For non-participants, the price of time is higher than their (unobserved) wage and we would have to estimate that in order to use time-use data to identify sharing. That extension is left for future work: in my application to UK data, I focus on working couples."*
-
 \[Blundell et al (2019)\]\[https://www.sfu.ca/\~pendakur/papers/BKLP16_longtitle.pdf\] still need to read this lol
 
 \[Hyee and Robledo (2010)\]\[https://www.nottingham.ac.uk/economics/documents/discussion-papers/10-06.pdf\]
 
-Calvi (2002): Under some mild assumptions, there exists a monotonic correspondence between Pareto weights and resource shares. Consequently, resource shares may also be interpreted as a measure of intrahousehold bargaining power. In effect, these are more tractable measures of power, as they are invariant to unobservable car- dinalizations of the utility functions.
+Calvi (2002): Under some mild assumptions, there exists a monotonic correspondence between Pareto weights and resource shares. Consequently, resource shares may also be interpreted as a measure of intra-household bargaining power. In effect, these are more tractable measures of power, as they are invariant to unobservable cardinalisations of the utility functions.
 
 \[Andrew et al (2021)\]\[https://ifs.org.uk/inequality/wp-content/uploads/2021/03/BN-The-careers-and-time-use-of-mothers-and-fathers.pdf\] show that heteronormative households, mothers are more likely to leave the labour force after having children regardless of the relative wages between mother and father before childbirth. (Much of the recent literature in this area focuses on COVID-19, maybe look into this.) It's difficult to really prove who in a relationship is doing the colloquially-named "mental load" of parenting (stuff like keeping appointments, planning meals, remembering when the laundry was last done), although anecdotally this is usually the wife or mother's job in this kind of household. (There may be a time use paper somewhere that tries to deal with this, maybe look into this). The ATUS records time spent doing activities, but not the thoughts that go on in someone's head. It also records the people present during an activity, but not, as far as I've seen, who is a active participant, or if someone needs to be actively prompted to do the groceries or pick up after a child.
 
