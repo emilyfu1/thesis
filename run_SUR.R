@@ -11,10 +11,10 @@ source("functions.R")
 setwd(wd)
 
 # import data (saves time running code)
-data_2015 = read_csv(paste0(data_direct, 
-                                        "sharing_est_data_2015.csv"))
-data_2000 = read_csv(paste0(data_direct, 
-                                        "sharing_est_data_2000.csv"))
+data_2015 = read_csv(paste0(data_direct,"sharing_est_data_2015.csv"),
+                            show_col_types = FALSE)
+data_2000 = read_csv(paste0(data_direct, "sharing_est_data_2000.csv"),
+                            show_col_types = FALSE)
 
 data_merged = bind_rows(data_2000 |> mutate(sample = "2000"),
                                data_2015 |> mutate(sample = "2015"))
