@@ -12,6 +12,8 @@ library(systemfit)
 library(ggplot2)
 library(purrr)
 library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
 library(lmtest)
 library(sandwich)
 library(car)
@@ -28,6 +30,10 @@ source("functions.R")
 
 # get all output
 source("run_SUR.R")
+
+# for display purposes
+options(scipen=999)
+options(digits=4)
 ```
 
 # The (baseline) framework
@@ -142,6 +148,7 @@ $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g
 -   With the ATUS, I do not observe the spouse’s diary outcomes. Rather, I get two different sets of households. This does not invalidate the idea of predicting shares themselves, but what I get is not the same object as the paper’s within-household resource shares.
 
 # The public good of childcare, children as public goods themselves
+- The way I'm estimating the resource shares kind of suggests that children themselves don't exist as their own household members. In fact, there are limited child time diaries in the UKTUS
 
 # Finding the sharing rule
 
@@ -174,14 +181,14 @@ print(make_sysfit_kable_df(fit_res_opposite_merged, rows_opposite))
 
 - Also, here's a bit of comparison with the unconstrained SURE regressions and they are pretty similar:
 ```{r}
+# without coefficient restrictions
 print(make_sysfit_kable_df(fit_unres_within_merged, rows_within))
-
+# with coefficient restrictions
 print(make_sysfit_kable_df(fit_res_within_merged, rows_within))
 ```
 
 - Basically, there's more of a difference when we change the definition of leisure. When we exclude personal care and sleep, there's a lot more of an even split on average. Here are some density plots that show this. Most, but not all, estimates fall within the unit interval.
-- Why would the inequality be so much more drastic when including personal care?
-```{r echo=FALSE, fig.width=5, fig.height=5}
+```{r echo=FALSE, fig.width=5, fig.height=8}
 
 narrowleisure_shares = plot_share_densities(shares_fit_ownsex_r_merged$data, 
                                             dev_type = "own")
@@ -195,11 +202,10 @@ combined_plot =
   plot_layout(nrow = 2) +
   plot_annotation(
     title = "Baseline results using pooled sample",
-    subtitle = "Estimated resource shares",
     theme = theme(
       plot.title = element_text(face = "bold", size = 14),
       plot.subtitle = element_text(size = 11)))
-      
+
 print(combined_plot)
 ```
 
@@ -224,12 +230,12 @@ print(combined_plot)
 -   The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
 
 ### Comparing the two years:
-- In general, the 2015 sharing rule applied to the 2000 data provides a much narrower distribution for (necessarily) both sexes, and is less unequal. Most estimated shares still fall within the unit interval.
-```{r}
-counterfactual_shares = plot_share_densities(counterfactual_r_within$data, 
+- In general, the 2015 sharing rule applied to the 2000 data provides a slightly narrower distribution for (necessarily) both sexes. Most estimated shares still fall within the unit interval.
+```{r, fig.width=5, fig.height=8}
+counterfactual_shares = plot_share_densities(counterfactual_within$data, 
                                             dev_type = "own")
 
-broadleisure_shares = plot_share_densities(shares_fit_ownsex_r_2000$data, 
+broadleisure_shares = plot_share_densities(shares_fit_ownsex_2000$data, 
                                            dev_type = "own")
 
 combined_plot =
@@ -244,10 +250,37 @@ combined_plot =
       
 print(combined_plot)
 ```
-- Also, I should make a plot similar to Table 3, but comparing the marginal contributions in 2000 with those from the 2015 sharing rule.
+- Here are some plots with the marginal contributions of each household characteristic to the estimated sharing rule. This one is for the merged data (2000 and 2015). Predictably, women’s resource shares are higher in households with high female hourly pay and low male hourly pay. These effects are about equal in magnitude! 
+- An increase in the age gap in the direction I've specified has a negative effect on the female resource share. 
+- What's interesting is that the education effects are kind of the opposite of what was found for the couples without children. Increasing male education has a small positive effect and increasing female education has a relatively larger negative effect. 
+- Being in a wealthier region generally means female resource shares are smaller...
+- 
 ```{r}
-# blah blah blah
+marginal_impacts_merged = marginal_impacts(shares_fit_ownsex_r_merged, 
+                                           data_merged, rows_within)
+
+kable(marginal_impacts_merged) |>
+  kable_styling("striped", full_width = F)
+
 ```
+
+- Now, I look at the marginal effects for both years of the UKTUS. In 2000, both female wage and female education outweigh the male wage and male education effects, so that women in households with higher household budgets have higher resource shares. 
+```{r}
+marginal_impacts_2000 = marginal_impacts(shares_fit_ownsex_r_2000, 
+                                         data_2000, rows_within)
+
+kable(marginal_impacts_2000) |>
+  kable_styling("striped", full_width = F)
+```
+
+- We see that opposite education effect in the 2015 data, where female education has a negative impact on female resource shares and male education has a negative impact on male resource shares. I don't really know why this would happen, but in a setting with children, increasing your educational attainment means delaying having a child, spending less time with your child once you do have one, or maybe both. This is true for both parents, but especially for mothers as they're the ones who actually have to give birth and stuff
+```{r}
+marginal_impacts_2015 = marginal_impacts(shares_fit_ownsex_r_2015, 
+                                         data_2015, rows_within)
+kable(marginal_impacts_2015) |>
+  kable_styling("striped", full_width = F)
+```
+- By the way, the wage standard deviations are very high because there are some extremely high earners in the data (or people who have high earnings but work few hours). 
 
 ## Some discussion on childcare expenditure
 - Conditional on total number of children, the sex composition of children is plausibly exogenous. Using this, how do resource shares translate into childcare behaviour? In a similar way to the leisure expenditure definition, I found childcare expenditure in the time-use data based on the household member's time allocation and their hourly wage. 
