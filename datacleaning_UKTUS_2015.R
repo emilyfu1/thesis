@@ -174,8 +174,13 @@ data_working_parents_2015 = data_individual_2015 |>
   group_by(serial) |>
   
   # based on actual hours worked
+  # filter(all(NetWkly > 0 | SENetPay > 0), 
+  #        all(HrWkUS > 0 | SEHrWkUs > 0)) |>
+  # filter(all(NetWkly > 0), all(HrWkUS > 0)) |>
+  
+  # filter(all(NetWkly > 0), all(HrWkAc > 0)) |>
   filter(all(NetWkly > 0 | SENetPay > 0), 
-         all(HrWkUS > 0 | SEHrWkUs > 0)) |>
+         all(HrWkUS > 0 | SEHrWkAc > 0)) |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -190,10 +195,10 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # combine different wage sources:
   mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
-  mutate(HrWkUS = if_else(HrWkUS > 0, HrWkUS, SEHrWkUs)) |>
+  mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc)) |>
   
   # individual expenditure calculated using time use
-  mutate(wage = NetWkly / HrWkUS, # calculated hourly wages
+  mutate(wage = NetWkly / HrWkAc, # calculated hourly wages
          
          # leisure and childcare expenditure
          total_leisure_exp = wage * total_leisure,

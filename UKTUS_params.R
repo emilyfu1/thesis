@@ -29,7 +29,7 @@ region_names = ls(region_codes)
 region_map = unlist(as.list(region_codes), use.names = TRUE)
 
 vars_to_suffix = c(
-  "wage", "educ", "NetWkly", "HrWkUS", "DVAge",
+  "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
@@ -107,10 +107,10 @@ rows_between = c("y" = "Budget",
                  "Bx_dev_agegap" = "Budget * dev. age gap")
 
 rows_opposite = c("y" = "Budget",
-                 "Bx_dev_wage_f_opp" = "Budget * dev. all hourly pay",
-                 "Bx_dev_wage_m_opp" = "Budget * dev. all hourly pay",
-                 "Bx_dev_educ_f_opp" = "Budget * dev. all qualification",
-                 "Bx_dev_educ_m_opp" = "Budget * dev. all qualification",
+                 "Bx_dev_wage_f_opp" = "Budget * dev. opp.sex hourly pay",
+                 "Bx_dev_wage_m_opp" = "Budget * dev. opp.sex hourly pay",
+                 "Bx_dev_educ_f_opp" = "Budget * dev. opp.sex qualification",
+                 "Bx_dev_educ_m_opp" = "Budget * dev. opp.sex qualification",
                  "Bx_dev_avgage" = "Budget * dev. average age",
                  "Bx_dev_agegap" = "Budget * dev. age gap")
 

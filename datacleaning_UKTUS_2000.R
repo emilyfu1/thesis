@@ -299,7 +299,7 @@ data_working_parents_2000 = data_individual_2000 |>
     q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),  # overtime default 0
     q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
     
-    HrWkUS = case_when(
+    HrWkAc = case_when(
       q14b == 2 ~ q14c_c,                    # no overtime
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
       TRUE ~ NA_real_
@@ -309,6 +309,8 @@ data_working_parents_2000 = data_individual_2000 |>
   
   # keep any households where both people are captured by this hourly wage
   filter(!is.na(wage)) |>
+  # deciding to keep employees only
+  # filter(wage_source == "employee_exact") |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
