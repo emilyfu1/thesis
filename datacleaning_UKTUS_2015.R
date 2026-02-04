@@ -152,21 +152,17 @@ kids_age_wide_2015 = find_kid_ages_wide(data_kids_2015)
 # find spouse/partner pairs in data
 spouse_pairs_2015 = find_spouse_pairs(all_relationships_2015)
 
-# parents
-data_working_parents_2015 = data_individual_2015 |>
-  # keep only hetero couples with child in household, valid education
-  filter(NumSSex == 0, NumChild > 0, !is.na(educ)) |>
+# get working straight couples with valid education, and then split into 
+# parents and non-parents
+data_working_couples_2015 = data_individual_2015 |>
+  # keep only valid education
+  filter(NumSSex == 0, !is.na(educ)) |>
   
   # show number of diaries and only keep diary month
   inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
   inner_join(diarymonth_households_2015, by = c("serial", "pnum")) |>
   # merge with time use
   inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
-  
-  # merge kid information 
-  inner_join(kids_counts_2015, by = c("serial")) |>
-  inner_join(kids_age_dist_2015, by = c("serial")) |>
-  inner_join(kids_age_wide_2015, by = c("serial")) |>
   
   # identify couples
   inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
@@ -175,7 +171,7 @@ data_working_parents_2015 = data_individual_2015 |>
   mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
   mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc)) |>
   mutate(wage = NetWkly / HrWkAc) |>
-
+  
   group_by(serial) |>
   
   # keep any households where both people are captured by this hourly wage
@@ -185,7 +181,7 @@ data_working_parents_2015 = data_individual_2015 |>
   # deciding to keep employees only
   # filter(wage_source == "employee_exact") |>
   
-  # check for couples who both have time diaries (filter after both joins)
+  # check for couples who both have time diaries (filter after joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
   
   ungroup() |> 
@@ -198,20 +194,53 @@ data_working_parents_2015 = data_individual_2015 |>
   
   # individual expenditure calculated using time use
   mutate(# leisure and childcare expenditure
-         total_leisure_exp = wage * total_leisure,
-         total_leisure_exp_r = wage * total_leisure_r,
-         private_leisure_exp = wage * total_private_leisure,
-         private_leisure_exp_r = wage * total_private_leisure_r,
-         total_childcare_exp = wage * total_childcare,
-         nospouse_childcare_exp = wage * total_childcare_nospouse,
-         # individual contribution to household budget
-         y_individual = wage * 24 * num_diaries_filled) |>
+    total_leisure_exp = wage * total_leisure,
+    total_leisure_exp_r = wage * total_leisure_r,
+    private_leisure_exp = wage * total_private_leisure,
+    private_leisure_exp_r = wage * total_private_leisure_r,
+    total_childcare_exp = wage * total_childcare,
+    nospouse_childcare_exp = wage * total_childcare_nospouse,
+    # individual contribution to household budget
+    y_individual = wage * 24 * num_diaries_filled)
+
+
+# parents
+data_working_parents_2015 = data_working_couples_2015 |>
+  # keep only hetero couples with child in household
+  filter(NumChild > 0) |>
   
+  # merge kid information 
+  inner_join(kids_counts_2015, by = c("serial")) |>
+  inner_join(kids_age_dist_2015, by = c("serial")) |>
+  inner_join(kids_age_wide_2015, by = c("serial")) |>
+
+  group_by(serial) |>
+  
+  # check for couples who both have time diaries (filter after joins)
+  mutate(spouse_present = spouse_pnum %in% pnum) |>
+  
+  ungroup() |> 
+  
+  # only keep couples who both have time diaries (filter after both joins)
+  filter(spouse_present) |>
+
   # keep households with under-18 kids
-  filter(kid_age_min < 18) |>
+  filter(kid_age_min < 18) 
+
+# get non-parent couples
+data_working_nonparents_2015 = data_working_couples_2015 |>
+  # keep only hetero couples without child in household
+  filter(NumChild == 0) |>
+
+  group_by(serial) |>
+
+  # check for couples who both have time diaries (filter after both joins)
+  mutate(spouse_present = spouse_pnum %in% pnum) |>
   
-  # for the really weirdly high owners, will filter them out
-  # because their
+  ungroup() |> 
+  
+  # only keep couples who both have time diaries (filter after joins)
+  filter(spouse_present)
   
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################

@@ -220,21 +220,17 @@ spouse_pairs_2000 = find_spouse_pairs(all_relationships_2000)
 # pay band midpoints
 q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 7000)
 
-# parents
-data_working_parents_2000 = data_individual_2000 |>
+# get working straight couples with valid education, and then split into 
+# parents and non-parents
+data_working_couples_2000 = data_individual_2000 |>
   
-  # keep only hetero couples with child in household, valid education
-  filter(hhtype4 %in% c(4,5,7,8), !is.na(educ)) |>
+  # keep only valid education
+  filter(!is.na(educ)) |>
   
   # show number of diaries and only keep diary month
   inner_join(individual_diaries_2000, by = c("serial", "pnum")) |>
   # merge with time use
   inner_join(activity_summaries_2000, by = c("serial", "pnum")) |>
-  
-  # merge kid information 
-  inner_join(kids_counts_2000, by = c("serial")) |>
-  inner_join(kids_age_dist_2000, by = c("serial")) |>
-  inner_join(kids_age_wide_2000, by = c("serial")) |>
   
   # identify couples
   inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
@@ -302,8 +298,7 @@ data_working_parents_2000 = data_individual_2000 |>
     HrWkAc = case_when(
       q14b == 2 ~ q14c_c,                    # no overtime
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
-      TRUE ~ NA_real_
-    )) |>
+      TRUE ~ NA_real_)) |>
   
   group_by(serial) |>
   
@@ -317,7 +312,7 @@ data_working_parents_2000 = data_individual_2000 |>
   
   ungroup() |> 
   
-  # only keep couples who both have time diaries (filter after both joins)
+  # only keep couples who both have time diaries (filter after joins)
   filter(spouse_present) |>
   
   # indicate whether someone is the spouse
@@ -325,17 +320,53 @@ data_working_parents_2000 = data_individual_2000 |>
   
   # individual expenditure calculated using time use
   mutate(# leisure and childcare expenditure
-         total_leisure_exp = wage * total_leisure,
-         total_leisure_exp_r = wage * total_leisure_r,
-         private_leisure_exp = wage * total_private_leisure,
-         private_leisure_exp_r = wage * total_private_leisure_r,
-         total_childcare_exp = wage * total_childcare,
-         nospouse_childcare_exp = wage * total_childcare_nospouse,
-         # individual contribution to household budget
-         y_individual = wage * 24 * num_diaries_filled) |>
+    total_leisure_exp = wage * total_leisure,
+    total_leisure_exp_r = wage * total_leisure_r,
+    private_leisure_exp = wage * total_private_leisure,
+    private_leisure_exp_r = wage * total_private_leisure_r,
+    total_childcare_exp = wage * total_childcare,
+    nospouse_childcare_exp = wage * total_childcare_nospouse,
+    # individual contribution to household budget
+    y_individual = wage * 24 * num_diaries_filled)
+
+
+# parents
+data_working_parents_2000 = data_working_couples_2000 |>
+  
+  # keep only hetero couples with child in household, valid education
+  filter(hhtype4 %in% c(4,5,7,8)) |>
+  # merge kid information 
+  inner_join(kids_counts_2000, by = c("serial")) |>
+  inner_join(kids_age_dist_2000, by = c("serial")) |>
+  inner_join(kids_age_wide_2000, by = c("serial")) |>
+  
+  group_by(serial) |>
+  
+  # check for couples who both have time diaries (filter after both joins)
+  mutate(spouse_present = spouse_pnum %in% pnum) |>
+  
+  ungroup() |> 
+  
+  # only keep couples who both have time diaries (filter after both joins)
+  filter(spouse_present) |>
   
   # keep households with under-18 kids
   filter(kid_age_min < 18)
+
+# get non-parent couples
+data_working_nonparents_2000 = data_working_couples_2000 |>
+  # keep only hetero couples without child in household
+  filter(hhtype4 %in% c(3,6)) |>
+  
+  group_by(serial) |>
+  
+  # check for couples who both have time diaries (filter after both joins)
+  mutate(spouse_present = spouse_pnum %in% pnum) |>
+  
+  ungroup() |> 
+  
+  # only keep couples who both have time diaries (filter after joins)
+  filter(spouse_present)
 
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################

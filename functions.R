@@ -116,6 +116,147 @@ find_spouse_pairs = function(relationships_data) {
   return(spouse_pairs)
 }
 
+# two similar functions to get individual level data for both types
+
+pivot_parents = function(couplesdata) {
+  pivoted_parents = couplesdata |>
+    zap_labels() |>
+    # letter for creating variable names
+    mutate(sex_tag = if_else(male, "m", "f")) |>
+    select(
+      serial, sex_tag, dgorpaf, all_of(vars_to_suffix),
+      # child info (household-level already, duplicated across spouses)
+      num_kids_total, num_kids_male, num_kids_female,
+      kid_age_min, kid_age_max, kid_age_mean,
+      n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
+      n_kid_aged_11_13, n_kid_aged_14_17) |>
+    pivot_wider(
+      # keep all the household-level stuff: kids, region, serial
+      id_cols = c(serial, dgorpaf, num_kids_total, 
+                  num_kids_male, num_kids_female,
+                  kid_age_min, kid_age_max, kid_age_mean,
+                  n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
+                  n_kid_aged_11_13, n_kid_aged_14_17),
+      names_from = sex_tag,
+      values_from = all_of(vars_to_suffix),
+      names_sep = "_")
+}
+
+pivot_nonparents = function(couplesdata) {
+  pivoted_parents = couplesdata |>
+    zap_labels() |>
+    # letter for creating variable names
+    mutate(sex_tag = if_else(male, "m", "f")) |>
+    select(
+      serial, sex_tag, dgorpaf, all_of(vars_to_suffix)) |>
+    pivot_wider(
+      # keep all the household-level stuff: kids, region, serial
+      id_cols = c(serial, dgorpaf),
+      names_from = sex_tag,
+      values_from = all_of(vars_to_suffix),
+      names_sep = "_")
+}
+
+# function to create variables for sharing estimates
+get_sharing_data = function(householdcouples, regionalwealth) {
+  sharing_est_data = householdcouples |>
+    inner_join(regionalwealth, by = c("dgorpaf")) |>
+    
+    # deviations from means of household-level characteristics
+    mutate(
+      # within-sex deviations of education and age
+      dev_wage_f_only = wage_f - mean(wage_f, na.rm = TRUE),
+      dev_wage_m_only = wage_m - mean(wage_m, na.rm = TRUE),
+      dev_educ_f_only = educ_f - mean(educ_f, na.rm = TRUE),
+      dev_educ_m_only = educ_m - mean(educ_m, na.rm = TRUE),
+      
+      # deviations of education and age for both sexes (maybe change this to opposite sexes)
+      dev_wage_f_all = wage_f - mean(c(wage_f, wage_m), na.rm = TRUE),
+      dev_wage_m_all = wage_m - mean(c(wage_f, wage_m), na.rm = TRUE),
+      dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
+      dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
+      
+      # deviations of education and age from opposite sex
+      dev_wage_f_opp = wage_f - mean(wage_m, na.rm = TRUE),
+      dev_wage_m_opp = wage_m - mean(wage_f, na.rm = TRUE),
+      dev_educ_f_opp = educ_f - mean(educ_m, na.rm = TRUE),
+      dev_educ_m_opp = educ_m - mean(educ_f, na.rm = TRUE),
+      
+      # deviations of average age of couple and age gap
+      dev_avgage = avgage - mean(avgage, na.rm = TRUE),
+      dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
+      
+      # deviation of household from regional wealth 
+      dev_gdppc = income_annual - rgdppc) |>
+    
+    # interaction terms
+    mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
+           Bx_dev_wage_m_only = y * dev_wage_m_only,
+           Bx_dev_educ_f_only = y * dev_educ_f_only,
+           Bx_dev_educ_m_only = y * dev_educ_m_only,
+           
+           Bx_dev_wage_f_all = y * dev_wage_f_all,
+           Bx_dev_wage_m_all = y * dev_wage_m_all,
+           Bx_dev_educ_f_all = y * dev_educ_f_all,
+           Bx_dev_educ_m_all = y * dev_educ_m_all,
+           
+           Bx_dev_wage_f_opp = y * dev_wage_f_opp,
+           Bx_dev_wage_m_opp = y * dev_wage_m_opp,
+           Bx_dev_educ_f_opp = y * dev_educ_f_opp,
+           Bx_dev_educ_m_opp = y * dev_educ_m_opp,
+           
+           Bx_dev_avgage = y * dev_avgage,
+           Bx_dev_agegap = y * dev_agegap,
+           Bx_dev_gdppc = y * dev_gdppc)
+}
+
+
+# two similar sharing estimates data functions (aside from annual income)
+
+get_household_level_2000 = function(couplesdata, regionalwealth, parents) {
+  if (parents == TRUE) {
+    sharing_est_data_2000 = pivot_parents(couplesdata)
+  } else {
+    sharing_est_data_2000 = pivot_nonparents(couplesdata)
+  }
+  sharing_est_data_2000 = sharing_est_data_2000 |>
+    
+    # fill in annual income, household budget, average age, age gap
+    mutate(income_annual = (NetWkly_f + NetWkly_m)*52,
+           y = y_individual_f + y_individual_m,
+           avgage = (DVAge_f + DVAge_m)/2,
+           agegap_m = DVAge_m - DVAge_f)
+  
+  # get new variables
+  sharing_est_data_2000 = get_sharing_data(sharing_est_data_2000, 
+                                           regionalwealth)
+  
+  return(sharing_est_data_2000)
+}
+
+get_household_level_2015 = function(couplesdata, regionalwealth, parents) {
+  if (parents == TRUE) {
+    sharing_est_data_2015 = pivot_parents(couplesdata)
+  } else {
+    sharing_est_data_2015 = pivot_nonparents(couplesdata)
+  }
+  sharing_est_data_2015 = sharing_est_data_2015 |>
+    # fill in annual income, household budget, average age, age gap
+    mutate(income_annual = if_else(Income > 0, # treat don't know and refused
+                                   Income * 12,
+                                   (NetWkly_f + NetWkly_f)*52),
+           y = y_individual_f + y_individual_m,
+           avgage = (DVAge_f + DVAge_m)/2,
+           agegap_m = DVAge_m - DVAge_f) |>
+    select(!Income)
+  
+  # get new variables
+  sharing_est_data_2015 = get_sharing_data(sharing_est_data_2015, 
+                                           regionalwealth)
+  
+  return(sharing_est_data_2015)
+}
+
 ################################## Regressions #################################
 
 # matrix of restrictions for SUREs
@@ -476,7 +617,6 @@ marginal_impacts = function(res, data, rows_map) {
 }
 
 `%||%` = function(x, y) if (!is.null(x)) x else y
-
 
 ########################## Archive: import FRED data ###########################
 
