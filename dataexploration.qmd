@@ -99,7 +99,13 @@ JT = f^{JT}(\mathbf{jt})$$
 -   What she needs: The variation in assignable good expenditure with household budget is taken to be informative about how household budget is split between individual members’ second stage budgets. This relies on the strong assumption that men and women have the same preference parameter for the assignable good, or else that we already know the preference parameters of men and women, e.g. from singles data.
 -   When using private leisure as the assignable good, this should not be interpreted as assuming that expenditure on any specific material good is split between members in the same manner as leisure. Men and women have a similar preference parameter for private leisure specifically. This means that, if they have the same wages and the same individual budget, then they will have the same hours of private leisure.
 
-$$u_{t,g} = \sum_{j \epsilon \Omega^c} (\alpha_{t,g}^{cj} \ln{(c_{i,h}^j)}) + \sum_{j \epsilon \Omega^X} (\alpha_{t,g}^{Xj} \ln{(X_{h}^j)}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Tst,g} \ln{(jt_{s,h})}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Dst,g} \ln{(d_{s,h})})$$ - Resource shares are equal to Pareto weights scaled by a composite preference parameter. For instance, a significant effect of wages on the sharing rule implies that Pareto weights vary with wages
+$$u_{t,g} = \sum_{j \epsilon \Omega^c} (\alpha_{t,g}^{cj} \ln{(c_{i,h}^j)}) + \sum_{j \epsilon \Omega^X} (\alpha_{t,g}^{Xj} \ln{(X_{h}^j)}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Tst,g} \ln{(jt_{s,h})}) + \sum_{st \epsilon h} (\alpha_{t,g}^{Dst,g} \ln{(d_{s,h})})$$ 
+
+- Resource shares are equal to Pareto weights scaled by a composite preference parameter. For instance, a significant effect of wages on the sharing rule implies that Pareto weights vary with wages
+- Cobb-Duuglas preferences provides the following estimating equation:
+
+$$w_{i,h}l_{i,h} = \alpha_{t,g}^{l} y_h (\eta_{t,g}^0 + \sum_{z} \eta_{t,g}^{z}(z_h - \bar{z}))$$
+
 
 ### Private leisure C-D SAP and private leisure C-D SRAT:
 
@@ -110,7 +116,7 @@ $$u_{t,g} = \sum_{j \epsilon \Omega^c} (\alpha_{t,g}^{cj} \ln{(c_{i,h}^j)}) + \s
 ### Public good SAP and public good C-D SAP:
 
 -   Public Goods SAP: Using family data probably violates assumption that total expenditure on public goods does not vary with the distribution of bargaining power in the household. This assumption does not amount to a unitary model in that the distribution of bargaining power still affects the composition of public good (and private good) expenditure; it simply does not affect the overall split between private and public expenditure. For example, female empowerment could lead to more spending on housing and less on television subscriptions.
--   With Cobb-Douglas preferences, we can achieve the desired restriction with public good C-D SAP. Public good C-D SAP imposes that the sum of all public good preference parameters is the same for all individuals of the same household category g:
+-   Public good C-D SAP imposes that the sum of all public good preference parameters is the same for all individuals of the same household category g:
 
 $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g}^{Tst,g} + \sum_{st \epsilon h} \alpha_{t,g}^{Dst,g} = a_{g}^Q$$
 
@@ -135,14 +141,6 @@ $$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g
 -   Next, estimate $\hat{\eta_{t}^{z}} = \frac{\hat{\beta_{t}^z}}{\hat{\alpha_{t}^{l}}}$, since $\beta_{t}^z = \alpha_{t}^{l} \eta_{t}^z$.
 -   Armed with the sharing rule, one can estimate individual-specific resource shares in the dataset used for estimation (the time-use dataset in this case): $\hat{\eta_{i,h}} = \hat{\eta}_{t}^0 + \sum_{z} \hat{\eta_{t}^{z}} (z_h - \bar{z})$.
 
-### Issues
-
--   The identification problem we face is that the man’s expenditure on private leisure may be more or less responsive than the woman’s to changes in the household budget for one of two reasons, or a combination of them. The first possibility is that the man receives a larger proportion of the household budget (net of public good expenditure), i.e. he has a higher resource share than the woman. The second possibility is that the man’s preference for private leisure is stronger relative to the woman’s, so that he spends a larger proportion of his individual budget on private leisure. In order to disentangle these two channels, she shuts down the preference channel with the identifying assumption to identify the sharing rule.
--   Under CD-SAP, private leisure expenditure for individuals of any type (within a given household category) $l_i w_i = α^l y_h η_{i,h}$ responds in the same way to the same increase in individual budget $y_h η_{i,h}$, so differences in responsiveness to changes in $y_h$ identify differences in sharing.
--   All changes in assignable-good expenditure induced by distribution factors operate through the sharing rule. She distinguishes between (i) prices/market variables (like wages), which can affect both preferences/demands and bargaining power, and (ii) distribution factors, which are assumed to affect bargaining power only, not preferences or the budget set.
--   Private leisure C-D SRAT rules out distribution factors changing relative tastes for leisure between men and women, and household composition or bargaining environment altering how much men vs women intrinsically value leisure.
--   Public goods C-D SAP says individuals may differ in how much they care about the public good, but the total weight placed on public goods is fixed for a given household type (e.g. heterosexual couples with children).
-
 # How I'm working within this framework:
 
 -   Maybe there could be room for extension of the existing model in her paper to try and make childcare a richer aspect of the model, maybe to try and explain how/why parenthood collides with the private leisure C-D SAP and public good SAP assumptions? The idea is to see if bargaining shifts who supplies the required childcare (mother vs father), it can change which spouse gets squeezed out of leisure, and it can also change the effective private budget.
@@ -157,7 +155,142 @@ child human capital = h(mother's time + father's time, parents’ material or fi
 
 -   Children also create a minimum time requirement. Even for people who have childcare assistance, they can't very well never interact with their children. Coordinating childcare takes time too. Childcare can change the feasible set for being alone.
 
-mother's time + father's time \>= all childcare time (as a function of household and parent characteristics)
+mother's time + father's time >= all childcare time (as a function of household and parent characteristics)
+
+## Why Public Goods C-D SAP is needed
+
+With Cobb–Douglas preferences, individuals spend a constant share of their individual private budget $\rho_{t,h}$ on private leisure:
+
+$$w_{t,h}l_{t,h} = \alpha^l_{t,g},\rho_{t,h}$$
+
+But $\rho_{t,h}$ is the individual’s share of the household budget net of public goods expenditure:
+
+$$\rho_{t,h} ;=; \eta_{t,h},(y_h - R_h Q_h)$$
+
+So the fundamental equation is
+
+$$ w_{t,h}l_{t,h} ;=; \alpha^l_{t,g},\eta_{t,h},(y_h - R_h Q_h)
+\tag{A}$$
+
+Public-goods C-D SAP says: for each person type $t$ in category $g$, the sum of Cobb-Douglas preferemce parameters is the same.
+
+$$\sum_{j \epsilon \Omega^X} \alpha_{t,g}^{j} + \sum_{st \epsilon h} \alpha_{t,g}^{Tst,g} + \sum_{st \epsilon h} \alpha_{t,g}^{Dst,g} = a_{g}^Q$$
+
+This also defines the total private weight for person type $t$:
+$$a^{priv}_{t,g} \equiv 1 - a_g^Q,$$
+which is now the same for everyone in the household category $g$. In a Cobb–Douglas problem, the share of the full budget spent on a block equals the sum of the preference parameters on that block. So (PG) implies:
+
+1. The household spends a constant fraction (a_g^Q) of (y_h) on public goods: $R_h Q_h = a_g^Q, y_h$
+2, Therefore the private residual is a constant fraction of (y_h): $y_h - R_h Q_h = (1-a_g^Q),y_h.$
+
+So public-goods C-D SAP gives you:
+
+$$
+(y_h - R_h Q_h) = \lambda_g y_h
+\quad \text{with } \lambda_g = 1-a_g^Q.
+\tag{B}
+$$
+Substitute (B) into (A):
+
+$$w_{t,h}l_{t,h} = \alpha^l_{t,g} \eta_{t,h} \lambda_g y_h$$
+
+Absorb the category constant $\lambda_g$ into $\alpha^l_{t,g}$ (or into the $\beta$’s). Define $\tilde\alpha^l_{t,g}\equiv \lambda_g \alpha^l_{t,g}$. Then:
+
+$$ w_{t,h}l_{t,h} = \tilde\alpha^l_{t,g} \eta_{t,h} y_h
+\tag{C}$$
+
+Public Goods C-D SAP is what justifies replacing $(y_h-RQ_h)$ by resource shares multiplied by $y_h$.
+
+Without it, we would need to find $(y_h-RQ_h)$ directly.
+
+With (C), linearising $\eta_{t,h}$ gives:
+
+$$\eta_{t,h} = \eta_{t,g}^0 + \sum_z \eta_{t,g}^z (z_h-\bar z)$$
+
+Then we end up with 
+
+$$w_{t,h}l_{t,h} = \tilde\alpha^l_{t,g} y_h\left(\eta_{t,g}^0 + 
+\sum_z \eta_{t,g}^z (z_h-\bar z)\right) \times \varepsilon_{t,h}$$
+
+So the coefficients are:
+
+$$\beta_{t,g}^0 = \tilde\alpha_{t,g}^l \eta_{t,g}^0,\qquad
+\beta_{t,g}^z = \tilde\alpha_{t,g}^l \eta_{t,g}^z.$$
+
+In other words, in the regressions I am really trying to find $\tilde\alpha^l_{t,g} = (1-a_g^Q)\alpha^l_{t,g}$. Public-goods C-D SAP is what makes $(1-a_g^Q)$ a constant within the household category, so it can be absorbed and doesn’t mess up identification.
+
+If public-goods C-D SAP holds, total public spending will be a fixed fraction of $y_h$ for some household so that variation in $y_h$ maps cleanly into variation in the private goods part. Then, variation in leisure expenditure in $y_h$ is informative about $\eta$ (subject to the private-leisure SAP/SRAT restriction to deal with $\alpha^l$.
+
+If it fails, $R_h Q_h$ (and hence $y_h-RQ_h$) can vary with distribution factors $z_h$. Then the slope on $y_h(z_h - z)$ conflates changes in $\eta_{t,h}$ and changes in the size of the private residual $(y_h-RQ_h)$, so the $\beta^z$’s no longer isolate sharing-rule responses. If bargaining power shifts how much the household “wants” to devote to public goods in general, then $(y_h-RQ_h)$ moves with $z_h$ which would mean resource shares are not identified.
+
+## Why Private Leisure C-D SAP is needed
+For a household (h) in category (g), individual (t)’s resource share is approximated as
+
+$$ \eta_{t,h} = \eta_{t,g}^0 + \sum_z \eta_{t,g}^z (z_h - \bar z)$$
+For every household (h), $\sum_{t \in h} \eta_{t,h} = 1$
+
+Plug in the approximation:
+
+$$\sum_{t\in h}\eta_{t,g}^0 + \sum_z (z_h-\bar z)\sum_{t\in h}\eta_{t,g}^z =1$$
+
+Since this must hold for all $z_h$, we need:
+
+1. $$\sum_{t\in h}\eta_{t,g}^0 = 1$$
+
+2. $$\sum_{t\in h}\eta_{t,g}^z = 0 \quad\forall z$$
+
+With Cobb–Douglas preferences over private leisure and under the two-stage structure, individual $t$’s leisure expenditure satisfies
+
+$$ w_{t,h} l_{t,h} = \alpha_{t,g}^l y_h (\eta_{t,g}^0 + \sum_{z} \eta_{t,g}^{z}(z_h - \bar{z})) \eta_{t,h} $$
+
+This provides estimating equations of the form
+
+$$ w_{t,h} l_{t,h} = \beta_{t,g}^0 y_h + \sum_z \beta_{t,g}^z , y_h (z_h-\bar z) + \varepsilon_{t,h}$$
+
+where
+
+$$\beta_{t,g}^0 = \alpha_{t,g}^l \eta_{t,g}^0 $$
+and 
+
+$$ \beta_{t,g}^z = \alpha_{t,g}^l \eta_{t,g}^z. $$
+
+Private leisure C-D SAP states that for a given household category $g$, all individuals have the same Cobb–Douglas parameter for private leisure:
+$$\alpha_{t,g}^l = \alpha_g^l \quad \forall t\in h$$
+Under SAP, the slope coefficients become $\beta_{t,g}^z = \alpha_g^l \eta_{t,g}^z$ 
+
+Now sum over household members:
+
+$$ \sum_{t\in h}\beta_{t,g}^z = \alpha_g^l \sum_{t\in h}\eta_{t,g}^z$$
+
+But from the adding-up condition above: 
+$$\sum_{t\in h}\eta_{t,g}^z = 0 $$
+
+Therefore:
+$$ \sum_{t\in h}\beta_{t,g}^z = 0$$ 
+Without SAP, this is
+
+$$ \sum_t \beta_{t,g}^z = \sum_t \alpha_{t,g}^l \eta_{t,g}^z$$
+
+which does not in general equal zero unless $\alpha_{t,g}^l$ is constant across (t).
+
+If SAP fails, then for each $z$:
+
+$$\beta_{f}^z = \alpha_f^l \eta_f^z,
+\quad
+\beta_{m}^z = \alpha_m^l \eta_m^z$$
+
+We observe $\beta_f^z, \beta_m^z$ and two equations with four unknowns:
+$$\alpha_f^l,\ \alpha_m^l,\ \eta_f^z,\ \eta_m^z$$
+SRAT may be more defensible once I go to a setting with children, as parenthood plausibly shifts the level but not the ranking of leisure preferences between men and women. This could be more believable than men and women having the same level of preference for private leisure within household type. However, it is still a strong assumption as parenting likely changes preferences asymmetrically due to gender norms. Suppose motherhood reduces women’s leisure preference relative to men, that is, women put less weight on private leisure (or face guilt/constraints that behave like a lower effective preference parameter). If women have a lower taste for private leisure, they will choose less leisure even with the same resources.
+
+## A use for weekend and weekday diaries?
+We observe time diaries for one weekday and one weekend day. On a weekend versus a weekday, families are likely to perform more childcare and do less market work. In households with children, the assumptions that let us identify η from time use are systematically violated
+
+I could go from a discussion of the collective household model and its motivation to looking at how time use is impacted by childcare for men vs women, using the weekend as a plausible source of exogenous variation. Conditional on working hours, being in a weekend setting shifts childcare in a way that is not chosen by the household and not driven by bargaining power or preferences. Households cannot choose for a weekend or weekday to happen. I have no reason to believe that households with stronger female bargaining power systematically choose different behaviour in anticipation of childcare needs only on the weekend. Female barganing power in a household likely 
+
+## Adapting these identifying assumptions
+
+Once children are in the picture, we could conceivably condition Private Leisure C-D SAP and Public Goods C-D SAP on observable childcare need?
 
 ## What are children?
 
@@ -169,7 +302,7 @@ mother's time + father's time \>= all childcare time (as a function of household
 -   This line of thinking could be extended to anyone's private leisure or even anyone's clothing. If one spouse takes assignable time for private leisure and this gives them something nice to talk about with the other, or if one spouse likes it when the other wears new clothing, then neither are really private.
 -   Dauphin et al (2008) and Cherchye, De Rock and Vermeulen (2008) test whether observed household demand functions are consistent with children having separate utility functions, and find evidence in favor of this hypothesis, though they do not estimate children’s shares.
 -   The collective household model has been proposed partly in response to the dissatisfaction with the unitary model. The former simply assumes that the family decision process, whatever its exact nature, leads to Pareto efficient outcomes. One interesting feature of the collective model is that it does not require the specification of the bargaining process. Evidently, the generality of the efficiency assumption comes at a price: the model is not very informative about which variables, other than those in the budget constraint, may influence the decision process. In particular, the model is totally silent as to the role children may play in the process.
--   Yet every parent knows that children, even at a very early age, have their own preferences over consumption and their parents’ labour supply. In an experiment, Harbaugh et al. (2001) found that “at age 7 children’s choices about consumption goods show clear evidence of rationality, though also many inconsistencies. By age 11, choices by children... are as rational as choices by adults”. Harbaugh et al. (2003) further showed in another experiment that children display good bargaining skills as early as 7 years of age. Naturally, one may object to the inclusion of young children as decision-makers on several grounds. Within a bargaining framework, the child’s threat point could correspond to his level of well-being in a non-cooperating equilibrium with his parents. Parents could then resort to punishment to reduce their child’s bargaining power or to make it non existent
+-   Yet every parent knows that children, even at a very early age, have their own preferences over consumption and their parents’ labour supply. In an experiment, Harbaugh et al. (2001) found that “at age 7 children’s choices about consumption goods show clear evidence of rationality, though also many inconsistencies. By age 11, choices by children... are as rational as choices by adults”. Harbaugh et al. (2003) further showed in another experiment that children display good bargaining skills as early as 7 years of age. Naturally, one may object to the inclusion of young children as decision-makers on several grounds. Within a bargaining framework, the child’s threat point could correspond to his level of well-being in a non-cooperating equilibrium with his parents. Parents could then resort to punishment to reduce their child’s bargaining power or to make it non existent.
 
 # Finding the sharing rule
 
@@ -250,7 +383,7 @@ print(combined_plot)
 
 ### An example
 
--   Suppose in 2000, the woman's wage relative to all other wages mattered *less* for the sharing rule, i.e. $\hat\eta_t^{w_f,(2000)}$ is small.
+-   Suppose in 2000, the woman's wage relative to all other wages mattered less for the sharing rule, i.e. $\hat\eta_t^{w_f,(2000)}$ is small.
 -   In 2015, maybe $\hat\eta_t^{w_f,(2015)}$ is larger. This would mean that household allocations are more affected by the woman's wage relative to all other wages. Women’s human capital carries more weight in allocation than it used to
 -   Applying the 2015 coefficients to 2000 households: even though 2000 women earned less on average, the same relative wage difference would buy them more bargaining power under the 2015 rule.
 -   The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
@@ -287,7 +420,7 @@ print(combined_plot)
 
 ```{r}
 marginal_impacts_merged = marginal_impacts(shares_fit_ownsex_r_merged, 
-                                           data_merged, rows_within)
+                                           sharing_est_data_merged, rows_within)
 
 kable(marginal_impacts_merged) |>
   kable_styling("striped", full_width = F)
@@ -323,39 +456,6 @@ print(make_sysfit_kable_df(fit_res_within_2000, rows_within))
 print(make_sysfit_kable_df(fit_res_within_2015, rows_within))
 ```
 
-## Some discussion on childcare expenditure
-
--   In a similar way to the leisure expenditure definition, I found childcare expenditure in the time-use data based on the household member's time allocation and their hourly wage.
--   Sex ratios at birth in the United Kingdom, 2017 to 2021 (ONS, 2023): This analysis finds evidence of a statistically significant imbalance in the ratio of males to females at birth for children of Indian ethnicity after 2 or more previous births, in England and Wales for the period of 2017 to 2021. This may indicate that sex selective abortions are taking place. If so, it is estimated that approximately 400 sex selective abortions may have taken place to female foetuses over the 5 year period from 2017 to 2021. No other evidence suggesting sex selective abortions occurring in the United Kingdom over the period 2017 to 2021 has been found in this analysis.
--   Separate regressions for male and female parents (condition on total number of kids, region, year, anything from sharing estimates) $$\text{nospouse_childcare_exp}_{f,h} = \beta_f \hat{\eta}_{f,h} + X_h'\gamma_f + \varepsilon_{f,h}$$ $$\text{nospouse_childcare_exp}_{m,h} = \beta_f \hat{\eta}_{m,h} + X_h'\gamma_m + \varepsilon_{m,h}$$
-
-```{r}
-# get the data:
-data_est_childcare = data_merged |>
-  inner_join(shares_fit_ownsex_merged$data, by = c("serial")) |>
-  mutate(boy_share = num_kids_male / num_kids_total,
-         girl_share = num_kids_female / num_kids_total)
-```
-
--   Some literature finds that a child's sex at birth impacts a parent's preferences around that child (Dahl and Moretti, 2005), and plausibly then the amount of time a parent spends with their child(ren). Yet, conditional on the total number of children (families who want a son may keep having children until they get one), the sex composition of children is plausibly exogenous. That is, parents may choose how many children to have, but they cannot choose the sex mix of those children: $(\text{Number of boys}_h ∣ \text{total number of kids})\perp \text{preferences, resources, or bargaining power}_h$
--   I want to know if a higher estimated resource share for women translate into more childcare expenditure. Child sex composition helps because it affects childcare demand, but does not directly affect: wages, household budget, or bargaining power $$\text{nospouse_childcare_exp}_{f,h} = \beta_m \hat{\eta}_{f,h} + \delta_m \text{boy_share}_h + \theta_f \big(\hat{\eta}_{f,h} \times \text{boy_share}_h\big) + X_h'\gamma_f + \varepsilon_{f,h}$$
-
-$$\text{nospouse_childcare_exp}_{m,h} = \beta_m \hat{\eta}_{m,h} + \delta_m \text{boy_share}_h + \theta_m \big(\hat{\eta}_{m,h} \times \text{boy_share}_h\big) + X_h'\gamma_m + \varepsilon_{m,h}$$ - For instance, in households with only sons, increasing the female resource share from 0 to 1 is associated with more individual childcare expenditure from both parents (so parenting-related time use while the other parent isn't present). Moving from all boys to all girls increases childcare expenditure from the mother but decreases child expenditure from the father
-
-```{r}
-# females
-childcareexp_moms = lm(nospouse_childcare_exp_f ~ 0 + shareown_etahat_f * girl_share + 
-                         num_kids_total, 
-                       data = data_est_childcare)
-
-# Male childcare regression
-childcareexp_dads = lm(nospouse_childcare_exp_m ~ 0 + shareown_etahat_m * girl_share +
-                         num_kids_total, 
-                       data = data_est_childcare)
-
-print(summary(childcareexp_moms))
-print(summary(childcareexp_dads))
-```
 
 ## Kind of sort of not testing assumptions:
 
@@ -365,28 +465,43 @@ If private leisure C-D SAP holds then the proportion of household budget spent o
 # check budget share on private leisure correlated w/ estimated resource shares
 
 # merge with sharing_est_data
-data_merged_shares = inner_join(shares_fit_ownsex_r_merged$data,
-                                data_merged,
-                                by=c('serial')) |>
+sharing_est_data_merged_shares = inner_join(shares_fit_ownsex_r_merged$data,
+                                sharing_est_data_merged,
+                                by=c('serial', 'is_weekend')) |>
   mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
            private_leisure_exp_r_m) / y,
          share_budget_leisure = (private_leisure_exp_f + 
            private_leisure_exp_m) / y)
 
 # correlation of estimated resource shares (broad leisure definition)
-cor.test(data_merged_shares$share_budget_leisure, 
-         data_merged_shares$shareown_etahat_f)
+cor.test(sharing_est_data_merged_shares$share_budget_leisure, 
+         sharing_est_data_merged_shares$shareown_etahat_f)
 
 # (narrow leisure definition)
-cor.test(data_merged_shares$share_budget_leisure_r, 
-         data_merged_shares$shareown_etahat_f)
+cor.test(sharing_est_data_merged_shares$share_budget_leisure_r, 
+         sharing_est_data_merged_shares$shareown_etahat_f)
 ```
+The share of household budget spent on private leisure is slightly negatively correlated with the woman's estimated resource share, but this correlation loses significance once I include personal care and sleep to match Arduini's definition of leisure.
 
-In fact there is a statistically significant relationship but it is not robust to the definition of leisure. The share of household budget spent on private leisure is slightly negatively correlated with the woman's estimated resource share, but this correlation loses significance once I include personal care and sleep. Bargaining power is supposed to shift who gets private leisure, not how much the household devotes to private leisure in total.
+The SRAT assumption allows preference levels to vary between different people and different household categories, while requiring that the ratio of the parameters is constant across household compositions. There is no particular reason to suspect women’s and men’s preferences change in a different manner when transitioning from living alone to living in a couple. The assumption is stronger for households with children, since the idea that single men and women’s preferences change similarly when they have children is less realistic.
 
-The SRAT assumption allows preference levels to vary between different people and different household categories, while requiring that the ratio of the parameters is constant across household compositions. While SRAT is not an innocuous assumption, it does not seem extraordinarily restrictive for working couples without cohabiting children. There is no particular reason to suspect women’s and men’s preferences change in a different manner when transitioning from living alone to living in a couple. The assumption is stronger for households with children, since the idea that single men and women’s preferences change similarly when they have children is less realistic. Define the ratio of men’s preference weight on private leisure to women’s preference weight implied by
+Using only time use data requires the Public Goods C-D SAP assumption that preference parameters over all public goods sum to the same quantity for men and women. With time use data, I don't have information on market goods. I don't particularly want to clean an entire expenditure survey dataset, so I think what I can do here is see (at least indirectly) whether public-good SAP plausibly fails specifically through childcare or maybe through domestic work (similarly valued at wage). I do have extensive time use data about domestic work.
 
-Also, I assumed that preference parameters over all public goods sum to the same quantity for men and women.
+## an empirical exercise
+
+
+Data I should use: probably individual-level data_working_parents_2015 and data_working_parents_2000
+
+Variables I should use:
+1. `is_weekend`: weekend vs weekday diaries
+2. `dgorpaf`: region the household lives in 
+3. `serial`: household ID
+4. `sample`: which year the data is from (2000 or 2014)
+5. `total_private_leisure`: leisure expenditure of the respondent, including eating, drinking, sleeping, and other personal care
+6. `total_private_leisure_r`: leisure expenditure of the respondent, excluding eating, drinking, sleeping, and other personal care
+7. The respondent's time spent working that day (In estimating resource shares, earnings and working hours not measured for secondary jobs, only main job)
+8. Some measure of childcare need
+9. `male`: Dummy variable for sex (`== 1` when respondent is male)
 
 # thought jail slash random archive
 
