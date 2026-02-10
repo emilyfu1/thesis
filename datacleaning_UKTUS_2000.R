@@ -78,8 +78,12 @@ data_activities_2000_long = data_activities_2000_wide |>
   mutate(eptime = 10) |>
   # make household identifier equivalent to 2015 data
   mutate(serial = as.integer(paste0(sn2, "0", sn1))) |>
-  rename(pnum = sn3, DiaryDay_Act = sn4, daynum = dday,
-         IMonth = dmonth, IYear = dyear, whatdoing = act1, What_Oth1 = act2)
+  rename(pnum = sn3, DiaryDay_Act = sn4, ddayw = ddayofwk,
+         IMonth = dmonth, IYear = dyear, whatdoing = act1, What_Oth1 = act2) |>
+  
+  # make weekend identifier
+  mutate(is_weekend = ddayw > 5)
+  
 
 # only keep information collected at the same point as the time use data
 diarymonth_households_2000 = unique_interview_months(data_activities_2000_long)
@@ -89,7 +93,7 @@ individual_diaries_2000 = unique_interview_diaries(data_activities_2000_long)
 
 # finding time use
 activity_summaries_2000 = data_activities_2000_long |>
-  select(serial, pnum, daynum, IMonth, IYear, eptime, whatdoing, What_Oth1,
+  select(serial, pnum, is_weekend, IMonth, IYear, eptime, whatdoing, What_Oth1,
          wit0, wit1, wit2, wit3, wit4, wit5, wit6) |>
   
   # secondary activities and stuff
@@ -123,7 +127,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     childcare_nospouse = activity_ischildcare & activity_excludesspouse) |>
   
   # add up time use in hours
-  group_by(serial, pnum) |>
+  group_by(serial, pnum, is_weekend) |>
   summarise(
     total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE) / 60,
     total_private_leisure = sum(eptime[private_leisure], na.rm = TRUE) / 60,
@@ -327,7 +331,7 @@ data_working_couples_2000 = data_individual_2000 |>
     total_childcare_exp = wage * total_childcare,
     nospouse_childcare_exp = wage * total_childcare_nospouse,
     # individual contribution to household budget
-    y_individual = wage * 24 * num_diaries_filled)
+    y_individual = wage * 24)
 
 
 # parents
@@ -377,7 +381,7 @@ sharing_est_data_2000 = data_working_parents_2000 |>
   # letter for creating variable names
   mutate(sex_tag = if_else(male, "m", "f")) |>
   select(
-    serial, sex_tag, dgorpaf, all_of(vars_to_suffix),
+    serial, is_weekend, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
@@ -385,7 +389,7 @@ sharing_est_data_2000 = data_working_parents_2000 |>
     n_kid_aged_11_13, n_kid_aged_14_17) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
-    id_cols = c(serial, dgorpaf, num_kids_total, 
+    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, 
                 num_kids_male, num_kids_female,
                 kid_age_min, kid_age_max, kid_age_mean,
                 n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,

@@ -14,7 +14,7 @@ unique_interview_months = function(data) {
 # find time diaries and number of diaries everyone completes
 unique_interview_diaries = function(data) {
   individual_diaries = data |>
-    distinct(serial, pnum, DiaryDay_Act) |>
+    distinct(serial, pnum, ddayw) |>
     group_by(serial, pnum) |>
     # household budget: i need to indicate how many days everyone has completed
     # so that i calculate expenditure and budget based on number of days
