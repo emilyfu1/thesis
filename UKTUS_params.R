@@ -50,9 +50,10 @@ personal_care_actlines = c(
   5310,     # Resting - time out
   310,      # Other personal care: Wash and dress
   300,      # Other personal care: Unspecified other personal care
-  390      # Other personal care: Other specified personal care
-  )
+  390,      # Other personal care: Other specified personal care
+  3630)     # Personal services
 
+# hobbies, social activities, entertainment
 restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
                       8211, 7190, 6170, 8219, 8221, 8222, 6179, 
                       8229, 6190, 5190, 7241, 5200, 7249, 7251,
@@ -69,7 +70,8 @@ restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
                       6100, 7130, 6110, 6111, 7140, 6119, 6120,
                       5100, 7150, 6312, 6130, 6131, 6132, 6142,
                       5110, 7160, 9210, 6140, 6141, 8190, 6143,
-                      3330)
+                      3330, 2210, 3330, 3410, 3440, 5140, 5246,
+                      7290, 7260, 9620, 9810, 6210, 6220)
 
 # childcare values
 childcare_actlines = c(
@@ -84,7 +86,25 @@ childcare_actlines = c(
   3840, # Accompanying child
   3890) # Other specified childcare
 
+# all leisure
 leisure_actlines = c(personal_care_actlines, restrict_actlines)
+
+# working at job
+work_actlines = c(
+  1110, # work at main job
+  1210) # work at second job
+
+# domestic work
+otherdomestic_actlines = c(3000, 3100, 3110, 3120, 3130, 3140, 3190, 3200, 3210,
+                           3220, 3230, 3250, 3290, 3300, 3310, 3320, 3390, 3400,
+                           3420, 3430, 3490, 3500, 3510, 3520, 3530, 3531, 3539,
+                           3540, 3590, 3600, 3610, 3611, 3612, 3613, 3614, 3619,
+                           3620, 3690, 3710, 3720, 3721, 3722, 3723, 3724, 3725,
+                           3726, 3727, 3729, 3910, 3911, 3914, 3919, 9310, 9360,
+                           9370, 9390, 9230)
+
+# all domestic work
+domestic_actlines = c(childcare_actlines, otherdomestic_actlines)
 
 ################################################################################
 ################################## TABLE STUFF #################################

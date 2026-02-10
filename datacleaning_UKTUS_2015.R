@@ -30,18 +30,33 @@ activity_summaries_2015 = data_activities_2015 |>
   
   # secondary activities and stuff
   mutate(
+    # first activity
     activity1_is_leisure = whatdoing %in% leisure_actlines,
     activity1_is_leisure_r = whatdoing %in% restrict_actlines,
     activity1_is_childcare = whatdoing %in% childcare_actlines,
+    activity1_is_work = whatdoing %in% work_actlines,
+    activity1_is_domestic = whatdoing %in% domestic_actlines,
+    
+    # second activity
     activity2_is_leisure = What_Oth1 %in% leisure_actlines,
     activity2_is_leisure_r = What_Oth1 %in% restrict_actlines,
     activity2_is_childcare = What_Oth1 %in% childcare_actlines,
+    activity2_is_work = What_Oth1 %in% work_actlines,
+    activity2_is_domestic = What_Oth1 %in% domestic_actlines,
+    
+    # third activity
     activity3_is_leisure = What_Oth2 %in% leisure_actlines,
     activity3_is_leisure_r = What_Oth2 %in% restrict_actlines,
     activity3_is_childcare = What_Oth2 %in% childcare_actlines,
+    activity3_is_work = What_Oth2 %in% work_actlines,
+    activity3_is_domestic = What_Oth2 %in% domestic_actlines,
+    
+    # fourth activity
     activity4_is_leisure = What_Oth3 %in% leisure_actlines,
     activity4_is_leisure_r = What_Oth3 %in% restrict_actlines,
     activity4_is_childcare = What_Oth3 %in% childcare_actlines,
+    activity4_is_work = What_Oth3 %in% work_actlines,
+    activity4_is_domestic = What_Oth3 %in% domestic_actlines,
     
     # private (no relevant household members present)
     # activities where "who" isn't asked are considered private
@@ -63,9 +78,20 @@ activity_summaries_2015 = data_activities_2015 |>
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
                               activity3_is_childcare | activity4_is_childcare | 
                               WithChild == 1),
+  
+    # general: is work?
+    activity_iswork = (activity1_is_work | activity2_is_work | 
+                         activity3_is_work | activity4_is_work),
+    
+    # general: is domestic?
+    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
+                             activity3_is_domestic | activity4_is_domestic),
     
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse,
+    
+    # is no-spouse domestic?
+    domestic_nospouse = activity_isdomestic & activity_excludesspouse,
     
     # make weekend identifier
     is_weekend = ddayw != 1) |>
@@ -80,6 +106,11 @@ activity_summaries_2015 = data_activities_2015 |>
     
     total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
     total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE) / 60,
+    
+    total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
+    total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
+    
+    total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
     .groups = "drop")
 
 ################################################################################
@@ -361,8 +392,4 @@ sharing_est_data_2015 = data_working_parents_2015 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc)
-
-write_csv(sharing_est_data_2015, paste0(data_direct, "sharing_est_data_2015.csv"))
-
-
+         Bx_dev_gdppc = y * dev_gdpp)
