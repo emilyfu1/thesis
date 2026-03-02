@@ -474,7 +474,7 @@ parents_est_data_2000 = data_working_parents_2000 |>
     total_leisure_exp_r_f = total_leisure_exp_r_f * deflator_2000,
     
     private_leisure_exp_m = private_leisure_exp_m * deflator_2000,
-    private_leisure_exp_m = private_leisure_exp_m * deflator_2000,
+    private_leisure_exp_f = private_leisure_exp_m * deflator_2000,
     
     private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2000,
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2000,
@@ -534,13 +534,7 @@ parents_est_data_2000 = data_working_parents_2000 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc) |>
-  
-  # now get rid of weekend
-  group_by(serial) |>
-  filter(!is_weekend) |>
-  ungroup() |>
-  select(!is_weekend)
+         Bx_dev_gdppc = y * dev_gdppc)
 
 # work in progress! 
 nonparents_est_data_2000 = data_working_nonparents_2000 |>
@@ -637,10 +631,4 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc) |>
-  
-  # now get rid of weekend
-  group_by(serial) |>
-  filter(!is_weekend) |>
-  ungroup() |>
-  select(!is_weekend)
+         Bx_dev_gdppc = y * dev_gdppc)
