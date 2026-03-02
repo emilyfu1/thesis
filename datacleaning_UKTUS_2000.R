@@ -138,16 +138,18 @@ activity_summaries_2000 = data_activities_2000_long |>
     # activity_is_leisure = activity1_is_leisure,
     # activity_is_leisure_r = activity1_is_leisure_r,
     
-    # note that sleep doesn't have accompanying copresence information
-    # so i will just classify it as private
+
     # private activity classifier (no relevant household members present)
     # activities where "who" isn't asked are considered private
-    activity_private = (wit1 == 0 & wit2 == 0 & wit3 == 0) | activity_is_sleep,
+    activity_private = (wit1 == 0 & wit2 == 0 & wit3 == 0),
     # spouse not present (as equivalent as possible)
     activity_excludesspouse = wit3 == 0,
     
+    # note that sleep doesn't have accompanying copresence information
+    # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = activity_is_leisure & activity_private,
+    private_leisure = (activity_is_leisure & activity_private) | 
+      activity_is_sleep,
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?

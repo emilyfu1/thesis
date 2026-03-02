@@ -406,6 +406,15 @@ add_shares_from_lm = function(fit, data,
 
 ################################### Plotting ###################################
 
+# simple summary statistics (in progress)
+summarytable = function(var) {
+  c(
+    mean = mean(var, na.rm = TRUE),
+    sd   = sd(var, na.rm = TRUE),
+    p25  = quantile(var, 0.25, na.rm = TRUE),
+    p50  = quantile(var, 0.50, na.rm = TRUE),
+    p75  = quantile(var, 0.75, na.rm = TRUE))}
+
 # kernel density plots
 plot_share_densities = function(data,
                                 dev_type,

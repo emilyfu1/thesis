@@ -352,22 +352,22 @@ nonparents_res_r_opposite_merged = systemfit(eqns_r_opposite, method = "SUR",
 
 ### calculate resource shares
 
-shares_parents_bothsex_merged = add_shares_from_lm(nonparents_res_between_merged, 
+shares_nonparents_bothsex_merged = add_shares_from_lm(nonparents_res_between_merged, 
                                                data=nonparents_est_data_merged, 
                                                dev_type = "all")
-shares_parents_bothsex_r_merged = add_shares_from_lm(nonparents_res_r_between_merged, 
+shares_nonparents_bothsex_r_merged = add_shares_from_lm(nonparents_res_r_between_merged, 
                                                  data=nonparents_est_data_merged, 
                                                  dev_type = "all")
-shares_parents_ownsex_merged = add_shares_from_lm(nonparents_res_within_merged, 
+shares_nonparents_ownsex_merged = add_shares_from_lm(nonparents_res_within_merged, 
                                               data=nonparents_est_data_merged, 
                                               dev_type = "own")
-shares_parents_ownsex_r_merged = add_shares_from_lm(nonparents_res_r_within_merged, 
+shares_nonparents_ownsex_r_merged = add_shares_from_lm(nonparents_res_r_within_merged, 
                                                 data=nonparents_est_data_merged, 
                                                 dev_type = "own")
-shares_parents_oppsex_merged = add_shares_from_lm(nonparents_res_opposite_merged, 
+shares_nonparents_oppsex_merged = add_shares_from_lm(nonparents_res_opposite_merged, 
                                               data=nonparents_est_data_merged, 
                                               dev_type = "opp")
-shares_parents_oppsex_r_merged = add_shares_from_lm(nonparents_res_r_opposite_merged, 
+shares_nonparents_oppsex_r_merged = add_shares_from_lm(nonparents_res_r_opposite_merged, 
                                                 data=nonparents_est_data_merged, 
                                                 dev_type = "opp")
 
@@ -435,22 +435,22 @@ nonparents_res_r_opposite_2015 = systemfit(eqns_r_opposite, method = "SUR",
 
 ### calculate resource shares
 
-shares_parents_bothsex_2015 = add_shares_from_lm(nonparents_res_between_2015, 
+shares_nonparents_bothsex_2015 = add_shares_from_lm(nonparents_res_between_2015, 
                                              data=nonparents_est_data_2015, 
                                              dev_type = "all")
-shares_parents_bothsex_r_2015 = add_shares_from_lm(nonparents_res_r_between_2015, 
+shares_nonparents_bothsex_r_2015 = add_shares_from_lm(nonparents_res_r_between_2015, 
                                                data=nonparents_est_data_2015, 
                                                dev_type = "all")
-shares_parents_ownsex_2015 = add_shares_from_lm(nonparents_res_within_2015, 
+shares_nonparents_ownsex_2015 = add_shares_from_lm(nonparents_res_within_2015, 
                                             data=nonparents_est_data_2015, 
                                             dev_type = "own")
-shares_parents_ownsex_r_2015 = add_shares_from_lm(nonparents_res_r_within_2015, 
+shares_nonparents_ownsex_r_2015 = add_shares_from_lm(nonparents_res_r_within_2015, 
                                               data=nonparents_est_data_2015, 
                                               dev_type = "own")
-shares_parents_oppsex_2015 = add_shares_from_lm(nonparents_res_opposite_2015, 
+shares_nonparents_oppsex_2015 = add_shares_from_lm(nonparents_res_opposite_2015, 
                                             data=nonparents_est_data_2015, 
                                             dev_type = "opp")
-shares_parents_oppsex_r_2015 = add_shares_from_lm(nonparents_res_r_opposite_2015, 
+shares_nonparents_oppsex_r_2015 = add_shares_from_lm(nonparents_res_r_opposite_2015, 
                                               data=nonparents_est_data_2015, 
                                               dev_type = "opp")
 
@@ -518,21 +518,21 @@ nonparents_res_r_opposite_2000 = systemfit(eqns_r_opposite, method = "SUR",
 
 ### calculate resource shares
 
-shares_parents_bothsex_2000 = add_shares_from_lm(nonparents_res_between_2000, 
+shares_nonparents_bothsex_2000 = add_shares_from_lm(nonparents_res_between_2000, 
                                              data=nonparents_est_data_2000, 
                                              dev_type = "all")
-shares_parents_bothsex_r_2000 = add_shares_from_lm(nonparents_res_r_between_2000, 
+shares_nonparents_bothsex_r_2000 = add_shares_from_lm(nonparents_res_r_between_2000, 
                                                data=nonparents_est_data_2000, 
                                                dev_type = "all")
-shares_parents_ownsex_2000 = add_shares_from_lm(nonparents_res_within_2000, 
+shares_nonparents_ownsex_2000 = add_shares_from_lm(nonparents_res_within_2000, 
                                             data=nonparents_est_data_2000, 
                                             dev_type = "own")
-shares_parents_ownsex_r_2000 = add_shares_from_lm(nonparents_res_r_within_2000, 
+shares_nonparents_ownsex_r_2000 = add_shares_from_lm(nonparents_res_r_within_2000, 
                                               data=nonparents_est_data_2000, 
                                               dev_type = "own")
-shares_parents_oppsex_2000 = add_shares_from_lm(nonparents_res_opposite_2000, 
+shares_nonparents_oppsex_2000 = add_shares_from_lm(nonparents_res_opposite_2000, 
                                             data=nonparents_est_data_2000, 
                                             dev_type = "opp")
-shares_parents_oppsex_r_2000 = add_shares_from_lm(nonparents_res_r_opposite_2000, 
+shares_nonparents_oppsex_r_2000 = add_shares_from_lm(nonparents_res_r_opposite_2000, 
                                               data=nonparents_est_data_2000, 
                                               dev_type = "opp")

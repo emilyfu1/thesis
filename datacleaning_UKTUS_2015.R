@@ -96,17 +96,17 @@ activity_summaries_2015 = data_activities_2015 |>
                                   activity3_is_personalcare_sleep | 
                                   activity4_is_personalcare_sleep),
     
-    # note that sleep doesn't have accompanying copresence information
-    # so i will just classify it as private
     # private (no relevant household members present)
     # activities where "who" isn't asked are considered private
-    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0) | 
-      activity_is_sleep,
+    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0),
     # spouse not present
     activity_excludesspouse = WithSpouse == 0,
     
+    # note that sleep doesn't have accompanying copresence information
+    # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = activity_is_leisure & activity_private,
+    private_leisure = (activity_is_leisure & activity_private) | 
+      activity_is_sleep,
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
