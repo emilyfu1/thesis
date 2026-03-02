@@ -578,7 +578,7 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
     total_leisure_exp_r_f = total_leisure_exp_r_f * deflator_2000,
     
     private_leisure_exp_m = private_leisure_exp_m * deflator_2000,
-    private_leisure_exp_m = private_leisure_exp_m * deflator_2000,
+    private_leisure_exp_f = private_leisure_exp_m * deflator_2000,
     
     private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2000,
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2000,

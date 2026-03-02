@@ -473,7 +473,7 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
     total_leisure_exp_r_f = total_leisure_exp_r_f * deflator_2014,
     
     private_leisure_exp_m = private_leisure_exp_m * deflator_2014,
-    private_leisure_exp_m = private_leisure_exp_m * deflator_2014,
+    private_leisure_exp_f = private_leisure_exp_m * deflator_2014,
     
     private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2014,
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2014,
