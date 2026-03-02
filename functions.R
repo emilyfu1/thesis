@@ -384,7 +384,7 @@ add_shares_from_lm = function(fit, data,
   }
   
   # add outputs
-  addcols = data[c("serial", "is_weekend")]
+  addcols = data[c("serial")]
   addcols[[paste0(prefix_out, dev_type, "_etahat_m")]] = etahat_m_h
   addcols[[paste0(prefix_out, dev_type, "_etahat_f")]] = etahat_f_h
   
