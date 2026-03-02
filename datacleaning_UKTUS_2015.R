@@ -33,6 +33,9 @@ activity_summaries_2015 = data_activities_2015 |>
     # first activity
     activity1_is_leisure = whatdoing %in% leisure_actlines,
     activity1_is_leisure_r = whatdoing %in% restrict_actlines,
+    activity1_is_sleep = whatdoing %in% sleep_actlines,
+    activity1_is_personalcare = whatdoing %in% personal_care_actlines,
+    activity1_is_personalcare_sleep = whatdoing %in% sleep_personalcare,
     activity1_is_childcare = whatdoing %in% childcare_actlines,
     activity1_is_work = whatdoing %in% work_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
@@ -40,6 +43,9 @@ activity_summaries_2015 = data_activities_2015 |>
     # second activity
     activity2_is_leisure = What_Oth1 %in% leisure_actlines,
     activity2_is_leisure_r = What_Oth1 %in% restrict_actlines,
+    activity2_is_sleep = What_Oth1 %in% sleep_actlines,
+    activity2_is_personalcare = What_Oth1 %in% personal_care_actlines,
+    activity2_is_personalcare_sleep = What_Oth1 %in% sleep_personalcare,
     activity2_is_childcare = What_Oth1 %in% childcare_actlines,
     activity2_is_work = What_Oth1 %in% work_actlines,
     activity2_is_domestic = What_Oth1 %in% domestic_actlines,
@@ -48,27 +54,56 @@ activity_summaries_2015 = data_activities_2015 |>
     activity3_is_leisure = What_Oth2 %in% leisure_actlines,
     activity3_is_leisure_r = What_Oth2 %in% restrict_actlines,
     activity3_is_childcare = What_Oth2 %in% childcare_actlines,
+    activity3_is_sleep = What_Oth2 %in% sleep_actlines,
+    activity3_is_personalcare = What_Oth2 %in% personal_care_actlines,
+    activity3_is_personalcare_sleep = What_Oth2 %in% sleep_personalcare,
     activity3_is_work = What_Oth2 %in% work_actlines,
     activity3_is_domestic = What_Oth2 %in% domestic_actlines,
     
     # fourth activity
     activity4_is_leisure = What_Oth3 %in% leisure_actlines,
     activity4_is_leisure_r = What_Oth3 %in% restrict_actlines,
+    activity4_is_sleep = What_Oth3 %in% sleep_actlines,
+    activity4_is_personalcare = What_Oth3 %in% personal_care_actlines,
+    activity4_is_personalcare_sleep = What_Oth3 %in% sleep_personalcare,
     activity4_is_childcare = What_Oth3 %in% childcare_actlines,
     activity4_is_work = What_Oth3 %in% work_actlines,
     activity4_is_domestic = What_Oth3 %in% domestic_actlines,
-    
-    # private (no relevant household members present)
-    # activities where "who" isn't asked are considered private
-    activity_private = WithSpouse == 0 & WithChild == 0,
-    # spouse not present
-    activity_excludesspouse = WithSpouse == 0,
     
     # general: is leisure?
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
                              activity3_is_leisure | activity4_is_leisure),
     activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
                                activity3_is_leisure_r | activity4_is_leisure),
+    
+    # general: is leisure? (trying something)
+    # activity_is_leisure = activity1_is_leisure,
+    # activity_is_leisure_r = activity1_is_leisure_r,
+    
+    # general: is sleep (only)?
+    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
+                           activity3_is_sleep | activity4_is_sleep),
+    
+    # general: is personal care (only)?
+    activity_is_personalcare = (activity1_is_personalcare | 
+                                  activity2_is_personalcare | 
+                                  activity3_is_personalcare | 
+                                  activity4_is_personalcare),
+    
+    # general: is personal care OR sleep?
+    activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
+                                  activity2_is_personalcare_sleep | 
+                                  activity3_is_personalcare_sleep | 
+                                  activity4_is_personalcare_sleep),
+    
+    # note that sleep doesn't have accompanying copresence information
+    # so i will just classify it as private
+    # private (no relevant household members present)
+    # activities where "who" isn't asked are considered private
+    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0) | 
+      activity_is_sleep,
+    # spouse not present
+    activity_excludesspouse = WithSpouse == 0,
     
     # general: is private leisure?
     private_leisure = activity_is_leisure & activity_private,
@@ -396,7 +431,7 @@ parents_est_data_2015 = data_working_parents_2015 |>
   
   # now get rid of weekend
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(!is_weekend) |>
   ungroup() |>
   select(!is_weekend)
 
@@ -500,7 +535,8 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
          Bx_dev_gdppc = y * dev_gdppc) |>
   
   # now get rid of weekend
+  # currently only taking weekday diary but might go back to taking both
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(!is_weekend) |>
   ungroup() |>
   select(!is_weekend)
