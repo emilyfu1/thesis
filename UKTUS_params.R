@@ -41,11 +41,12 @@ vars_to_suffix = c(
 ################################ ACTIVITY CODES ################################
 ################################################################################
 
+sleep_actlines = c(10, 110)
+
 personal_care_actlines = c(
   ## --- Personal care, rest, eating ---
   0,        # Unspecified personal care
-  10,       # Unspecified sleep
-  110, 111, # Sleep; Sleep in bed not asleep
+  111,      # Sleep: In bed not asleep
   120,      # Sleep: Sick in bed
   210,      # Eating
   5310,     # Resting - time out
@@ -53,6 +54,8 @@ personal_care_actlines = c(
   300,      # Other personal care: Unspecified other personal care
   390,      # Other personal care: Other specified personal care
   3630)     # Personal services
+
+sleep_personalcare = c(sleep_actlines, personal_care_actlines)
 
 # hobbies, social activities, entertainment
 restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
@@ -62,9 +65,9 @@ restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
                       8300, 5229, 8311, 5245, 8319, 5250, 7300,
                       7320, 7321, 7329, 6171, 6310, 6311, 8220,
                       5290, 5291, 7340, 5293, 5294, 5299, 1220,
-                      6144, 4300, 7390, 1310, 9510, 5295, 9520,
-                      9440, 7230, 9600, 9610, 9630, 7240, 3531,
-                      9710, 9720, 3615, 9820, 5224, 5230, 8310,
+                      6144, 4300, 7390, 1310, 5295,
+                      7230, 9600, 9630, 7240, 3531,
+                      3615, 9820, 5224, 5230, 8310,
                       4390, 8320, 7129, 8312, 8000, 7310, 7000,
                       8212, 6000, 5000, 7322, 8110, 8120, 7100,
                       7110, 7111, 7112, 7330, 7119, 7120, 7121, 
@@ -72,7 +75,7 @@ restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
                       5100, 7150, 6312, 6130, 6131, 6132, 6142,
                       5110, 7160, 9210, 6140, 6141, 8190, 6143,
                       3330, 2210, 3330, 3410, 3440, 5140, 5246,
-                      7290, 7260, 9620, 9810, 6210, 6220)
+                      7290, 7260, 6210, 6220)
 
 # childcare values
 childcare_actlines = c(
@@ -88,7 +91,7 @@ childcare_actlines = c(
   3890) # Other specified childcare
 
 # all leisure
-leisure_actlines = c(personal_care_actlines, restrict_actlines)
+leisure_actlines = c(sleep_actlines, personal_care_actlines, restrict_actlines)
 
 # working at job
 work_actlines = c(
