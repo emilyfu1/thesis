@@ -308,21 +308,67 @@ $$\alpha_f^l,\ \alpha_m^l,\ \eta_f^z,\ \eta_m^z$$
 
 # Estimating the sharing rule using household time use data
 
-This part basically constitutes a replication of Francesca's work. I want to use this section to show some of the differences in how these structural estimates behave compared to the childless couple case and talk about why this could be happening and how identification could be impacted. Because of my later work with time diaries, I filtered for households where both partners/spouses filled out both days of the time diary. I have pooled samples of 704 couples without children (dropping seven households where only one time diary was filled) and 635 couples with children (dropping two households where only one time diary was filled.
+This part basically constitutes a replication of Francesca's work. I want to use this section to show some of the differences in how these structural estimates behave compared to the childless couple case and talk about why this could be happening and how identification could be impacted. Because of my later work with time diaries, I filtered for households where both partners/spouses filled out both days of the time diary. I have pooled samples of 704 couples without children and 635 couples with children across both UKTUS survey waves.  Wages are calculated using actual hours worked and actual earnings from a respondent's main job. Both employee earnings and self-employed earnings are used.
+- I've never quite been able to replicate empirical results from any paper perfectly but my non-parent characteristics do differ slightly from Francesca's. I have not removed any of the very high earners from my data.
 
-- Here are the results of SURE regressions of leisure expenditure on determinants of bargaining power $z$. The average point for the female resource share, for instance, is given by $\hat{\eta^0_f} = \frac{0.0305}{0.0305 + 0.0348} \approx 0.4671$. Only deviations from male and female wages appear to be significant determinants of sharing
-```{r}
-# deviations of characteristics compared to own sex
-print(make_sysfit_kable_df(fit_res_r_within_merged, rows_within))
+- The UKTUS does not contain enough data to distinguish between households who never had children and households with non-cohabiting children, so childless couples may tend to be older. As expected, the parents in my data occupy a smaller age range and are slightly younger. Both groups achieve similar average qualifications. Women are slightly more qualified than men and tend to earn slightly less. The wage standard deviation is high. This is due to relatively high earners with low working hours.
+```{r echo=FALSE}
+
+summary = c("wage_f", "wage_m", "DVAge_f", "DVAge_m", "educ_f", "educ_m")
+
+nonparents_summary = t(sapply(nonparents_est_data_merged[summary], summarytable))
+parents_summary = t(sapply(parents_est_data_merged[summary], summarytable))
+
+print("UKTUS working heterosexual couples (parents), pooled sample")
+print(as.data.frame(parents_summary))
+print("UKTUS working heterosexual couples (nonparents), pooled sample")
+print(as.data.frame(nonparents_summary))
 ```
 
--   Basically, there's more of a difference in estimates when we change the definition of leisure, which is not the case with the childless couples data. When we exclude personal care and sleep, there's a lot more equal sharing. Here are some density plots that show this. Most, but not all, estimates fall within the unit interval. This is noteably not something imposed in estimation, so in this sense the model does appear to fit the data well.
+- Here are the results of SURE regressions of leisure expenditure on determinants of bargaining power $z$ among parents. By the linear estimating equations, the average point for a mother's resource share, for instance, is given by the estimated coefficients on household budget as follows: $\hat{\eta}^0_f = \frac{0.0341}{0.0341 + 0.0606} \approx 0.3534$. We get estimated preference parameters on private leisure by dividing the household budget coefficient in the female regression by the average resource share calculated previously: $\hat{\alpha}^l = \frac{0.0341}{0.3534} \approx 0.0962$. By the preference heterogeneity restriction, these are the same for males and females. Unit deviations from the mean of hourly wage (in 2025 GBP), qualification level (on the scale 0, 1, 2), the average age of the couple, and the age gap of the couple are calculated by dividing the coefficient on the corresponding interaction term by the estimated preference parameter. Deviations from male and female wages, male qualifications, and the age gap of the couple appear to be significant determinants of sharing, while deviations in female qualifications and the average age of the couple do not. Once I include sleep and personal care, only male and female wage deviations remain significant.
+
+```{r}
+# deviations of characteristics compared to own sex
+print("Leisure expenditure of parents (excluding sleep and personal care)")
+print(make_sysfit_kable_df(parents_res_r_within_merged, rows_within))
+
+# deviations of characteristics compared to own sex
+print("Leisure expenditure of parents (including sleep and personal care)")
+print(make_sysfit_kable_df(parents_res_within_merged, rows_within))
+```
+- Estimated parameters fall once I restrict leisure (pretty predictably, as I'm now excluding a component of leisure that is very time-intensive)
+  - Leisure preference parameter excluding personal care = 0.0606 / (0.0606 / (0.0606 + 0.0341)) = 0.0341 / (0.0341 / (0.0606 + 0.0341)) = 0.0947
+  - Leisure preference parameter including personal care = 0.274 / (0.274 / (0.274 + 0.0826)) = 0.0826 / (0.0826 / (0.274 + 0.0826)) = 0.3566
+  
+-   There are large differences in estimated resource shares when we change the definition of leisure. When we exclude personal care and sleep, there's a lot more equal sharing. This seems weird to me, although the unrestricted regressions show the same thing. Here are some density plots that show resource share estimates. Most, but not all, estimates fall within the unit interval. This is noteably not something imposed in estimation (not by construction), so in this sense the model does appear to fit the data well.
 ```{r echo=FALSE, fig.width=5, fig.height=8}
 
-narrowleisure_shares = plot_share_densities(shares_fit_ownsex_r_merged$data, 
+narrowleisure_shares = plot_share_densities(shares_parents_ownsex_r_2015$data, 
+                                            dev_type = "own",
+                                            restrict_leisure = TRUE)
+
+broadleisure_shares = plot_share_densities(shares_parents_ownsex_2015$data, 
+                                           dev_type = "own",
+                                           restrict_leisure = FALSE)
+
+combined_plot =
+  narrowleisure_shares + broadleisure_shares +
+  plot_layout(nrow = 2) +
+  plot_annotation(
+    title = "Baseline results using pooled sample",
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(size = 11)))
+
+print(combined_plot)
+```
+
+```{r echo=FALSE, fig.width=5, fig.height=8}
+
+narrowleisure_shares = plot_share_densities(shares_parents_ownsex_r_2000$data, 
                                             dev_type = "own")
 
-broadleisure_shares = plot_share_densities(shares_fit_ownsex_merged$data, 
+broadleisure_shares = plot_share_densities(shares_parents_ownsex_2000$data, 
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
@@ -346,7 +392,7 @@ print(combined_plot)
 
 ```{r echo=FALSE}
 marginal_impacts_merged = marginal_impacts(shares_fit_ownsex_r_merged, 
-                                           sharing_est_data_merged, rows_within)
+                                           parents_est_data_merged, rows_within)
 
 kable(marginal_impacts_merged) |>
   kable_styling("striped", full_width = F)
@@ -360,7 +406,7 @@ kable(marginal_impacts_merged) |>
 
 ```{r echo=FALSE}
 marginal_impacts_2000 = marginal_impacts(shares_fit_ownsex_r_2000, 
-                                         sharing_est_data_2000, rows_within)
+                                         parents_est_data_2000, rows_within)
 
 kable(marginal_impacts_2000) |>
   kable_styling("striped", full_width = F)
@@ -370,7 +416,7 @@ kable(marginal_impacts_2000) |>
 
 ```{r echo=FALSE}
 marginal_impacts_2015 = marginal_impacts(shares_fit_ownsex_r_2015, 
-                                         sharing_est_data_2015, rows_within)
+                                         parents_est_data_2015, rows_within)
 kable(marginal_impacts_2015) |>
   kable_styling("striped", full_width = F)
 ```
@@ -395,21 +441,21 @@ print(make_sysfit_kable_df(fit_res_within_2015, rows_within))
 # check budget share on private leisure correlated w/ estimated resource shares
 
 # merge with sharing_est_data
-sharing_est_data_merged_shares = inner_join(shares_fit_ownsex_r_merged$data,
-                                sharing_est_data_merged,
-                                by=c('serial', 'is_weekend')) |>
+parents_est_data_merged_shares = inner_join(shares_fit_ownsex_r_merged$data,
+                                parents_est_data_merged,
+                                by=c('serial')) |>
   mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
            private_leisure_exp_r_m) / y,
          share_budget_leisure = (private_leisure_exp_f + 
            private_leisure_exp_m) / y)
 
 # correlation of estimated resource shares (broad leisure definition)
-cor.test(sharing_est_data_merged_shares$share_budget_leisure, 
-         sharing_est_data_merged_shares$shareown_etahat_f)
+cor.test(parents_est_data_merged_shares$share_budget_leisure, 
+         parents_est_data_merged_shares$shareown_etahat_f)
 
 # (narrow leisure definition)
-cor.test(sharing_est_data_merged_shares$share_budget_leisure_r, 
-         sharing_est_data_merged_shares$shareown_etahat_f)
+cor.test(parents_est_data_merged_shares$share_budget_leisure_r, 
+         parents_est_data_merged_shares$shareown_etahat_f)
 ```
 
 The SRAT assumption allows preference levels to vary between different people and different household categories, while requiring that the ratio of the parameters is constant across household compositions. SRAT may be more defensible once I go to a setting with children, as parenthood plausibly shifts the level but not the ranking of leisure preferences between men and women. This could be more believable than men and women having the same level of preference for private leisure within household type. However, it is still a strong assumption as parenting likely changes preferences asymmetrically due to gender norms. Suppose motherhood reduces women’s leisure preference relative to men, that is, women put less weight on private leisure (or face guilt/constraints that behave like a lower effective preference parameter). If women have a lower taste for private leisure, they will choose less leisure even with the same resources.
