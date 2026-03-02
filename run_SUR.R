@@ -1,6 +1,10 @@
 library(tidyverse)
 library(systemfit)
 
+# setwd
+wd = Sys.getenv("THESIS_WD")
+setwd(wd)
+
 # actlines and directories
 source("UKTUS_params.R")
 

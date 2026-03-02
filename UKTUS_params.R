@@ -1,9 +1,9 @@
-# import functions
-source("functions.R")
-
 # setwd
 wd = Sys.getenv("THESIS_WD")
 setwd(wd)
+
+# import functions
+source("functions.R")
 
 # directories
 data_direct = paste0(wd,"/uktus_data/")
@@ -31,7 +31,8 @@ region_map = unlist(as.list(region_codes), use.names = TRUE)
 vars_to_suffix = c(
   "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
-  "total_private_leisure_r", "total_childcare", "total_childcare_nospouse",
+  "total_private_leisure_r", "total_childcare", "total_domestic", 
+  "total_domestic_nospouse", "total_childcare_nospouse", "total_work",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
   "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
   "y_individual", "pnum", "spouse_pnum")
