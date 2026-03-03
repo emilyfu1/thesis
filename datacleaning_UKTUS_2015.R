@@ -105,8 +105,7 @@ activity_summaries_2015 = data_activities_2015 |>
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private) | 
-      activity_is_sleep,
+    private_leisure = (activity_is_leisure & activity_private),
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
@@ -236,6 +235,9 @@ data_working_couples_2015 = data_individual_2015 |>
   # identify couples
   inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
   
+  # keep only people who fill out both diaries |>
+  filter(num_diaries_filled == 2) |>
+  
   # combine different wage sources:
   mutate(NetWkly = if_else(NetWkly > 0, NetWkly, SENetPay / 4.33)) |>
   mutate(HrWkAc = if_else(HrWkAc > 0, HrWkAc, SEHrWkAc)) |>
@@ -261,17 +263,19 @@ data_working_couples_2015 = data_individual_2015 |>
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
   
+  # make sure time use EXPENDITURE is calculated across all days
+  group_by(serial, pnum) |>
   # individual expenditure calculated using time use
   mutate(# leisure and childcare expenditure
-    total_leisure_exp = wage * total_leisure,
-    total_leisure_exp_r = wage * total_leisure_r,
-    private_leisure_exp = wage * total_private_leisure,
-    private_leisure_exp_r = wage * total_private_leisure_r,
-    total_childcare_exp = wage * total_childcare,
-    nospouse_childcare_exp = wage * total_childcare_nospouse,
+    total_leisure_exp = wage * sum(total_leisure),
+    total_leisure_exp_r = wage * sum(total_leisure_r),
+    private_leisure_exp = wage * sum(total_private_leisure),
+    private_leisure_exp_r = wage * sum(total_private_leisure_r),
+    total_childcare_exp = wage * sum(total_childcare),
+    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
     # individual contribution to household budget
-    y_individual = wage * 24)
-
+    y_individual = wage * 24 * num_diaries_filled) |>
+  ungroup()
 
 # parents
 data_working_parents_2015 = data_working_couples_2015 |>
@@ -427,7 +431,13 @@ parents_est_data_2015 = data_working_parents_2015 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc)
+         Bx_dev_gdppc = y * dev_gdppc) |>
+  
+  # since the expenditure variables are calculated across the entire survey 
+  # period, it doesn't matter which one i drop
+  group_by(serial) |>
+  filter(is_weekend) |>
+  ungroup()
 
 # work in progress!
 nonparents_est_data_2015 = data_working_nonparents_2015 |>
@@ -528,6 +538,8 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc) |>
   
-  # now get rid of weekend
-  # currently only taking weekday diary but might go back to taking both
-  group_by(serial)
+  # since the expenditure variables are calculated across the entire survey 
+  # period, it doesn't matter which one i drop
+  group_by(serial) |>
+  filter(is_weekend) |>
+  ungroup()

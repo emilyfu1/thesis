@@ -148,8 +148,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private) | 
-      activity_is_sleep,
+    private_leisure = (activity_is_leisure & activity_private), 
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
@@ -237,6 +236,7 @@ data_individual_2000 = read_dta(paste0(uktus_2000_direct,
   
   # keep if observation has age, sex
   filter(DMSex != 3, DVAge >= 0) |>
+  
   mutate(# Highest qualification obtained, simplified into three categories. 
          # Category 2: is equivalent to an undergraduate degree or higher. 
          # Category 1: end-of-school diplomas e.g. A levels, IBDP
@@ -287,6 +287,9 @@ data_working_couples_2000 = data_individual_2000 |>
   
   # identify couples
   inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
+  
+  # keep only people who fill out both diaries |>
+  filter(num_diaries_filled == 2) |>
   
   # dealing with all different wage/hours related variables  
   
@@ -371,16 +374,19 @@ data_working_couples_2000 = data_individual_2000 |>
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
   
+  # make sure time use EXPENDITURE is calculated across all days
+  group_by(serial, pnum) |>
   # individual expenditure calculated using time use
   mutate(# leisure and childcare expenditure
-    total_leisure_exp = wage * total_leisure,
-    total_leisure_exp_r = wage * total_leisure_r,
-    private_leisure_exp = wage * total_private_leisure,
-    private_leisure_exp_r = wage * total_private_leisure_r,
-    total_childcare_exp = wage * total_childcare,
-    nospouse_childcare_exp = wage * total_childcare_nospouse,
+    total_leisure_exp = wage * sum(total_leisure),
+    total_leisure_exp_r = wage * sum(total_leisure_r),
+    private_leisure_exp = wage * sum(total_private_leisure),
+    private_leisure_exp_r = wage * sum(total_private_leisure_r),
+    total_childcare_exp = wage * sum(total_childcare),
+    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
     # individual contribution to household budget
-    y_individual = wage * 24)
+    y_individual = wage * 24 * num_diaries_filled) |>
+  ungroup()
 
 # parents
 data_working_parents_2000 = data_working_couples_2000 |>
@@ -419,6 +425,8 @@ data_working_nonparents_2000 = data_working_couples_2000 |>
   
   # only keep couples who both have time diaries (filter after joins)
   filter(spouse_present)
+
+
 
 ################################################################################
 ##################### CALCULATING HOUSEHOLD CHARACTERISTICS ####################
@@ -534,7 +542,13 @@ parents_est_data_2000 = data_working_parents_2000 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc)
+         Bx_dev_gdppc = y * dev_gdppc) |>
+  
+  # since the expenditure variables are calculated across the entire survey 
+  # period, it doesn't matter which one i drop
+  group_by(serial) |>
+  filter(is_weekend) |>
+  ungroup()
 
 # work in progress! 
 nonparents_est_data_2000 = data_working_nonparents_2000 |>
@@ -631,4 +645,10 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc)
+         Bx_dev_gdppc = y * dev_gdppc) |>
+  
+  # since the expenditure variables are calculated across the entire survey 
+  # period, it doesn't matter which one i drop
+  group_by(serial) |>
+  filter(is_weekend) |>
+  ungroup()
