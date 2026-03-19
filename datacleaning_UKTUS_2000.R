@@ -356,6 +356,8 @@ data_working_couples_2000 = data_individual_2000 |>
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
       TRUE ~ NA_real_)) |>
   
+  filter(wage > 0 & wage < 400) |>
+  
   group_by(serial) |>
   
   # keep any households where both people are captured by this hourly wage
