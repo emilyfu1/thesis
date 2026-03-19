@@ -88,7 +88,9 @@ childcare_actlines = c(
   3820, # Teaching the child
   3830, # Reading, playing and talking with child
   3840, # Accompanying child
-  3890) # Other specified childcare
+  3890, # Other specified childcare
+  9230, # Travel escorting to/ from education
+  9380) # Travel escorting a child (other than education)
 
 # all leisure
 leisure_actlines = c(sleep_actlines, personal_care_actlines, restrict_actlines)
