@@ -122,7 +122,8 @@ rows_within = c("y" = "Budget",
                 "Bx_dev_educ_f_only" = "Budget * dev. fem. qualification",
                 "Bx_dev_educ_m_only" = "Budget * dev. mal. qualification",
                 "Bx_dev_avgage" = "Budget * dev. average age",
-                "Bx_dev_agegap" = "Budget * dev. age gap")
+                "Bx_dev_agegap" = "Budget * dev. age gap",
+                "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
 rows_between = c("y" = "Budget",
                  "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
@@ -130,7 +131,8 @@ rows_between = c("y" = "Budget",
                  "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
                  "Bx_dev_educ_m_all" = "Budget * dev. all qualification",
                  "Bx_dev_avgage" = "Budget * dev. average age",
-                 "Bx_dev_agegap" = "Budget * dev. age gap")
+                 "Bx_dev_agegap" = "Budget * dev. age gap",
+                 "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
 rows_opposite = c("y" = "Budget",
                  "Bx_dev_wage_f_opp" = "Budget * dev. opp.sex hourly pay",
@@ -138,7 +140,8 @@ rows_opposite = c("y" = "Budget",
                  "Bx_dev_educ_f_opp" = "Budget * dev. opp.sex qualification",
                  "Bx_dev_educ_m_opp" = "Budget * dev. opp.sex qualification",
                  "Bx_dev_avgage" = "Budget * dev. average age",
-                 "Bx_dev_agegap" = "Budget * dev. age gap")
+                 "Bx_dev_agegap" = "Budget * dev. age gap",
+                 "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
 ################################################################################
 ################################# Regressions! #################################
