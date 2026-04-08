@@ -26,7 +26,8 @@ individual_diaries_2015 = unique_interview_diaries(data_activities_2015)
 # finding time use
 activity_summaries_2015 = data_activities_2015 |>
   select(serial, pnum, ddayw, IMonth, IYear, eptime, whatdoing, What_Oth1, 
-         What_Oth2, What_Oth3, WithAlone, WithSpouse, WithChild, WithOther) |>
+         What_Oth2, What_Oth3, WithAlone, WithSpouse, WithChild, WithOther,
+         WithOtherYK, WithNA) |>
   
   # secondary activities and stuff
   mutate(
@@ -76,41 +77,40 @@ activity_summaries_2015 = data_activities_2015 |>
     activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
                                activity3_is_leisure_r | activity4_is_leisure),
     
-    # general: is leisure? (trying something)
-    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
-    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure),
+    # general: is leisure?
+    # activity_is_leisure = (activity1_is_leisure),
+    # activity_is_leisure_r = (activity1_is_leisure_r),
     
     # general: is sleep (only)?
     activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
                            activity3_is_sleep | activity4_is_sleep),
-    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
+    activity_is_sleep = (activity1_is_sleep),
     
     # general: is personal care (only)?
     activity_is_personalcare = (activity1_is_personalcare | 
                                   activity2_is_personalcare | 
                                   activity3_is_personalcare | 
                                   activity4_is_personalcare),
-    # activity_is_personalcare = (activity1_is_personalcare | activity2_is_personalcare),
+    # activity_is_personalcare = (activity1_is_personalcare),
     
     # general: is personal care OR sleep?
     activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
                                   activity2_is_personalcare_sleep | 
                                   activity3_is_personalcare_sleep | 
                                   activity4_is_personalcare_sleep),
-    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | activity2_is_personalcare_sleep),
+    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep),
     
     # private (no relevant household members present)
     # activities where "who" isn't asked are considered private
-    activity_private = (WithSpouse == 0 & WithChild == 0) |
-      activity_is_sleep,
+    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0),
     # spouse not present
     activity_excludesspouse = WithSpouse == 0,
     
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private),
-    private_leisure_r = activity_is_leisure_r & activity_private,
+    private_leisure = (activity_is_leisure & activity_private) | activity_is_sleep,
+    private_leisure_r = (activity_is_leisure_r & activity_private),
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
@@ -225,7 +225,6 @@ spouse_pairs_2015 = find_spouse_pairs(all_relationships_2015)
 
 data_working_couples_2015 = data_individual_2015 |>
   filter(NumSSex == 0, !is.na(educ)) |>
-  filter(NumSSex == 0) |>
   inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
   inner_join(diarymonth_households_2015, by = c("serial", "pnum")) |>
   inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
@@ -242,27 +241,26 @@ data_working_couples_2015 = data_individual_2015 |>
     se_earn = if_else(SENetPay > 0, as.numeric(SENetPay), NA_real_),
     
     # think there are some mistakes in the encoding for wage!
-    wage = case_when(Stat == 1 & emp_earn > 10000 ~ (emp_earn / 52) / emp_hours,
-                     Stat == 1 & emp_earn <= 10000 ~ emp_earn / emp_hours,
+    wage = case_when(Stat == 1 & emp_earn > 8000 ~ (emp_earn / 52) / emp_hours,
+                     Stat == 1 & emp_earn <= 8000 ~ emp_earn / emp_hours,
                      Stat == 2 ~ se_earn / (se_hours * 4.33),
                      TRUE ~ NA_real_)) |>
 
   
   # need people with positive wage
   # group_by(serial) |>
-  # filter(wage > 1 & wage < 300) |>
   filter(wage > 0) |>
   # ungroup() |>
 
   mutate(is_spouse = !is_resp) |>
   group_by(serial, pnum, is_weekend) |>
   mutate(
-    total_leisure_exp = wage * sum(total_leisure),
-    total_leisure_exp_r = wage * sum(total_leisure_r),
-    private_leisure_exp = wage * sum(total_private_leisure),
-    private_leisure_exp_r = wage * sum(total_private_leisure_r),
-    total_childcare_exp = wage * sum(total_childcare),
-    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
+    total_leisure_exp = wage * total_leisure,
+    total_leisure_exp_r = wage * total_leisure_r,
+    private_leisure_exp = wage * total_private_leisure,
+    private_leisure_exp_r = wage * total_private_leisure_r,
+    total_childcare_exp = wage * total_childcare,
+    nospouse_childcare_exp = wage * total_childcare_nospouse,
     y_individual = wage * 24) |>
   ungroup()
 
@@ -276,7 +274,7 @@ data_working_parents_2015 = data_working_couples_2015 |>
   inner_join(kids_age_dist_2015, by = c("serial")) |>
   inner_join(kids_age_wide_2015, by = c("serial")) |>
 
-  group_by(serial) |>
+  group_by(serial, is_weekend) |>
   
   # check for couples who both have time diaries (filter after joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -294,7 +292,7 @@ data_working_nonparents_2015 = data_working_couples_2015 |>
   # keep only hetero couples without child in household
   filter(NumChild == 0) |>
 
-  group_by(serial) |>
+  group_by(serial, is_weekend) |>
 
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -400,7 +398,13 @@ parents_est_data_2015 = data_working_parents_2015 |>
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    dev_gdppc = income_annual - rgdppc) |>
+    dev_gdppc = income_annual - rgdppc,
+    
+    # deviation of youngest child age
+    dev_ageyoungest = kid_age_min - mean(kid_age_min, na.rm = TRUE),
+    
+    # deviation of total num kids
+    dev_numkids = num_kids_total - mean(num_kids_total, na.rm = TRUE)) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
@@ -420,7 +424,9 @@ parents_est_data_2015 = data_working_parents_2015 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc) |>
+         Bx_dev_gdppc = y * dev_gdppc,
+         Bx_dev_ageyoungest = y * dev_ageyoungest,
+         Bx_dev_numkids = y * dev_numkids) |>
   
   # keep only weekday data
   group_by(serial) |>
