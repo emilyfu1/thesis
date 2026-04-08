@@ -89,14 +89,14 @@ find_kid_ages_wide = function(data) {
 
 pay_to_weekly = function(pay, period) {
   case_when(
-    period == 1 ~ pay,             # week
-    period == 2 ~ pay / 2,          # two weeks
-    period == 3 ~ pay / 4,          # four weeks
-    period == 4 ~ pay / 4.333,      # calendar month
-    period == 5 ~ pay / 52,         # year
-    TRUE ~ NA_real_
-  )
+    period == 1 ~ pay,  # one week
+    period == 2 ~ pay / 2, # two weeks
+    period == 3 ~ pay / 4, # four weeks
+    period == 4 ~ pay / 4.333, # calendar month
+    period == 5 ~ pay / 52, # year
+    TRUE ~ NA_real_)
 }
+
 
 ############################## Parents and couples #############################
 
@@ -298,41 +298,46 @@ make_regMat = function(regressors, theta_names,
 
 # calculate resource shares with sharing rule
 add_shares_from_lm = function(fit, data,
-                              dev_type,
+                              dev_type = "own",
+                              data_type = "parents",
                               male_prefix = "male_",
                               female_prefix = "female_",
                               y_term_m = "male_y",
                               y_term_f = "female_y",
                               clamp01 = FALSE,
                               prefix_out = "share") {
-  dev_map_ownsex = c("Bx_dev_wage_f_only" = "dev_wage_f_only",
-                     "Bx_dev_wage_m_only" = "dev_wage_m_only",
-                     "Bx_dev_educ_f_only" = "dev_educ_f_only",
-                     "Bx_dev_educ_m_only" = "dev_educ_m_only",
-                     "Bx_dev_avgage" = "dev_avgage",
-                     "Bx_dev_agegap" = "dev_agegap",
-                     "Bx_dev_gdppc" = "dev_gdppc")
-  dev_map_bothsex = c("Bx_dev_wage_f_all" = "dev_wage_f_all",
-                      "Bx_dev_wage_m_all" = "dev_wage_m_all",
-                      "Bx_dev_educ_f_all" = "dev_educ_f_all",
-                      "Bx_dev_educ_m_all" = "dev_educ_m_all",
-                      "Bx_dev_avgage" = "dev_avgage",
-                      "Bx_dev_agegap" = "dev_agegap",
-                      "Bx_dev_gdppc" = "dev_gdppc")
-  dev_map_oppositesex = c("Bx_dev_wage_f_opp" = "dev_wage_f_opp",
-                          "Bx_dev_wage_m_opp" = "dev_wage_m_opp",
-                           "Bx_dev_educ_f_opp" = "dev_educ_f_opp",
-                           "Bx_dev_educ_m_opp" = "dev_educ_m_opp",
-                           "Bx_dev_avgage" = "dev_avgage",
-                           "Bx_dev_agegap" = "dev_agegap",
-                           "Bx_dev_gdppc" = "dev_gdppc")
+  
+  parents_addition = c("Bx_dev_ageyoungest" = "dev_ageyoungest", 
+                       "Bx_dev_numkids" = "dev_numkids")
   
   if (dev_type == "own") {
-    dev_map = dev_map_ownsex
+    dev_map = c("Bx_dev_wage_f_only" = "dev_wage_f_only",
+                "Bx_dev_wage_m_only" = "dev_wage_m_only",
+                "Bx_dev_educ_f_only" = "dev_educ_f_only",
+                "Bx_dev_educ_m_only" = "dev_educ_m_only",
+                "Bx_dev_avgage" = "dev_avgage",
+                "Bx_dev_agegap" = "dev_agegap",
+                "Bx_dev_gdppc" = "dev_gdppc")
   } else if (dev_type == "all") {
-    dev_map = dev_map_bothsex
+    dev_map = c("Bx_dev_wage_f_all" = "dev_wage_f_all",
+                "Bx_dev_wage_m_all" = "dev_wage_m_all",
+                "Bx_dev_educ_f_all" = "dev_educ_f_all",
+                "Bx_dev_educ_m_all" = "dev_educ_m_all",
+                "Bx_dev_avgage" = "dev_avgage",
+                "Bx_dev_agegap" = "dev_agegap",
+                "Bx_dev_gdppc" = "dev_gdppc")
   } else if (dev_type == "opp") {
-    dev_map = dev_map_oppositesex
+    dev_map = c("Bx_dev_wage_f_opp" = "dev_wage_f_opp",
+                "Bx_dev_wage_m_opp" = "dev_wage_m_opp",
+                "Bx_dev_educ_f_opp" = "dev_educ_f_opp",
+                "Bx_dev_educ_m_opp" = "dev_educ_m_opp",
+                "Bx_dev_avgage" = "dev_avgage",
+                "Bx_dev_agegap" = "dev_agegap",
+                "Bx_dev_gdppc" = "dev_gdppc")
+  }
+  
+  if (data_type == "parents") {
+    dev_map = c(dev_map, parents_addition)
   }
   
   coefficients = fit$coefficients
@@ -531,11 +536,11 @@ make_sysfit_kable_df = function(fit, row_map,
     out$female[i] = fmt_cell(f$est, f$se, f$p)
   }
   
-  out
+  return(out)
 }
 
 # table of marginal effects
-marginal_impacts = function(res, data, rows_map) {
+marginal_impacts = function(res, data, rows_map, data_type = "parents") {
   
   # local variables
   
@@ -578,6 +583,57 @@ marginal_impacts = function(res, data, rows_map) {
                    educ_f = "1 qualification level",
                    rgdppc = "£5,000")
   
+  if (data_type == "parents") {
+    mean_sd_vars = list(wage_m = "wage_m",
+                        wage_f = "wage_f",
+                        avgage = "avgage",
+                        agegap = "agegap_m",
+                        rgdppc = "rgdppc",
+                        educ_m = "educ_m",
+                        educ_f = "educ_f",
+                        kid_age_min = "kid_age_min",
+                        num_kids_total = "num_kids_total")
+    
+    units = list(wage_gbp = 1,          # +£1 hourly wage
+                 age_years = 10,        # +10 years
+                 income_gbp = 5000,     # +£5000 annual income / regional wealth
+                 educ_levels = 1,       # +1 education level
+                 years = 1,             # +1 year of age
+                 number_kids = 1)       # +1 child
+    
+    pretty_names = c(wage_m = "Male wage (2024 GBP)",
+                     wage_f = "Female wage (2024 GBP)",
+                     avgage = "Average age of couple",
+                     agegap = "Age gap (male - female)",
+                     rgdppc = "Regional wealth p.c. (2024 GBP)",
+                     educ_m = "Male qualifications (0/1/2)",
+                     educ_f = "Female qualifications (0/1/2)",
+                     kid_age_min = "Age of youngest h.h. child (years)",
+                     num_kids_total = "Number of children in h.h.")
+    
+    # map “table variable” -> which dev_* term drives the share rule
+    dev_term_for = list(wage_m = "dev_wage_m_only",
+                        wage_f = "dev_wage_f_only",
+                        avgage = "dev_avgage",
+                        agegap = "dev_agegap",
+                        rgdppc = "dev_gdppc",
+                        educ_m = "dev_educ_m_only",
+                        educ_f = "dev_educ_f_only",
+                        kid_age_min = "dev_ageyoungest",
+                        num_kids_total = "dev_numkids")
+    
+    # lazy ahh way of adding columns
+    impact_units = c(wage_m = "£1 per hour",
+                     wage_f = "£1 per hour",
+                     avgage = "10 years",
+                     agegap = "10 years",
+                     educ_m = "1 qualification level",
+                     educ_f = "1 qualification level",
+                     rgdppc = "£5,000",
+                     kid_age_min = "1 year",
+                     num_kids_total = "1 child")
+  }
+  
   params = res$params
   
   # etahat_z_f is named by Bx_* terms; dev_map maps Bx_* -> dev_* column name
@@ -618,6 +674,8 @@ marginal_impacts = function(res, data, rows_map) {
         key %in% c("avgage", "agegap") ~ theta_f * units$age_years,
         key == "rgdppc" ~ theta_f * units$income_gbp,
         key %in% c("educ_m", "educ_f") ~ theta_f * units$educ_levels,
+        key %in% c("kid_age_min") ~ theta_f * units$years,
+        key %in% c("num_kids_total") ~ theta_f * units$number_kids,
         TRUE ~ NA_real_)) |>
     select(variable, mean, sd, unit_level_impact, 
            impact_1sd_fshare, level_impact_fshare)
@@ -625,7 +683,7 @@ marginal_impacts = function(res, data, rows_map) {
   return(out)
 }
 
-`%||%` = function(x, y) if (!is.null(x)) x else y
+`%||%` = function(x, y) if (!is.null(x)) x else ys
 
 ########################## Archive: import FRED data ###########################
 
