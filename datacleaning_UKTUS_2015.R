@@ -37,8 +37,9 @@ activity_summaries_2015 = data_activities_2015 |>
     activity1_is_sleep = whatdoing %in% sleep_actlines,
     activity1_is_personalcare = whatdoing %in% personal_care_actlines,
     activity1_is_personalcare_sleep = whatdoing %in% sleep_personalcare,
-    activity1_is_childcare = whatdoing %in% childcare_actlines | WithChild != 0,
+    activity1_is_childcare = whatdoing %in% childcare_actlines,
     activity1_is_work = whatdoing %in% work_actlines,
+    activity1_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
     
     # second activity
@@ -49,6 +50,7 @@ activity_summaries_2015 = data_activities_2015 |>
     activity2_is_personalcare_sleep = What_Oth1 %in% sleep_personalcare,
     activity2_is_childcare = What_Oth1 %in% childcare_actlines,
     activity2_is_work = What_Oth1 %in% work_actlines,
+    activity2_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     activity2_is_domestic = What_Oth1 %in% domestic_actlines,
     
     # third activity
@@ -59,6 +61,7 @@ activity_summaries_2015 = data_activities_2015 |>
     activity3_is_personalcare = What_Oth2 %in% personal_care_actlines,
     activity3_is_personalcare_sleep = What_Oth2 %in% sleep_personalcare,
     activity3_is_work = What_Oth2 %in% work_actlines,
+    activity3_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     activity3_is_domestic = What_Oth2 %in% domestic_actlines,
     
     # fourth activity
@@ -69,6 +72,7 @@ activity_summaries_2015 = data_activities_2015 |>
     activity4_is_personalcare_sleep = What_Oth3 %in% sleep_personalcare,
     activity4_is_childcare = What_Oth3 %in% childcare_actlines,
     activity4_is_work = What_Oth3 %in% work_actlines,
+    activity4_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     activity4_is_domestic = What_Oth3 %in% domestic_actlines,
     
     # general: is leisure?
@@ -114,20 +118,28 @@ activity_summaries_2015 = data_activities_2015 |>
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              activity3_is_childcare | activity4_is_childcare),
+                              activity3_is_childcare | activity4_is_childcare | 
+                              WithChild == 1),
   
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work | 
                          activity3_is_work | activity4_is_work),
     
-    # general: is domestic?
+    # general: is domestic (aside from childcare)?
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
+                             activity3_is_otherdomestic | activity4_is_otherdomestic),
+    
+    # general: is domestic (all domestic work)?
     activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
                              activity3_is_domestic | activity4_is_domestic),
     
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse,
     
-    # is no-spouse domestic?
+    # is no-spouse domestic (aside from childcare)?
+    otherdomestic_nospouse = activity_isotherdomestic & activity_excludesspouse,
+    
+    # is no-spouse domestic (all domestic work)?
     domestic_nospouse = activity_isdomestic & activity_excludesspouse,
     
     # make weekend identifier
@@ -144,7 +156,9 @@ activity_summaries_2015 = data_activities_2015 |>
     total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
     total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE) / 60,
     
+    total_otherdomestic = sum(eptime[activity_isotherdomestic], na.rm = TRUE)  / 60,
     total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
+    total_otherdomestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
     total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
     
     total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
@@ -155,7 +169,16 @@ activity_summaries_2015 = data_activities_2015 |>
 ################################################################################
 
 # household data
-data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta"))
+data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
+  # help with childcare received? 
+  mutate(has_childcare_help = Help1 == 1 | Help2 == 1) |>
+  
+  # help with other domestic tasks received?
+  mutate(has_otherdomestic_help = Help4 == 1 | Help5 == 1 | Help7 == 1 | 
+           Help8 == 1 | Help10 == 1 | Help11 == 1 | Help13 == 1 | Help14 == 1 |
+           Help16 == 1 | Help17 == 1 | Help19 == 1 | Help20 == 1 | Help22 == 1 | 
+           Help23 == 1 | Help25 == 1 | Help26 == 1 | Help28 == 1 | Help29 == 1 |
+           Help31 == 1 | Help32 == 1)
 
 ################################################################################
 ############################ INDIVIDUAL-LEVEL DATA #############################
@@ -242,7 +265,7 @@ data_working_couples_2015 = data_individual_2015 |>
     
     # think there are some mistakes in the encoding for wage!
     wage = case_when(Stat == 1 & emp_earn > 8000 ~ (emp_earn / 52) / emp_hours,
-                     Stat == 1 & emp_earn <= 8000 ~ emp_earn / emp_hours,
+                     Stat == 1 & emp_earn > 0 & emp_earn <= 8000 ~ emp_earn / emp_hours,
                      Stat == 2 ~ se_earn / (se_hours * 4.33),
                      TRUE ~ NA_real_)) |>
 
@@ -253,7 +276,7 @@ data_working_couples_2015 = data_individual_2015 |>
   # ungroup() |>
 
   mutate(is_spouse = !is_resp) |>
-  group_by(serial, pnum, is_weekend) |>
+  group_by(serial, pnum) |>
   mutate(
     total_leisure_exp = wage * total_leisure,
     total_leisure_exp_r = wage * total_leisure_r,
@@ -261,7 +284,7 @@ data_working_couples_2015 = data_individual_2015 |>
     private_leisure_exp_r = wage * total_private_leisure_r,
     total_childcare_exp = wage * total_childcare,
     nospouse_childcare_exp = wage * total_childcare_nospouse,
-    y_individual = wage * 24) |>
+    y_individual = wage * 48) |>
   ungroup()
 
 # parents
@@ -273,6 +296,10 @@ data_working_parents_2015 = data_working_couples_2015 |>
   inner_join(kids_counts_2015, by = c("serial")) |>
   inner_join(kids_age_dist_2015, by = c("serial")) |>
   inner_join(kids_age_wide_2015, by = c("serial")) |>
+  
+  # merge information about domestic help
+  inner_join(data_hh_2015 |> select(serial, has_childcare_help, 
+                                    has_otherdomestic_help), by = c("serial")) |>
 
   group_by(serial, is_weekend) |>
   

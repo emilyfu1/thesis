@@ -4,3 +4,5 @@
 .pdf
 .DS_Store
 .Rhistory
+uktus_data/*
+.RDataTmp

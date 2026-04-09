@@ -107,6 +107,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity1_is_personalcare_sleep = whatdoing %in% sleep_personalcare,
     activity1_is_childcare = whatdoing %in% childcare_actlines,
     activity1_is_work = whatdoing %in% work_actlines,
+    activity1_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
     
     # secondary activity
@@ -117,6 +118,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity2_is_personalcare_sleep = What_Oth1 %in% sleep_personalcare,
     activity2_is_childcare = What_Oth1 %in% childcare_actlines,
     activity2_is_work = What_Oth1 %in% work_actlines,
+    activity2_is_otherdomestic = What_Oth1 %in% otherdomestic_actlines,
     activity2_is_domestic = What_Oth1 %in% domestic_actlines,
     
     # general: is leisure?
@@ -158,16 +160,22 @@ activity_summaries_2000 = data_activities_2000_long |>
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work),
     
-    # general: is domestic?
-    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    # general: is domestic work (aside from childcare)?
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic),
     
+    # general: is domestic work (all domestic work)?
+    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+      
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse,
     
-    # is no-spouse domestic?
+    # is no-spouse domestic (aside from childcare)?
+    otherdomestic_nospouse = activity_isotherdomestic & activity_excludesspouse,
+  
+    # is no-spouse domestic (all domestic work)?
     domestic_nospouse = activity_isdomestic & activity_excludesspouse) |>
   
-  # add up time use in hours
+  # add up time use in hours 
   group_by(serial, pnum, is_weekend) |>
   summarise(
     total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE) / 60,
@@ -178,7 +186,9 @@ activity_summaries_2000 = data_activities_2000_long |>
     total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
     total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE) / 60,
     
+    total_otherdomestic = sum(eptime[activity_isotherdomestic], na.rm = TRUE)  / 60,
     total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
+    total_otherdomestic_nospouse = sum(eptime[otherdomestic_nospouse], na.rm = TRUE) / 60,
     total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
     
     total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
@@ -192,7 +202,29 @@ activity_summaries_2000 = data_activities_2000_long |>
 data_hh_2000 = read_dta(paste0(uktus_2000_direct, 
                                       "hhld_data_6.dta")) |>
   # make household identifier equivalent to 2015 data
-  mutate(serial = as.integer(paste0(sn2, "0", sn1)))
+  mutate(serial = as.integer(paste0(sn2, "0", sn1))) |>
+  
+  # help with childcare received? 
+  # only have this information at the household level and no information on duration
+  mutate(has_childcare_help = (hq9a01 == 1 | hq9a01 == 2 | hq9a01 == 3)) |>
+  
+  # help with other domestic tasks received?
+  mutate(has_otherdomestic_help = (hq9a02 == 1 | hq9a02 == 2 | hq9a02 == 3 |
+                                     hq9a03 == 1 | hq9a03 == 2 | hq9a03 == 3 |
+                                     hq9a04 == 1 | hq9a04 == 2 | hq9a04 == 3 |
+                                     hq9a05 == 1 | hq9a05 == 2 | hq9a05 == 3 |
+                                     hq9a06 == 1 | hq9a06 == 2 | hq9a06 == 3 |
+                                     hq9a07 == 1 | hq9a07 == 2 | hq9a07 == 3 |
+                                     hq9a08 == 1 | hq9a08 == 2 | hq9a08 == 3 |
+                                     hq9a09 == 1 | hq9a09 == 2 | hq9a09 == 3 |
+                                     hq9a10 == 1 | hq9a10 == 2 | hq9a10 == 3 |
+                                     hq9a11 == 1 | hq9a11 == 2 | hq9a11 == 3 |
+                                     hq9a12 == 1 | hq9a12 == 2 | hq9a12 == 3 |
+                                     hq9a13 == 1 | hq9a13 == 2 | hq9a13 == 3 |
+                                     hq9a14 == 1 | hq9a14 == 2 | hq9a14 == 3 |
+                                     hq9a15 == 1 | hq9a15 == 2 | hq9a15 == 3 |
+                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3))
+  
 
 # relationships in individual data
 all_relationships_2000 = data_hh_2000 |>
@@ -308,19 +340,35 @@ data_working_couples_2000 = data_individual_2000 |>
     # clean main job earnings
     emp_weekly_exact = if_else(q7 == 1 & q10 > 0, pay_to_weekly(q10, q11), NA_real_),
     # emp_takehome_range = if_else(q7 == 1 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
-    emp_monthly_range = if_else(q7 == 1 & q11a %in% 0:10, q10x_mid[q11a + 1], NA_real_),
+    # emp_monthly_range = if_else(q7 == 1 & q11a %in% 0:10, q10x_mid[q11a + 1], NA_real_),
     se_weekly_exact = if_else(q7 == 2 & q13c > 0, q13c / 4.33, NA_real_),
-    # se_weekly_range = if_else(q7 == 2 & q13d %in% 0:10, q10x_mid[q13d + 1], NA_real_),
+    se_weekly_range = if_else(q7 == 2 & q13d %in% 0:10, q10x_mid[q13d + 1], NA_real_),
+    
+    # clean working hours
+    q14c = if_else(q14c > 0 & !is.na(q14c), q14c, 0),
+    q14d = if_else(q14d > 0 & !is.na(q14d), q14d, 0),
+    q14e = if_else(q14e > 0 & !is.na(q14e), q14e, 0),
+    q14f = if_else(q14f > 0 & !is.na(q14f), q14f, 0),
     
     # calculate weekly earnings
     NetWkly = case_when(q7 == 1 & q10 > 0 ~ emp_weekly_exact,
                         # q7 == 1 & q10x %in% 0:10 ~ pay_to_weekly(emp_takehome_range, q11),
-                        q7 == 1 & q11a %in% 0:10 ~ emp_monthly_range / 4.33,
+                        # q7 == 1 & q11a %in% 0:10 ~ emp_monthly_range / 4.33,
                         q7 == 2 & q13c > 0 ~ se_weekly_exact,
-                        # q7 == 2 & q13d %in% 0:10 ~ se_weekly_range / 4.33,
+                        q7 == 2 & q13d %in% 0:10 ~ se_weekly_range / 4.33,
                         TRUE ~ NA_real_),
     
     # calculate wage (fill in for full-time)
+
+    HrWkAc = case_when(q14d <= 0 & q14c > 0 ~ q14c,
+                       q14c <= 0 & q14d > 0 & q14e > 0 & q14f > 0 ~ q14d + q14e + q14f,
+                       q14c <= 0 & q14d > 0 & q14e > 0 & q14f <= 0 ~ q14d + q14e,
+                       q14c <= 0 & q14d > 0 & q14e <= 0 & q14f > 0 ~ q14d + q14f,
+                       q14c <= 0 & q14d > 0 & q14e <= 0 & q14f <= 0 ~ q14d,
+                       q14c <= 0 & q14d <= 0 & q14e > 0 & q14f <= 0 ~ q14e,
+                       q14c <= 0 & q14d <= 0 & q14e <= 0 & q14f > 0 ~ q14f,
+                       q14c <= 0 & q14d <= 0 & q14e > 0 & q14f > 0 ~ q14e + q14f,
+                       TRUE ~ NA_real_),
     HrWkAc = case_when((q8c == 1 | q13e == 1) ~ 40,
                        (q8c == 2 | q13e == 2) ~ 20,
                        TRUE ~ NA_real_),
@@ -336,7 +384,7 @@ data_working_couples_2000 = data_individual_2000 |>
   mutate(is_spouse = !is_resp) |>
   
   # make sure time use EXPENDITURE is calculated for both days separately
-  group_by(serial, pnum, is_weekend) |>
+  group_by(serial, pnum) |>
   # individual expenditure calculated using time use
   mutate(# leisure and childcare expenditure
     total_leisure_exp = wage * total_leisure,
@@ -346,7 +394,7 @@ data_working_couples_2000 = data_individual_2000 |>
     total_childcare_exp = wage * total_childcare,
     nospouse_childcare_exp = wage * total_childcare_nospouse,
     # individual contribution to household budget
-    y_individual = wage * 24) |>
+    y_individual = wage * 48) |>
   ungroup()
 
 # parents
@@ -358,6 +406,10 @@ data_working_parents_2000 = data_working_couples_2000 |>
   inner_join(kids_counts_2000, by = c("serial")) |>
   inner_join(kids_age_dist_2000, by = c("serial")) |>
   inner_join(kids_age_wide_2000, by = c("serial")) |>
+  
+  # merge information about domestic help
+  inner_join(data_hh_2000 |> select(serial, has_childcare_help, 
+                                    has_otherdomestic_help), by = c("serial")) |>
   
   group_by(serial, is_weekend) |>
   
