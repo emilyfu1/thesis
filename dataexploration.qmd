@@ -258,11 +258,11 @@ print(as.data.frame(nonparents_summary))
 ```{r}
 # deviations of characteristics compared to own sex
 print("Leisure expenditure of parents (excluding sleep and personal care)")
-print(make_sysfit_kable_df(parents_res_r_within_merged, rows_within))
+print(make_sysfit_kable_df(parents_res_r_within_merged, p_rows_within))
 
 # deviations of characteristics compared to own sex
 print("Leisure expenditure of parents (including sleep and personal care)")
-print(make_sysfit_kable_df(parents_res_within_merged, rows_within))
+print(make_sysfit_kable_df(parents_res_within_merged, p_rows_within))
 ```
 - Here are the regression results for the childless couples:
 - Treating children as a public good, however, should put the parents and non-parents in the same household category, so I don't know if they should technically be estimated together? Or what I can get from separating parents and non-parents from each other exactly, like does it even matter? I see that the estimated preference parameter for parents is in fact different despite being in the same household category as non-parents, but they're point estimates so I can't really test for the significance of them
@@ -270,11 +270,11 @@ print(make_sysfit_kable_df(parents_res_within_merged, rows_within))
 ```{r}
 # deviations of characteristics compared to own sex
 print("Leisure expenditure of non-parents (excluding sleep and personal care)")
-print(make_sysfit_kable_df(nonparents_res_r_within_merged, rows_within))
+print(make_sysfit_kable_df(nonparents_res_r_within_merged, np_rows_within))
 
 # deviations of characteristics compared to own sex
 print("Leisure expenditure of non-parents (including sleep and personal care)")
-print(make_sysfit_kable_df(nonparents_res_within_merged, rows_within))
+print(make_sysfit_kable_df(nonparents_res_within_merged, np_rows_within))
 ```
 I reject equal sharing for both parents and non-parents (again while estimating separately), although this inequality is not significantly different between the two groups
 - Although, I'm not sure if differences in sharing between the two groups actually means that one of the identifying assumptions is being violated. For instance, possible preference heterogeneity in the assignable good driven by gender expectations would make mothers more "self-sacrificial" and have a lower preference for leisure, regardless of her relative bargaining power. 
@@ -342,7 +342,8 @@ marginal_impacts_parents = marginal_impacts(shares_parents_ownsex_r_merged,
                                            parents_est_data_merged, p_rows_within)
 
 marginal_impacts_nonparents = marginal_impacts(shares_nonparents_ownsex_r_merged, 
-                                           nonparents_est_data_merged, np_rows_within)
+                                           nonparents_est_data_merged, np_rows_within, 
+                                           data_type = "nonparents")
 
 print("Interpretation of regression coefficients (including personal care and sleep, parents)")
 print(marginal_impacts_parents)
@@ -494,11 +495,11 @@ reg_stacked = bind_rows(
       pnum,
       is_weekend = as.integer(is_weekend), # dummy
       male = as.integer(male), # dummy
-      # has_childcare_help = as.integer(has_childcare_help),
-      # has_otherdomestic_help = as.integer(has_otherdomestic_help),
+      has_childcare_help = as.integer(has_childcare_help),
+      has_otherdomestic_help = as.integer(has_otherdomestic_help),
       wage, 
       total_work,
-      # total_otherdomestic,
+      total_otherdomestic,
       total_private_leisure,
       total_private_leisure_r,
       total_childcare_nospouse,
@@ -511,11 +512,11 @@ reg_stacked = bind_rows(
       sample = "2015",
       is_weekend = as.integer(is_weekend),
       male = as.integer(male),
-      # has_childcare_help = as.integer(has_childcare_help),
-      # has_otherdomestic_help = as.integer(has_otherdomestic_help),
+      has_childcare_help = as.integer(has_childcare_help),
+      has_otherdomestic_help = as.integer(has_otherdomestic_help),
       wage,
       total_work,
-      # total_otherdomestic,
+      total_otherdomestic,
       total_private_leisure,
       total_private_leisure_r,
       total_childcare_nospouse,
@@ -732,12 +733,11 @@ etable(feols(
   total_private_leisure ~ 
     is_weekend * male * shareown_etahat_f
   + total_work
-  # + is_weekend * total_otherdomestic
-  + male * shareown_etahat_f
-  + is_weekend * male * has_young_child
-  + is_weekend * male * proportion_male_children
-  # + has_childcare_help
-  # + has_otherdomestic_help
+  + total_otherdomestic
+  + has_young_child
+  + proportion_male_children
+  + has_childcare_help
+  + has_otherdomestic_help
   | sample + dgorpaf,
   cluster = "serial",
   data = reg_stacked

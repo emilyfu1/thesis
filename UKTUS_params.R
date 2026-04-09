@@ -32,6 +32,7 @@ vars_to_suffix = c(
   "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", "total_domestic", 
+  "total_otherdomestic", "total_otherdomestic_nospouse",
   "total_domestic_nospouse", "total_childcare_nospouse", "total_work",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
   "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
@@ -57,20 +58,20 @@ sleep_personalcare = c(sleep_actlines, personal_care_actlines)
 
 # hobbies, social activities, entertainment
 mainleisure_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
-                         8211, 7190, 6170, 8219, 8221, 8222, 6179, 
-                         8229, 6190, 5190, 7241, 5200, 7249, 7251,
-                         5210, 1120, 5220, 5221, 5222, 5223, 5225,
-                         8300, 5229, 8311, 5245, 8319, 5250, 7300,
-                         7320, 7321, 7329, 6171, 6310, 6311, 8220,
-                         5290, 5291, 7340, 5293, 5294, 5299, 1220,
-                         6144, 4300, 7390, 5295, 7230, 7240, 3531,
-                         3615, 9820, 5224, 5230, 8310, 4390, 8320, 
-                         7129, 8312, 8000, 7310, 7000, 8212, 6000, 
-                         5000, 7322, 8110, 8120, 7100, 7110, 7111, 
-                         7112, 7330, 7119, 7120, 7121, 6100, 7130, 
-                         6110, 6111, 7140, 6119, 6120, 5100, 7150, 
-                         6312, 6130, 6131, 6132, 6142, 5110, 7160, 
-                         6140, 6141, 8190, 6143)
+                      8211, 7190, 6170, 8219, 8221, 8222, 6179, 
+                      8229, 6190, 5190, 7241, 5200, 7249, 7251,
+                      5210, 1120, 5220, 5221, 5222, 5223, 5225,
+                      8300, 5229, 8311, 5245, 8319, 5250, 7300,
+                      7320, 7321, 7329, 6171, 6310, 6311, 8220,
+                      5290, 5291, 7340, 5293, 5294, 5299, 1220,
+                      6144, 4300, 7390, 5295, 7230, 7240, 3531,
+                      3615, 9820, 5224, 5230, 8310, 4390, 8320, 
+                      7129, 8312, 8000, 7310, 7000, 8212, 6000, 
+                      5000, 7322, 8110, 8120, 7100, 7110, 7111, 
+                      7112, 7330, 7119, 7120, 7121, 6100, 7130, 
+                      6110, 6111, 7140, 6119, 6120, 5100, 7150, 
+                      6312, 6130, 6131, 6132, 6142, 5110, 7160, 
+                      6140, 6141, 8190, 6143)
 
 travel_leisure_actlines = c(9500, # Travel to visit friends/relatives in their homes not respondents household
                             9620, # Travel related to hunting & fishing
@@ -205,11 +206,14 @@ otherdomestic_actlines = c(4100, # Unspecified organisational work
                            3924, # Accompanying a dependent adult household member e.g. Alzheimic
                            3929) # Other specified help to a dependent adult household member
 
+# all domestic work
+domestic_actlines = c(childcare_actlines, otherdomestic_actlines)
+
 ################################################################################
-################################## TABLE STUFF #################################
+############################# NONPARENT TABLE STUFF ############################
 ################################################################################
 
-rows_within = c("y" = "Budget",
+np_rows_within = c("y" = "Budget",
                 "Bx_dev_wage_f_only" = "Budget * dev. fem. hourly pay",
                 "Bx_dev_wage_m_only" = "Budget * dev. mal. hourly pay",
                 "Bx_dev_educ_f_only" = "Budget * dev. fem. qualification",
@@ -218,7 +222,7 @@ rows_within = c("y" = "Budget",
                 "Bx_dev_agegap" = "Budget * dev. age gap",
                 "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
-rows_between = c("y" = "Budget",
+np_rows_between = c("y" = "Budget",
                  "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
                  "Bx_dev_wage_m_all" = "Budget * dev. all hourly pay",
                  "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
@@ -227,7 +231,7 @@ rows_between = c("y" = "Budget",
                  "Bx_dev_agegap" = "Budget * dev. age gap",
                  "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
-rows_opposite = c("y" = "Budget",
+np_rows_opposite = c("y" = "Budget",
                  "Bx_dev_wage_f_opp" = "Budget * dev. opp.sex hourly pay",
                  "Bx_dev_wage_m_opp" = "Budget * dev. opp.sex hourly pay",
                  "Bx_dev_educ_f_opp" = "Budget * dev. opp.sex qualification",
@@ -237,113 +241,270 @@ rows_opposite = c("y" = "Budget",
                  "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
 ################################################################################
-################################# Regressions! #################################
+############################### PARENT TABLE STUFF #############################
+################################################################################
+
+p_rows_within = c("y" = "Budget",
+                  "Bx_dev_wage_f_only" = "Budget * dev. fem. hourly pay",
+                  "Bx_dev_wage_m_only" = "Budget * dev. mal. hourly pay",
+                  "Bx_dev_educ_f_only" = "Budget * dev. fem. qualification",
+                  "Bx_dev_educ_m_only" = "Budget * dev. mal. qualification",
+                  "Bx_dev_avgage" = "Budget * dev. average age",
+                  "Bx_dev_agegap" = "Budget * dev. age gap",
+                  "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.",
+                  "Bx_dev_ageyoungest" = "Budget * dev. youngest child age",
+                  "Bx_dev_numkids" = "Budget * dev. num. kids")
+
+p_rows_between = c("y" = "Budget",
+                  "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
+                  "Bx_dev_wage_m_all" = "Budget * dev. all hourly pay",
+                  "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
+                  "Bx_dev_educ_m_all" = "Budget * dev. all qualification",
+                  "Bx_dev_avgage" = "Budget * dev. average age",
+                  "Bx_dev_agegap" = "Budget * dev. age gap",
+                  "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c",
+                  "Bx_dev_ageyoungest" = "Budget * dev. youngest child age",
+                  "Bx_dev_numkids" = "Budget * dev. num. kids")
+
+p_rows_opposite = c("y" = "Budget",
+                    "Bx_dev_wage_f_opp" = "Budget * dev. opp.sex hourly pay",
+                    "Bx_dev_wage_m_opp" = "Budget * dev. opp.sex hourly pay",
+                    "Bx_dev_educ_f_opp" = "Budget * dev. opp.sex qualification",
+                    "Bx_dev_educ_m_opp" = "Budget * dev. opp.sex qualification",
+                    "Bx_dev_avgage" = "Budget * dev. average age",
+                    "Bx_dev_agegap" = "Budget * dev. age gap",
+                    "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.",
+                    "Bx_dev_ageyoungest" = "Budget * dev. youngest child age",
+                    "Bx_dev_numkids" = "Budget * dev. num. kids")
+
+################################################################################
+############################ Regressions non-parents ###########################
 ################################################################################
 
 ##### Male and female specifications: deviations from average with own sex #####
 
-# leisure including eating, drinking, washing, spirituality, volunteering
+# leisure including sleep and personal care
 
 # men
-eq_m_within = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+np_eq_m_within = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # women
-eq_f_within = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+np_eq_f_within = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
-# relaxing, socialising, sport, entertainment, and hobbies only
+# leisure excluding sleep and personal care
 
 # men
-eq_m_r_within = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+np_eq_m_r_within = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # women
-eq_f_r_within = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+np_eq_f_r_within = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # list of regressions
-eqns_within = list(male = eq_m_within, female = eq_f_within)
-eqns_r_within = list(male = eq_m_r_within, female = eq_f_r_within)
+np_eqns_within = list(male = np_eq_m_within, female = np_eq_f_within)
+np_eqns_r_within = list(male = np_eq_m_r_within, female = np_eq_f_r_within)
 
 ### Male and female specifications: deviations from average of men AND women ###
 
-# leisure including eating, drinking, washing, spirituality, volunteering
+# leisure including sleep and personal care
 
 # men
-eq_m_between = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+np_eq_m_between = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
   Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # women
-eq_f_between = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+np_eq_f_between = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
   Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
-# relaxing, socialising, sport, entertainment, and hobbies only
+# leisure excluding sleep and personal care
 
 # men
-eq_m_r_between = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+np_eq_m_r_between = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
   Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # women
-eq_f_r_between = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+np_eq_f_r_between = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
   Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # list of regressions
-eqns_between = list(male = eq_m_between, female = eq_f_between)
-eqns_r_between = list(male = eq_m_r_between, female = eq_f_r_between)
+np_eqns_between = list(male = np_eq_m_between, female = np_eq_f_between)
+np_eqns_r_between = list(male = np_eq_m_r_between, female = np_eq_f_r_between)
 
 ######### Male and female specifications: deviations from opposite sex #########
 
-# leisure including eating, drinking, washing, spirituality, volunteering
+# leisure including sleep and personal care
 
 # men
-eq_m_opposite = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+np_eq_m_opposite = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
   Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # women
-eq_f_opposite = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+np_eq_f_opposite = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
   Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
-# relaxing, socialising, sport, entertainment, and hobbies only
+# leisure excluding sleep and personal care
 
 # men
-eq_m_r_opposite = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+np_eq_m_r_opposite = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
   Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # women
-eq_f_r_opposite = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+np_eq_f_r_opposite = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
   Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc
 
 # list of regressions
-eqns_opposite = list(male = eq_m_opposite, female = eq_f_opposite)
-eqns_r_opposite = list(male = eq_m_r_opposite, female = eq_f_r_opposite)
+np_eqns_opposite = list(male = np_eq_m_opposite, female = np_eq_f_opposite)
+np_eqns_r_opposite = list(male = np_eq_m_r_opposite, female = np_eq_f_r_opposite)
+
+################################################################################
+############################## Regressions parents #############################
+################################################################################
+
+##### Male and female specifications: deviations from average with own sex #####
+
+# leisure including sleep and personal care
+
+# men
+p_eq_m_within = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# women
+p_eq_f_within = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# leisure excluding sleep and personal care
+
+# men
+p_eq_m_r_within = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# women
+p_eq_f_r_within = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
+  Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# list of regressions
+p_eqns_within = list(male = p_eq_m_within, female = p_eq_f_within)
+p_eqns_r_within = list(male = p_eq_m_r_within, female = p_eq_f_r_within)
+
+### Male and female specifications: deviations from average of men AND women ###
+
+# leisure including sleep and personal care
+
+# men
+p_eq_m_between = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# women
+p_eq_f_between = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# leisure excluding sleep and personal care
+
+# men
+p_eq_m_r_between = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# women
+p_eq_f_r_between = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_all + Bx_dev_wage_m_all + 
+  Bx_dev_educ_f_all + Bx_dev_educ_m_all + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# list of regressions
+p_eqns_between = list(male = p_eq_m_between, female = p_eq_f_between)
+p_eqns_r_between = list(male = p_eq_m_r_between, female = p_eq_f_r_between)
+
+######### Male and female specifications: deviations from opposite sex #########
+
+# leisure including sleep and personal care
+
+# men
+p_eq_m_opposite = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# women
+p_eq_f_opposite = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# leisure excluding sleep and personal care
+
+# men
+p_eq_m_r_opposite = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# women
+p_eq_f_r_opposite = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_opp + Bx_dev_wage_m_opp + 
+  Bx_dev_educ_f_opp + Bx_dev_educ_m_opp + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
+  Bx_dev_ageyoungest + Bx_dev_numkids
+
+# list of regressions
+p_eqns_opposite = list(male = p_eq_m_opposite, female = p_eq_f_opposite)
+p_eqns_r_opposite = list(male = p_eq_m_r_opposite, female = p_eq_f_r_opposite)
+
+
 
 ######################## MATRIX OF RESTRICTIONS FOR SUR ########################
 
-regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
+parents_addition = c("Bx_dev_ageyoungest", "Bx_dev_numkids")
+
+np_regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
                 "Bx_dev_educ_f_only", "Bx_dev_educ_m_only",
                 "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
 
-regs_between = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
+p_regs_within = c(np_regs_within, parents_addition)
+
+np_regs_between = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
                  "Bx_dev_educ_f_all", "Bx_dev_educ_m_all",
                  "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
 
-regs_opposite = c("Bx_dev_wage_f_opp", "Bx_dev_wage_m_opp",
+p_regs_between = c(np_regs_between, parents_addition)
+
+np_regs_opposite = c("Bx_dev_wage_f_opp", "Bx_dev_wage_m_opp",
                   "Bx_dev_educ_f_opp", "Bx_dev_educ_m_opp",
                   "Bx_dev_avgage", "Bx_dev_agegap", "Bx_dev_gdppc")
 
-theta_names_single = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
+p_regs_opposite = c(np_regs_between, parents_addition)
+
+np_theta_names_single = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
                        "theta_age", "theta_agegap", "theta_regwealth")
 
-modReg_within = make_regMat(regressors = regs_within,
-                            theta_names = theta_names_single)
+p_theta_names_single = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
+                          "theta_age", "theta_agegap", "theta_regwealth",
+                         "theta_ageyoungest", "theta_numkids")
 
-modReg_between = make_regMat(regressors = regs_between,
-                             theta_names = theta_names_single)
+# restricted coefficients nonparents
+np_modReg_within = make_regMat(regressors = np_regs_within,
+                            theta_names = np_theta_names_single)
 
-modReg_opposite = make_regMat(regressors = regs_opposite,
-                              theta_names = theta_names_single)
+np_modReg_between = make_regMat(regressors = np_regs_between,
+                             theta_names = np_theta_names_single)
 
+np_modReg_opposite = make_regMat(regressors = np_regs_opposite,
+                              theta_names = np_theta_names_single)
+
+# restricted coefficients parents
+p_modReg_within = make_regMat(regressors = p_regs_within,
+                               theta_names = p_theta_names_single)
+
+p_modReg_between = make_regMat(regressors = p_regs_between,
+                                theta_names = p_theta_names_single)
+
+p_modReg_opposite = make_regMat(regressors = p_regs_opposite,
+                                 theta_names = p_theta_names_single)
+
+# using all deviations
 regs_both = c("Bx_dev_wage_f_all", "Bx_dev_wage_m_all",
               "Bx_dev_educ_f_all", "Bx_dev_educ_m_all",
               "Bx_dev_wage_f_only", "Bx_dev_wage_m_only",

@@ -108,6 +108,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity1_is_childcare = whatdoing %in% childcare_actlines,
     activity1_is_work = whatdoing %in% work_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
+    activity1_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     
     # secondary activity
     activity2_is_leisure = What_Oth1 %in% leisure_actlines,
@@ -118,6 +119,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity2_is_childcare = What_Oth1 %in% childcare_actlines,
     activity2_is_work = What_Oth1 %in% work_actlines,
     activity2_is_domestic = What_Oth1 %in% domestic_actlines,
+    activity2_is_otherdomestic = What_Oth1 %in% otherdomestic_actlines,
     
     # general: is leisure?
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
@@ -160,14 +162,14 @@ activity_summaries_2000 = data_activities_2000_long |>
     
     # general: is domestic?
     activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic),
     
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse,
     
     # is no-spouse domestic?
     domestic_nospouse = activity_isdomestic & activity_excludesspouse,
-    
-    ) |>
+    otherdomestic_nospouse = activity_isotherdomestic & activity_excludesspouse) |>
   
   # add up time use in hours
   group_by(serial, pnum, is_weekend) |>
@@ -182,6 +184,8 @@ activity_summaries_2000 = data_activities_2000_long |>
     
     total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
     total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
+    total_otherdomestic = sum(eptime[activity_isotherdomestic], na.rm = TRUE)  / 60,
+    total_otherdomestic_nospouse = sum(eptime[otherdomestic_nospouse], na.rm = TRUE) / 60,
     
     total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
     .groups = "drop")
@@ -194,7 +198,28 @@ activity_summaries_2000 = data_activities_2000_long |>
 data_hh_2000 = read_dta(paste0(uktus_2000_direct, 
                                       "hhld_data_6.dta")) |>
   # make household identifier equivalent to 2015 data
-  mutate(serial = as.integer(paste0(sn2, "0", sn1)))
+  mutate(serial = as.integer(paste0(sn2, "0", sn1))) |>
+  
+  # help with childcare received? 
+  # only have this information at the household level and no information on duration
+  mutate(has_childcare_help = (hq9a01 == 1 | hq9a01 == 2 | hq9a01 == 3)) |>
+  
+  # help with other domestic tasks received?
+  mutate(has_otherdomestic_help = (hq9a02 == 1 | hq9a02 == 2 | hq9a02 == 3 |
+                                     hq9a03 == 1 | hq9a03 == 2 | hq9a03 == 3 |
+                                     hq9a04 == 1 | hq9a04 == 2 | hq9a04 == 3 |
+                                     hq9a05 == 1 | hq9a05 == 2 | hq9a05 == 3 |
+                                     hq9a06 == 1 | hq9a06 == 2 | hq9a06 == 3 |
+                                     hq9a07 == 1 | hq9a07 == 2 | hq9a07 == 3 |
+                                     hq9a08 == 1 | hq9a08 == 2 | hq9a08 == 3 |
+                                     hq9a09 == 1 | hq9a09 == 2 | hq9a09 == 3 |
+                                     hq9a10 == 1 | hq9a10 == 2 | hq9a10 == 3 |
+                                     hq9a11 == 1 | hq9a11 == 2 | hq9a11 == 3 |
+                                     hq9a12 == 1 | hq9a12 == 2 | hq9a12 == 3 |
+                                     hq9a13 == 1 | hq9a13 == 2 | hq9a13 == 3 |
+                                     hq9a14 == 1 | hq9a14 == 2 | hq9a14 == 3 |
+                                     hq9a15 == 1 | hq9a15 == 2 | hq9a15 == 3 |
+                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3))
 
 # relationships in individual data
 all_relationships_2000 = data_hh_2000 |>
@@ -380,19 +405,6 @@ data_working_couples_2000 = data_individual_2000 |>
 
   group_by(serial) |>
   
-  # keep any households where both people are captured by this hourly wage
-  filter(all(wage > 0)) |>
-  # deciding to keep employees only
-  # filter(wage_source == "employee_exact") |>
-  
-  # check for couples who both have time diaries (filter after both joins)
-  mutate(spouse_present = spouse_pnum %in% pnum) |>
-  
-  ungroup() |> 
-  
-  # only keep couples who both have time diaries (filter after joins)
-  filter(spouse_present) |>
-  
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
   
@@ -420,7 +432,11 @@ data_working_parents_2000 = data_working_couples_2000 |>
   inner_join(kids_age_dist_2000, by = c("serial")) |>
   inner_join(kids_age_wide_2000, by = c("serial")) |>
   
-  group_by(serial) |>
+  # merge information about domestic help
+  inner_join(data_hh_2000 |> select(serial, has_childcare_help, 
+                                    has_otherdomestic_help), by = c("serial")) |>
+  
+  group_by(serial, is_weekend) |>
   
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -443,7 +459,7 @@ data_working_nonparents_2000 = data_working_couples_2000 |>
   filter(hhtype4 %in% c(3, 6) | kid_age_min >= 18) |>
   select(-kid_age_min) |>
 
-  group_by(serial) |>
+  group_by(serial, is_weekend) |>
 
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -549,7 +565,13 @@ parents_est_data_2000 = data_working_parents_2000 |>
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    dev_gdppc = income_annual - rgdppc) |>
+    dev_gdppc = income_annual - rgdppc,
+    
+    # deviation of youngest child age
+    dev_ageyoungest = kid_age_min - mean(kid_age_min, na.rm = TRUE),
+    
+    # deviation of total num kids
+    dev_numkids = num_kids_total - mean(num_kids_total, na.rm = TRUE)) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
@@ -569,7 +591,9 @@ parents_est_data_2000 = data_working_parents_2000 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc) |>
+         Bx_dev_gdppc = y * dev_gdppc,
+         Bx_dev_ageyoungest = y * dev_ageyoungest,
+         Bx_dev_numkids = y * dev_numkids) |>
   
   # since the expenditure variables are calculated across the entire survey 
   # period, it doesn't matter which one i drop
