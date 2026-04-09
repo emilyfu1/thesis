@@ -257,11 +257,11 @@ print(as.data.frame(nonparents_summary))
 - Fathers are slightly favoured over mothers in both definitions of the assignable good
 ```{r}
 # deviations of characteristics compared to own sex
-print("Leisure expenditure of parents (excluding sleep and personal care)")
+print("Regression results (sharing rule) of parents (excluding sleep and personal care)")
 print(make_sysfit_kable_df(parents_res_r_within_merged, p_rows_within))
 
 # deviations of characteristics compared to own sex
-print("Leisure expenditure of parents (including sleep and personal care)")
+print("Regression results (sharing rule) of parents (including sleep and personal care)")
 print(make_sysfit_kable_df(parents_res_within_merged, p_rows_within))
 ```
 - Here are the regression results for the childless couples:
@@ -269,11 +269,11 @@ print(make_sysfit_kable_df(parents_res_within_merged, p_rows_within))
 - Magnitude/sign/direction of the coefficients are similar to the previous regressions, but more are significant, aside from average age of the couple. It looks like in the less constrained setting, the set of effective bargaining instruments grows to include male and female educational attainment (or there's just more variation in labour-leisure choices than when time is more scarce)
 ```{r}
 # deviations of characteristics compared to own sex
-print("Leisure expenditure of non-parents (excluding sleep and personal care)")
+print("Regression results (sharing rule) of non-parents (excluding sleep and personal care)")
 print(make_sysfit_kable_df(nonparents_res_r_within_merged, np_rows_within))
 
 # deviations of characteristics compared to own sex
-print("Leisure expenditure of non-parents (including sleep and personal care)")
+print("Regression results (sharing rule) of non-parents (including sleep and personal care)")
 print(make_sysfit_kable_df(nonparents_res_within_merged, np_rows_within))
 ```
 I reject equal sharing for both parents and non-parents (again while estimating separately), although this inequality is not significantly different between the two groups
@@ -929,22 +929,22 @@ kable(diff_tab, digits = 3, caption = "Difference between men and women in the p
 Using just relaxing, socialising, sport, entertainment, and hobbies:
 ```{r}
 # deviations of characteristics compared to own sex
-print(make_sysfit_kable_df(parents_res_r_within_merged, rows_within))
+print(make_sysfit_kable_df(parents_res_r_within_merged, p_rows_within))
 
 # deviations of characteristics across both sexes
-print(make_sysfit_kable_df(parents_res_r_between_merged, rows_between))
+print(make_sysfit_kable_df(parents_res_r_between_merged, p_rows_between))
 
 # deviations of characteristics compared to opposite sex
-print(make_sysfit_kable_df(parents_res_r_opposite_merged, rows_opposite))
+print(make_sysfit_kable_df(parents_res_r_opposite_merged, p_rows_opposite))
 ```
 
 Including eating, sleeping, and personal care:
 ```{r}
-print(make_sysfit_kable_df(parents_res_within_merged, rows_within))
+print(make_sysfit_kable_df(parents_res_within_merged, p_rows_within))
 
-print(make_sysfit_kable_df(parents_res_between_merged, rows_between))
+print(make_sysfit_kable_df(parents_res_between_merged, p_rows_between))
 
-print(make_sysfit_kable_df(parents_res_opposite_merged, rows_opposite))
+print(make_sysfit_kable_df(parents_res_opposite_merged, p_rows_opposite))
 ```
 
 - Also, here are the unconstrained SURE regressions for comparison. I find the magnitudes and signs of coefficients (and significance) are similar to the restricted regressions.
@@ -953,11 +953,11 @@ print(make_sysfit_kable_df(parents_res_opposite_merged, rows_opposite))
 
 # deviations of characteristics compared to own sex
 print("Leisure expenditure of parents (excluding sleep and personal care)")
-print(make_sysfit_kable_df(parents_unres_r_within_merged, rows_within))
+print(make_sysfit_kable_df(parents_unres_r_within_merged, p_rows_within))
 
 # deviations of characteristics compared to own sex
 print("Leisure expenditure of parents (including sleep and personal care)")
-print(make_sysfit_kable_df(parents_unres_within_merged, rows_within))
+print(make_sysfit_kable_df(parents_unres_within_merged, p_rows_within))
 ```
 
 ### How would households with characteristics $z_h$ be treated by a different sharing rule? (I did do this but not sure my code is correct!)
@@ -976,6 +976,64 @@ print(make_sysfit_kable_df(parents_unres_within_merged, rows_within))
 -   In 2015, maybe $\hat\eta_t^{w_f,(2015)}$ is larger. This would mean that household allocations are more affected by the woman's wage relative to all other wages. Women’s human capital carries more weight in allocation than it used to
 -   Applying the 2015 coefficients to 2000 households: even though 2000 women earned less on average, the same relative wage difference would buy them more bargaining power under the 2015 rule.
 -   The identifying assumption is: conditional on $z_h$, the estimated sharing rule captures a stable mapping from characteristics to allocation, which is the same assumption Arduini (2025) relies on.
+```{r}
+# the 2015 sharing rule using the 2000 data
+print("female resource shares, 2015 sharing rule using 2000 data")
+summary(counterfactual_2015sharing_2000data$data$shareown_etahat_f)
+
+# the main sharing rule (estimated using both years) using the 2000 data
+print("female resource shares, main sharing rule using 2000 data")
+summary(counterfactual_mainsharing_2000data$data$shareown_etahat_f)
+
+# the 2000 sharing rule using 2000 data
+print("female resource shares, 2000 sharing rule using 2000 data")
+summary(shares_parents_ownsex_2000$data$shareown_etahat_f)
+
+# the 2000 sharing rule using the 2015 data
+print("female resource shares, 2000 sharing rule using 2015 data")
+summary(counterfactual_2000sharing_2015data$data$shareown_etahat_f)
+
+# the main sharing rule (estimated using both years) using the 2015 data
+print("female resource shares, main sharing rule using 2015 data")
+summary(counterfactual_mainsharing_2015data$data$shareown_etahat_f)
+
+# the 2015 sharing rule using 2015 data
+print("female resource shares, 2015 sharing rule using 2015 data")
+summary(shares_parents_ownsex_2015$data$shareown_etahat_f)
+
+# the 2000 sharing rule using all data
+print("female resource shares, 2000 sharing rule using all data")
+summary(counterfactual_2000sharing_alldata$data$shareown_etahat_f)
+
+# the 2015 sharing rule using all data
+print("female resource shares, 2015 sharing rule using all data")
+summary(counterfactual_2015sharing_alldata$data$shareown_etahat_f)
+
+```
+Sharing rules for each year separately:
+```{r}
+# deviations of characteristics compared to own sex
+print("Regression results (sharing rule) of parents (including sleep and personal care, 2000)")
+print(make_sysfit_kable_df(parents_res_within_2000, p_rows_within))
+
+# deviations of characteristics compared to own sex
+print("Regression results (sharing rule) of parents (including sleep and personal care, 2015)")
+print(make_sysfit_kable_df(parents_res_within_2015, p_rows_within))
+```
+
+```{r}
+marginal_impacts_counterfactual2000 = marginal_impacts(counterfactual_2000sharing_alldata, 
+                                           parents_est_data_merged, p_rows_within)
+
+marginal_impacts_counterfactual_2015 = marginal_impacts(counterfactual_2015sharing_alldata, 
+                                           parents_est_data_merged, np_rows_within)
+
+print("Interpretation of regression coefficients (using 2000 sharing rule)")
+print(marginal_impacts_counterfactual2000)
+
+print("Interpretation of regression coefficients (using 2015 sharing rule)")
+print(marginal_impacts_counterfactual_2015)
+```
 
 ## random comments 
 
