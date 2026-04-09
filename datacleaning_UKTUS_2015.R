@@ -26,7 +26,8 @@ individual_diaries_2015 = unique_interview_diaries(data_activities_2015)
 # finding time use
 activity_summaries_2015 = data_activities_2015 |>
   select(serial, pnum, ddayw, IMonth, IYear, eptime, whatdoing, What_Oth1, 
-         What_Oth2, What_Oth3, WithAlone, WithSpouse, WithChild, WithOther) |>
+         What_Oth2, What_Oth3, WithAlone, WithSpouse, WithChild, WithOther,
+         WithOtherYK, WithNA) |>
   
   # secondary activities and stuff
   mutate(
@@ -36,7 +37,7 @@ activity_summaries_2015 = data_activities_2015 |>
     activity1_is_sleep = whatdoing %in% sleep_actlines,
     activity1_is_personalcare = whatdoing %in% personal_care_actlines,
     activity1_is_personalcare_sleep = whatdoing %in% sleep_personalcare,
-    activity1_is_childcare = whatdoing %in% childcare_actlines,
+    activity1_is_childcare = whatdoing %in% childcare_actlines | WithChild != 0,
     activity1_is_work = whatdoing %in% work_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
     activity1_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
@@ -118,8 +119,7 @@ activity_summaries_2015 = data_activities_2015 |>
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              activity3_is_childcare | activity4_is_childcare | 
-                              WithChild == 1),
+                              activity3_is_childcare | activity4_is_childcare),
   
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work | 
@@ -452,8 +452,7 @@ parents_est_data_2015 = data_working_parents_2015 |>
          Bx_dev_ageyoungest = y * dev_ageyoungest,
          Bx_dev_numkids = y * dev_numkids) |>
   
-  # since the expenditure variables are calculated across the entire survey 
-  # period, it doesn't matter which one i drop
+  # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
   ungroup() |>
@@ -558,8 +557,7 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc) |>
   
-  # since the expenditure variables are calculated across the entire survey 
-  # period, it doesn't matter which one i drop
+  # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
   ungroup() |>

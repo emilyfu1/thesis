@@ -123,23 +123,23 @@ activity_summaries_2000 = data_activities_2000_long |>
     
     # general: is leisure?
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
+    # activity_is_leisure = (activity1_is_leisure),
     activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r),
+    # activity_is_leisure_r = (activity1_is_leisure_r),
     
     # general: is sleep (only)?
     activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
+    # activity_is_sleep = (activity1_is_sleep),
     
     # general: is personal care (only)?
     activity_is_personalcare = (activity1_is_personalcare | 
                                   activity2_is_personalcare),
+    # activity_is_personalcare = (activity1_is_personalcare),
     
     # general: is personal care OR sleep?
     activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
                                         activity2_is_personalcare_sleep),
-    
-    # general: is leisure? (trying something)
-    # activity_is_leisure = activity1_is_leisure,
-    # activity_is_leisure_r = activity1_is_leisure_r,
-    
+    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep),
 
     # private activity classifier (no relevant household members present)
     # activities where "who" isn't asked are considered private
@@ -408,16 +408,16 @@ data_working_couples_2000 = data_individual_2000 |>
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
   
-  # make sure time use EXPENDITURE is calculated across all days
+  # make sure time use EXPENDITURE is calculated for both days separately
   group_by(serial, pnum, is_weekend) |>
   # individual expenditure calculated using time use
   mutate(# leisure and childcare expenditure
-    total_leisure_exp = wage * sum(total_leisure),
-    total_leisure_exp_r = wage * sum(total_leisure_r),
-    private_leisure_exp = wage * sum(total_private_leisure),
-    private_leisure_exp_r = wage * sum(total_private_leisure_r),
-    total_childcare_exp = wage * sum(total_childcare),
-    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
+    total_leisure_exp = wage * total_leisure,
+    total_leisure_exp_r = wage * total_leisure_r,
+    private_leisure_exp = wage * total_private_leisure,
+    private_leisure_exp_r = wage * total_private_leisure_r,
+    total_childcare_exp = wage * total_childcare,
+    nospouse_childcare_exp = wage * total_childcare_nospouse,
     # individual contribution to household budget
     y_individual = wage * 24) |>
   ungroup()
@@ -595,8 +595,7 @@ parents_est_data_2000 = data_working_parents_2000 |>
          Bx_dev_ageyoungest = y * dev_ageyoungest,
          Bx_dev_numkids = y * dev_numkids) |>
   
-  # since the expenditure variables are calculated across the entire survey 
-  # period, it doesn't matter which one i drop
+  # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
   ungroup() |>
@@ -699,8 +698,7 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc) |>
   
-  # since the expenditure variables are calculated across the entire survey 
-  # period, it doesn't matter which one i drop
+  # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
   ungroup() |>
