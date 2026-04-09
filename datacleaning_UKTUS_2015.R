@@ -71,45 +71,45 @@ activity_summaries_2015 = data_activities_2015 |>
     activity4_is_domestic = What_Oth3 %in% domestic_actlines,
     
     # general: is leisure?
-    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
-    #                          activity3_is_leisure | activity4_is_leisure),
-    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
-    #                            activity3_is_leisure_r | activity4_is_leisure),
+    activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
+                             activity3_is_leisure | activity4_is_leisure),
+    activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
+                               activity3_is_leisure_r | activity4_is_leisure),
     
     # general: is leisure? (trying something)
-    activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
-    activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure),
+    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
+    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure),
     
     # general: is sleep (only)?
-    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
-    #                        activity3_is_sleep | activity4_is_sleep),
-    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
+    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
+                           activity3_is_sleep | activity4_is_sleep),
+    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
     
     # general: is personal care (only)?
-    # activity_is_personalcare = (activity1_is_personalcare | 
-    #                               activity2_is_personalcare | 
-    #                               activity3_is_personalcare | 
-    #                               activity4_is_personalcare),
-    activity_is_personalcare = (activity1_is_personalcare | activity2_is_personalcare),
+    activity_is_personalcare = (activity1_is_personalcare | 
+                                  activity2_is_personalcare | 
+                                  activity3_is_personalcare | 
+                                  activity4_is_personalcare),
+    # activity_is_personalcare = (activity1_is_personalcare | activity2_is_personalcare),
     
     # general: is personal care OR sleep?
-    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
-    #                               activity2_is_personalcare_sleep | 
-    #                               activity3_is_personalcare_sleep | 
-    #                               activity4_is_personalcare_sleep),
-    activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | activity2_is_personalcare_sleep),
+    activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
+                                  activity2_is_personalcare_sleep | 
+                                  activity3_is_personalcare_sleep | 
+                                  activity4_is_personalcare_sleep),
+    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | activity2_is_personalcare_sleep),
     
     # private (no relevant household members present)
     # activities where "who" isn't asked are considered private
-    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0) |
-      activity_is_personalcare_sleep,
+    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0),
     # spouse not present
     activity_excludesspouse = WithSpouse == 0,
     
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private),
+    private_leisure = (activity_is_leisure & activity_private) |
+      activity_is_sleep,
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
@@ -233,72 +233,69 @@ data_working_couples_2015 = data_individual_2015 |>
   filter(num_diaries_filled == 2) |>
   
   mutate(
-    # actual hours worked last week
+    # clean main-job hours
     emp_hours = if_else(HrWkAc > 0, as.numeric(HrWkAc), NA_real_),
     se_hours  = if_else(SEHrWkAc > 0, as.numeric(SEHrWkAc), NA_real_),
     
-    # EMPLOYEES: exact last-pay amount converted to weekly where possible
+    # -------------------------
+    # EMPLOYEES
+    # -------------------------
     emp_pay_weekly_exact = case_when(
       Stat == 1 & NetPay > 0 & NetPayP %in% 1:5 ~ pay_to_weekly(NetPay, NetPayP),
       TRUE ~ NA_real_),
     
-    # if pay amount was for X hours, get direct hourly wage and implied weekly pay
+    # if pay was reported for a written-in number of hours, use direct hourly pay
     emp_wage_exact = case_when(
       Stat == 1 & NetPay > 0 & NetPayP == 7 & NetPayHr > 0 ~ NetPay / NetPayHr,
       Stat == 1 & !is.na(emp_pay_weekly_exact) & emp_hours > 0 ~ emp_pay_weekly_exact / emp_hours,
       TRUE ~ NA_real_),
     
-    emp_pay_weekly_hours = case_when(
-      Stat == 1 & NetPay > 0 & NetPayP == 7 & NetPayHr > 0 & emp_hours > 0 ~
-        (NetPay / NetPayHr) * emp_hours,
+    # fallback: constructed monthly net pay
+    emp_pay_weekly_monthly = case_when(
+      Stat == 1 & is.na(emp_wage_exact) & NetWkly > 0 ~ NetWkly / 4.333,
       TRUE ~ NA_real_),
     
-    # fallback: NetWkly is actually WEEKLY, despite the bad label
-    emp_pay_weekly_fallback = case_when(
-      Stat == 1 & is.na(emp_wage_exact) & NetWkly > 0 ~ NetWkly,
+    emp_wage_monthly_fallback = case_when(
+      Stat == 1 & is.na(emp_wage_exact) & !is.na(emp_pay_weekly_monthly) & emp_hours > 0 ~
+        emp_pay_weekly_monthly / emp_hours,
       TRUE ~ NA_real_),
     
-    emp_wage_fallback = case_when(
-      Stat == 1 & is.na(emp_wage_exact) &
-        !is.na(emp_pay_weekly_fallback) & emp_hours > 0 ~
-        emp_pay_weekly_fallback / emp_hours,
-      TRUE ~ NA_real_),
-    
-    # SELF-EMPLOYED: documented monthly, so convert to weekly
+    # -------------------------
+    # SELF-EMPLOYED
+    # -------------------------
     se_pay_weekly_exact = case_when(
       Stat == 2 & SENetPay > 0 ~ SENetPay / 4.333,
       TRUE ~ NA_real_),
     
     se_wage_exact = case_when(
-      Stat == 2 & !is.na(se_pay_weekly_exact) & se_hours > 0 ~
-        se_pay_weekly_exact / se_hours,
+      Stat == 2 & !is.na(se_pay_weekly_exact) & se_hours > 0 ~ se_pay_weekly_exact / se_hours,
       TRUE ~ NA_real_),
     
+    # fill in wages
+    
+    # source tracker
     wage_source = case_when(
-      Stat == 1 & NetPay > 0 & NetPayP == 7 & NetPayHr > 0 ~ "employee_exact_hourspay",
       !is.na(emp_wage_exact) ~ "employee_exact_lastpay",
-      !is.na(emp_wage_fallback) ~ "employee_NetWkly_fallback",
+      !is.na(emp_wage_monthly_fallback) ~ "employee_monthly_constructed",
       !is.na(se_wage_exact) ~ "selfemp_exact_monthly",
       TRUE ~ NA_character_),
     
     NetWkly = case_when(
-      wage_source == "employee_exact_hourspay" ~ emp_pay_weekly_hours,
       wage_source == "employee_exact_lastpay" ~ emp_pay_weekly_exact,
-      wage_source == "employee_NetWkly_fallback" ~ emp_pay_weekly_fallback,
+      wage_source == "employee_monthly_constructed" ~ emp_pay_weekly_monthly,
       wage_source == "selfemp_exact_monthly" ~ se_pay_weekly_exact,
       TRUE ~ NA_real_),
     
     wage = case_when(
-      wage_source == "employee_exact_hourspay" ~ emp_wage_exact,
       wage_source == "employee_exact_lastpay" ~ emp_wage_exact,
-      wage_source == "employee_NetWkly_fallback" ~ emp_wage_fallback,
-      wage_source == "selfemp_exact_monthly" ~ se_wage_exact,
+      # wage_source == "employee_monthly_constructed" ~ emp_wage_monthly_fallback,
+      # wage_source == "selfemp_exact_monthly" ~ se_wage_exact,
       TRUE ~ NA_real_)) |>
   
-  filter(wage > 0, wage < 400) |>
+  filter(wage > 0, wage < 300) |>
   
   group_by(serial) |>
-  # filter(all(wage > 0)) |>
+  filter(all(wage > 0)) |>
   mutate(spouse_present = spouse_pnum %in% pnum) |>
   ungroup() |>
   filter(spouse_present) |>
@@ -475,7 +472,8 @@ parents_est_data_2015 = data_working_parents_2015 |>
   # period, it doesn't matter which one i drop
   group_by(serial) |>
   filter(is_weekend) |>
-  ungroup()
+  ungroup() |>
+  select(!is_weekend)
 
 # work in progress!
 nonparents_est_data_2015 = data_working_nonparents_2015 |>
@@ -580,4 +578,5 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
   # period, it doesn't matter which one i drop
   group_by(serial) |>
   filter(is_weekend) |>
-  ungroup()
+  ungroup() |>
+  select(!is_weekend)

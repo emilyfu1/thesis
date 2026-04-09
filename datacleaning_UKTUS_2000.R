@@ -148,7 +148,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private), 
+    private_leisure = (activity_is_leisure & activity_private)| activity_is_sleep, 
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
@@ -270,93 +270,100 @@ kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
 
 spouse_pairs_2000 = find_spouse_pairs(all_relationships_2000)
 
-# pay band midpoints
+# pay band midpoints (monthly midpoints for q10x bands 0–10)
 q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 7000)
 
-# get working straight couples with valid education, and then split into 
+# get working straight couples with valid education, and then split into
 # parents and non-parents
 data_working_couples_2000 = data_individual_2000 |>
-  
+
   # keep only valid education
   filter(!is.na(educ)) |>
-  
+
   # show number of diaries and only keep diary month
   inner_join(individual_diaries_2000, by = c("serial", "pnum")) |>
   # merge with time use
   inner_join(activity_summaries_2000, by = c("serial", "pnum")) |>
-  
+
   # identify couples
   inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
-  
+
   # keep only people who fill out both diaries |>
   filter(num_diaries_filled == 2) |>
-  
-  # dealing with all different wage/hours related variables  
-  
-  # prepare working hours stuff
+
+  # dealing with all different wage/hours related variables
+
+  # working hours (paid hours only, used for converting pay to hourly wage)
   mutate(
-    weekly_hours = case_when(
-      q14b == 2 & q14c > 0 ~ q14c,
-      q14b == 1 & q14d > 0 ~ q14d + if_else(q14e > 0, q14e, 0),
-      TRUE ~ NA_real_)) |> 
-  
+    emp_hours = case_when(
+      q14b == 2 & q14c > 0 ~ as.numeric(q14c),
+      q14b == 1 & q14d > 0 ~ as.numeric(q14d) + if_else(q14e > 0, as.numeric(q14e), 0),
+      TRUE ~ NA_real_)) |>
+
   # for employees
   mutate(
-    NetWkly = if_else(
-      q7 == 1 & q10 >= 0,
-      pay_to_weekly(q10, q11),
-      NA_real_),
-    hourly_wage_emp = NetWkly / weekly_hours,
-    pay_banded = if_else(q10 < 0 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
-    NetWkly_banded = pay_to_weekly(pay_banded, q11),
-    hourly_wage_emp_banded = if_else(
-      is.na(hourly_wage_emp),
-      NetWkly_banded / weekly_hours,
-      hourly_wage_emp)) |>
-  
+    # convert pay to weekly for standard periods (q11 1-5)
+    emp_pay_weekly_exact = case_when(
+      q7 == 1 & q10 >= 0 & q11 %in% 1:5 ~ pay_to_weekly(q10, q11),
+      TRUE ~ NA_real_),
+
+    # if paid by hours (q11 == 8), q10 / q11n gives direct hourly rate
+    emp_wage_exact = case_when(
+      q7 == 1 & q10 >= 0 & q11 == 8 & q11n > 0 ~ q10 / q11n,
+      q7 == 1 & !is.na(emp_pay_weekly_exact) & emp_hours > 0 ~ emp_pay_weekly_exact / emp_hours,
+      TRUE ~ NA_real_),
+
+    # banded fallback: q10x band index -> midpoint -> weekly -> hourly
+    pay_banded = if_else(q7 == 1 & q10 < 0 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
+    emp_pay_weekly_banded = pay_to_weekly(pay_banded, q11),
+    emp_wage_banded = if_else(
+      q7 == 1 & is.na(emp_wage_exact) & !is.na(emp_pay_weekly_banded) & emp_hours > 0,
+      emp_pay_weekly_banded / emp_hours,
+      NA_real_)) |>
+
   # for self employed
   mutate(
-    hourly_earnings_selfemp =
-      if_else(
-        q7 == 2 & q13c > 0 & weekly_hours > 0,
-        q13c / (4.333 * weekly_hours),
-        NA_real_)) |>
-  
+    se_pay_weekly_exact = case_when(
+      q7 == 2 & q13c > 0 ~ q13c / 4.333,
+      TRUE ~ NA_real_),
+
+    se_wage_exact = case_when(
+      q7 == 2 & !is.na(se_pay_weekly_exact) & emp_hours > 0 ~ se_pay_weekly_exact / emp_hours,
+      TRUE ~ NA_real_)) |>
+
   # source of wage
   mutate(
     wage_source = case_when(
-      !is.na(hourly_wage_emp) ~ "employee_exact",
-      !is.na(hourly_wage_emp_banded) ~ "employee_banded",
-      !is.na(hourly_earnings_selfemp) ~ "self_employed",
-      TRUE ~ NA_character_)) |>
-  
-  # combine wages
-  mutate(
+      !is.na(emp_wage_exact) ~ "employee_exact",
+      !is.na(emp_wage_banded) ~ "employee_banded",
+      !is.na(se_wage_exact) ~ "self_employed",
+      TRUE ~ NA_character_),
+
     NetWkly = case_when(
-      wage_source == "employee_exact" ~ NetWkly,
-      wage_source == "employee_banded" ~ NetWkly_banded,
-      wage_source == "self_employed" ~ q13c / 4.333,
+      wage_source == "employee_exact" ~ emp_pay_weekly_exact,
+      wage_source == "employee_banded" ~ emp_pay_weekly_banded,
+      wage_source == "self_employed" ~ se_pay_weekly_exact,
       TRUE ~ NA_real_),
+
     wage = case_when(
-      wage_source == "employee_exact" ~ hourly_wage_emp,
-      wage_source == "employee_banded" ~ hourly_wage_emp_banded,
-      wage_source == "self_employed" ~ hourly_earnings_selfemp,
+      wage_source == "employee_exact" ~ emp_wage_exact,
+      wage_source == "employee_banded" ~ emp_wage_banded,
+      wage_source == "self_employed" ~ se_wage_exact,
       TRUE ~ NA_real_)) |>
-  
-  # combine working hours
+
+  # actual hours worked (incl. unpaid overtime), kept for HrWkAc in vars_to_suffix
   mutate(
-    # clean hours pieces
     q14c_c = if_else(q14c > 0, as.numeric(q14c), NA_real_),
     q14d_c = if_else(q14d > 0, as.numeric(q14d), NA_real_),
-    q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),  # overtime default 0
+    q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),
     q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
-    
+
     HrWkAc = case_when(
-      q14b == 2 ~ q14c_c,                    # no overtime
-      q14b == 1 ~ q14d_c + q14e_c + q14f_c,  # overtime
+      q14b == 2 ~ q14c_c,
+      q14b == 1 ~ q14d_c + q14e_c + q14f_c,
       TRUE ~ NA_real_)) |>
   
-  filter(wage > 0 & wage < 400) |>
+  filter(wage > 0 & wage < 300) |>
   
   group_by(serial) |>
   
@@ -413,18 +420,23 @@ data_working_parents_2000 = data_working_couples_2000 |>
   # keep households with under-18 kids
   filter(kid_age_min < 18)
 
-# get non-parent couples
+# get non-parent couples (including empty nesters: hhtype4 5/8 with all kids >= 18)
 data_working_nonparents_2000 = data_working_couples_2000 |>
-  # keep only hetero couples without child in household
-  filter(hhtype4 %in% c(3,6)) |>
-  
+  # hhtype4 3/6: no children; hhtype4 5/8: children all >= 16 (check below for >= 18)
+  filter(hhtype4 %in% c(3, 5, 6, 8)) |>
+  # left join to get youngest kid age; NA means no children in household
+  left_join(kids_age_dist_2000 |> select(serial, kid_age_min), by = "serial") |>
+  # keep childless couples and empty nesters (youngest child >= 18)
+  filter(hhtype4 %in% c(3, 6) | kid_age_min >= 18) |>
+  select(-kid_age_min) |>
+
   group_by(serial) |>
-  
+
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
-  
-  ungroup() |> 
-  
+
+  ungroup() |>
+
   # only keep couples who both have time diaries (filter after joins)
   filter(spouse_present)
 
@@ -550,7 +562,8 @@ parents_est_data_2000 = data_working_parents_2000 |>
   # period, it doesn't matter which one i drop
   group_by(serial) |>
   filter(is_weekend) |>
-  ungroup()
+  ungroup() |>
+  select(!is_weekend)
 
 # work in progress! 
 nonparents_est_data_2000 = data_working_nonparents_2000 |>
@@ -653,4 +666,5 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
   # period, it doesn't matter which one i drop
   group_by(serial) |>
   filter(is_weekend) |>
-  ungroup()
+  ungroup() |>
+  select(!is_weekend)

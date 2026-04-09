@@ -23,6 +23,13 @@ nonparents_est_data_merged = bind_rows(
   nonparents_est_data_2000 |> mutate(sample = "2000"), 
   nonparents_est_data_2015 |> mutate(sample = "2015"))
 
+everyone_est_data_merged = bind_rows(
+  nonparents_est_data_merged |> mutate(is_parent = 0),
+  parents_est_data_merged |> mutate(is_parent = 1))
+
+everyone_est_data_2000 = everyone_est_data_merged |> filter(sample == "2000")
+everyone_est_data_2015 = everyone_est_data_merged |> filter(sample == "2015")
+
 # this is a super long block of code! work in progress to make it more efficient
 
 ################################################################################
@@ -536,3 +543,257 @@ shares_nonparents_oppsex_2000 = add_shares_from_lm(nonparents_res_opposite_2000,
 shares_nonparents_oppsex_r_2000 = add_shares_from_lm(nonparents_res_r_opposite_2000, 
                                               data=nonparents_est_data_2000, 
                                               dev_type = "opp")
+
+################################################################################
+###################################### BOTH ####################################
+################################################################################
+
+############################### Using both years ###############################
+
+### No restrictions on coefficients: deviations from average with own sex
+
+# leisure including eating, drinking, washing
+everyone_unres_within_merged = systemfit(eqns_within, method = "SUR", 
+                                           data = everyone_est_data_merged)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_within_merged = systemfit(eqns_r_within, method = "SUR", 
+                                             data = everyone_est_data_merged)
+
+### No restrictions on coefficients: deviations from average of men AND women
+
+# leisure including eating, drinking, washing
+everyone_unres_between_merged = systemfit(eqns_between, method = "SUR", 
+                                            data = everyone_est_data_merged)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_between_merged = systemfit(eqns_r_between, method = "SUR", 
+                                              data = everyone_est_data_merged)
+
+### No restrictions on coefficients: deviations from average of opposite sex
+
+# leisure including eating, drinking, washing
+everyone_unres_opposite_merged = systemfit(eqns_opposite, method = "SUR", 
+                                             data = everyone_est_data_merged)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_opposite_merged = systemfit(eqns_opposite, method = "SUR", 
+                                               data = everyone_est_data_merged)
+
+### Restricted coefficients, deviations from average with own sex
+
+# leisure including eating, drinking, washing
+everyone_res_within_merged = systemfit(eqns_within, method = "SUR", 
+                                         data = everyone_est_data_merged,
+                                         restrict.regMat = modReg_within)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_within_merged = systemfit(eqns_r_within, method = "SUR", 
+                                           data = everyone_est_data_merged, 
+                                           restrict.regMat = modReg_within)
+
+### Restricted coefficients, deviations from average of men AND women
+
+# leisure including eating, drinking, washing
+everyone_res_between_merged = systemfit(eqns_between, method = "SUR", 
+                                          data = everyone_est_data_merged,
+                                          restrict.regMat = modReg_between)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_between_merged = systemfit(eqns_r_between, method = "SUR", 
+                                            data = everyone_est_data_merged,
+                                            restrict.regMat = modReg_between)
+
+### Restricted coefficients, deviations from average of opposite sex
+
+# leisure including eating, drinking, washing
+everyone_res_opposite_merged = systemfit(eqns_opposite, method = "SUR", 
+                                           data = everyone_est_data_merged,
+                                           restrict.regMat = modReg_opposite)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_opposite_merged = systemfit(eqns_r_opposite, method = "SUR", 
+                                             data = everyone_est_data_merged,
+                                             restrict.regMat = modReg_opposite)
+
+### calculate resource shares
+
+shares_everyone_bothsex_merged = add_shares_from_lm(everyone_res_between_merged, 
+                                                      data=everyone_est_data_merged, 
+                                                      dev_type = "all")
+shares_everyone_bothsex_r_merged = add_shares_from_lm(everyone_res_r_between_merged, 
+                                                        data=everyone_est_data_merged, 
+                                                        dev_type = "all")
+shares_everyone_ownsex_merged = add_shares_from_lm(everyone_res_within_merged, 
+                                                     data=everyone_est_data_merged, 
+                                                     dev_type = "own")
+shares_everyone_ownsex_r_merged = add_shares_from_lm(everyone_res_r_within_merged, 
+                                                       data=everyone_est_data_merged, 
+                                                       dev_type = "own")
+shares_everyone_oppsex_merged = add_shares_from_lm(everyone_res_opposite_merged, 
+                                                     data=everyone_est_data_merged, 
+                                                     dev_type = "opp")
+shares_everyone_oppsex_r_merged = add_shares_from_lm(everyone_res_r_opposite_merged, 
+                                                       data=everyone_est_data_merged, 
+                                                       dev_type = "opp")
+
+################################## Using 2015 ##################################
+
+### No restrictions on coefficients: deviations from average with own sex
+
+# leisure including eating, drinking, washing
+everyone_unres_within_2015 = systemfit(eqns_within, method = "SUR", 
+                                         data = everyone_est_data_2015)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_within_2015 = systemfit(eqns_r_within, method = "SUR", 
+                                           data = everyone_est_data_2015)
+
+### No restrictions on coefficients: deviations from average of men AND women
+
+# leisure including eating, drinking, washing
+everyone_unres_between_2015 = systemfit(eqns_between, method = "SUR", 
+                                          data = everyone_est_data_2015)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_between_2015 = systemfit(eqns_r_between, method = "SUR", 
+                                            data = everyone_est_data_2015)
+
+### No restrictions on coefficients: deviations from average of opposite sex
+
+# leisure including eating, drinking, washing
+everyone_unres_opposite_2015 = systemfit(eqns_opposite, method = "SUR", 
+                                           data = everyone_est_data_2015)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_opposite_2015 = systemfit(eqns_opposite, method = "SUR", 
+                                             data = everyone_est_data_2015)
+
+### Restricted coefficients, deviations from average with own sex
+
+# leisure including eating, drinking, washing
+everyone_res_within_2015 = systemfit(eqns_within, method = "SUR", 
+                                       data = everyone_est_data_2015,
+                                       restrict.regMat = modReg_within)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_within_2015 = systemfit(eqns_r_within, method = "SUR", 
+                                         data = everyone_est_data_2015, 
+                                         restrict.regMat = modReg_within)
+
+### Restricted coefficients, deviations from average of men AND women
+
+# leisure including eating, drinking, washing
+everyone_res_between_2015 = systemfit(eqns_between, method = "SUR", 
+                                        data = everyone_est_data_2015,
+                                        restrict.regMat = modReg_between)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_between_2015 = systemfit(eqns_r_between, method = "SUR", 
+                                          data = everyone_est_data_2015,
+                                          restrict.regMat = modReg_between)
+
+### Restricted coefficients, deviations from average of opposite sex
+
+# leisure including eating, drinking, washing
+everyone_res_opposite_2015 = systemfit(eqns_opposite, method = "SUR", 
+                                         data = everyone_est_data_2015,
+                                         restrict.regMat = modReg_opposite)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_opposite_2015 = systemfit(eqns_r_opposite, method = "SUR", 
+                                           data = everyone_est_data_2015,
+                                           restrict.regMat = modReg_opposite)
+
+### calculate resource shares
+
+shares_everyone_bothsex_2015 = add_shares_from_lm(everyone_res_between_2015, 
+                                                    data=everyone_est_data_2015, 
+                                                    dev_type = "all")
+shares_everyone_bothsex_r_2015 = add_shares_from_lm(everyone_res_r_between_2015, 
+                                                      data=everyone_est_data_2015, 
+                                                      dev_type = "all")
+shares_everyone_ownsex_2015 = add_shares_from_lm(everyone_res_within_2015, 
+                                                   data=everyone_est_data_2015, 
+                                                   dev_type = "own")
+shares_everyone_ownsex_r_2015 = add_shares_from_lm(everyone_res_r_within_2015, 
+                                                     data=everyone_est_data_2015, 
+                                                     dev_type = "own")
+shares_everyone_oppsex_2015 = add_shares_from_lm(everyone_res_opposite_2015, 
+                                                   data=everyone_est_data_2015, 
+                                                   dev_type = "opp")
+shares_everyone_oppsex_r_2015 = add_shares_from_lm(everyone_res_r_opposite_2015, 
+                                                     data=everyone_est_data_2015, 
+                                                     dev_type = "opp")
+
+################################## Using 2000 ##################################
+
+### No restrictions on coefficients: deviations from average with own sex
+
+# leisure including eating, drinking, washing
+everyone_unres_within_2000 = systemfit(eqns_within, method = "SUR", 
+                                         data = everyone_est_data_2000)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_within_2000 = systemfit(eqns_r_within, method = "SUR", 
+                                           data = everyone_est_data_2000)
+
+### No restrictions on coefficients: deviations from average of men AND women
+
+# leisure including eating, drinking, washing
+everyone_unres_between_2000 = systemfit(eqns_between, method = "SUR", 
+                                          data = everyone_est_data_2000)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_between_2000 = systemfit(eqns_r_between, method = "SUR", 
+                                            data = everyone_est_data_2000)
+
+### No restrictions on coefficients: deviations from average of opposite sex
+
+# leisure including eating, drinking, washing
+everyone_unres_opposite_2000 = systemfit(eqns_opposite, method = "SUR", 
+                                           data = everyone_est_data_2000)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_unres_r_opposite_2000 = systemfit(eqns_opposite, method = "SUR", 
+                                             data = everyone_est_data_2000)
+
+### Restricted coefficients, deviations from average with own sex
+
+# leisure including eating, drinking, washing
+everyone_res_within_2000 = systemfit(eqns_within, method = "SUR", 
+                                       data = everyone_est_data_2000,
+                                       restrict.regMat = modReg_within)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_within_2000 = systemfit(eqns_r_within, method = "SUR", 
+                                         data = everyone_est_data_2000, 
+                                         restrict.regMat = modReg_within)
+
+### Restricted coefficients, deviations from average of men AND women
+
+# leisure including eating, drinking, washing
+everyone_res_between_2000 = systemfit(eqns_between, method = "SUR", 
+                                        data = everyone_est_data_2000,
+                                        restrict.regMat = modReg_between)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_between_2000 = systemfit(eqns_r_between, method = "SUR", 
+                                          data = everyone_est_data_2000,
+                                          restrict.regMat = modReg_between)
+
+### Restricted coefficients, deviations from average of opposite sex
+
+# leisure including eating, drinking, washing
+everyone_res_opposite_2000 = systemfit(eqns_opposite, method = "SUR", 
+                                         data = everyone_est_data_2000,
+                                         restrict.regMat = modReg_opposite)
+# relaxing, socialising, sport, entertainment, and hobbies only
+everyone_res_r_opposite_2000 = systemfit(eqns_r_opposite, method = "SUR", 
+                                           data = everyone_est_data_2000,
+                                           restrict.regMat = modReg_opposite)
+
+### calculate resource shares
+
+shares_everyone_bothsex_2000 = add_shares_from_lm(everyone_res_between_2000, 
+                                                    data=everyone_est_data_2000, 
+                                                    dev_type = "all")
+shares_everyone_bothsex_r_2000 = add_shares_from_lm(everyone_res_r_between_2000, 
+                                                      data=everyone_est_data_2000, 
+                                                      dev_type = "all")
+shares_everyone_ownsex_2000 = add_shares_from_lm(everyone_res_within_2000, 
+                                                   data=everyone_est_data_2000, 
+                                                   dev_type = "own")
+shares_everyone_ownsex_r_2000 = add_shares_from_lm(everyone_res_r_within_2000, 
+                                                     data=everyone_est_data_2000, 
+                                                     dev_type = "own")
+shares_everyone_oppsex_2000 = add_shares_from_lm(everyone_res_opposite_2000, 
+                                                   data=everyone_est_data_2000, 
+                                                   dev_type = "opp")
+shares_everyone_oppsex_r_2000 = add_shares_from_lm(everyone_res_r_opposite_2000, 
+                                                     data=everyone_est_data_2000, 
+                                                     dev_type = "opp")
+
