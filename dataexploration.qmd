@@ -770,74 +770,149 @@ etable(spec_3)
 The regression results above are not easy to interpret on their own
 Counterfactual predictions: How many hours of leisure change when female resource share increases from the 25th to the 75th percentile, holding child composition fixed
 ```{r}
+# stand-in code
+
+# re-estimate and save the model
+mod_weekend <- feols(
+  total_private_leisure ~ 
+    is_weekend * male * shareown_etahat_f +
+    is_weekend * male * proportion_male_children +
+    is_weekend * male * has_young_child +
+    total_work |
+    sample + dgorpaf,
+  data = reg_stacked,
+  cluster = "serial"
+)
+
 # clustered vcov
-V = vcov(spec_4)
+V <- vcov(mod_weekend)
+
+# helper: estimate + delta-method CI for any linear combination b'w
+lincom_ci <- function(model, weights, V = vcov(model), level = 0.95) {
+  b <- coef(model)
+  w <- rep(0, length(b))
+  names(w) <- names(b)
+  w[names(weights)] <- weights
+  
+  est <- sum(w * b)
+  se  <- sqrt(as.numeric(t(w) %*% V %*% w))
+  z   <- qnorm(1 - (1 - level) / 2)
+  
+  tibble(
+    estimate = est,
+    std.error = se,
+    conf.low = est - z * se,
+    conf.high = est + z * se
+  )
+}
 
 # percentiles of female resource share
-q25 = quantile(reg_stacked$shareown_etahat_f, 0.25, na.rm = TRUE)
-q75 = quantile(reg_stacked$shareown_etahat_f, 0.75, na.rm = TRUE)
-dq = as.numeric(q75 - q25)
+q25 <- quantile(reg_stacked$shareown_etahat_f, 0.25, na.rm = TRUE)
+q75 <- quantile(reg_stacked$shareown_etahat_f, 0.75, na.rm = TRUE)
+dq  <- as.numeric(q75 - q25)
 
 # choose a "typical" household for the other interacted controls
-pmc_typical = mean(reg_stacked$proportion_male_children, na.rm = TRUE)
-young_typical = as.numeric(mean(reg_stacked$has_young_child, na.rm = TRUE) >= 0.5)
+pmc_typical   <- mean(reg_stacked$proportion_male_children, na.rm = TRUE)
+young_typical <- as.numeric(mean(reg_stacked$has_young_child, na.rm = TRUE) >= 0.5)
 
-# coefficient names (check these with names(coef(final_model)) if needed)
-b_w = "is_weekend"
-b_wm = "is_weekend:male"
-b_ws = "is_weekend:shareown_etahat_f"
-b_wms = "is_weekend:male:shareown_etahat_f"
-b_wh = "is_weekend:has_young_childTRUE"
-b_wmh = "is_weekend:male:has_young_childTRUE"
+# coefficient names (check these with names(coef(mod_weekend)) if needed)
+b_w      <- "is_weekend"
+b_wm     <- "is_weekend:male"
+b_ws     <- "is_weekend:shareown_etahat_f"
+b_wms    <- "is_weekend:male:shareown_etahat_f"
+b_wp     <- "is_weekend:proportion_male_children"
+b_wmp    <- "is_weekend:male:proportion_male_children"
+b_wh     <- "is_weekend:has_young_childTRUE"
+b_wmh    <- "is_weekend:male:has_young_childTRUE"
+
+# weekend effect for WOMEN at a given share:
+# E[weekend - weekday | female, share = q, controls fixed]
+weekend_effect_female <- function(q) {
+  lincom_ci(
+    mod_weekend,
+    c(
+      setNames(1, b_w),
+      setNames(q, b_ws),
+      setNames(pmc_typical, b_wp),
+      setNames(young_typical, b_wh)
+    ),
+    V = V
+  )
+}
+
+# weekend effect for MEN at a given share:
+weekend_effect_male <- function(q) {
+  lincom_ci(
+    mod_weekend,
+    c(
+      setNames(1, b_w),
+      setNames(1, b_wm),
+      setNames(q, b_ws),
+      setNames(q, b_wms),
+      setNames(pmc_typical, b_wp),
+      setNames(pmc_typical, b_wmp),
+      setNames(young_typical, b_wh),
+      setNames(young_typical, b_wmh)
+    ),
+    V = V
+  )
+}
 
 # change in the weekend effect when female share rises from p25 to p75
 # women: dq * beta(is_weekend:share)
-change_female = lincom_ci(
-  spec_4,
+change_female <- lincom_ci(
+  mod_weekend,
   c(setNames(dq, b_ws)),
-  V = V)
+  V = V
+)
 
 # men: dq * [beta(is_weekend:share) + beta(is_weekend:male:share)]
-change_male = lincom_ci(
-  spec_4,
+change_male <- lincom_ci(
+  mod_weekend,
   c(
     setNames(dq, b_ws),
-    setNames(dq, b_wms)),
-  V = V)
+    setNames(dq, b_wms)
+  ),
+  V = V
+)
 
 # male - female difference in the p25->p75 change
 # = dq * beta(is_weekend:male:share)
-diff_change = lincom_ci(
-  spec_4,
+diff_change <- lincom_ci(
+  mod_weekend,
   c(setNames(dq, b_wms)),
-  V = V)
+  V = V
+)
 
 # build the table
-weekend_effects_bysex = bind_rows(
+tab <- bind_rows(
   weekend_effect_female(q25) |> mutate(sex = "Female", share = "p25"),
   weekend_effect_female(q75) |> mutate(sex = "Female", share = "p75"),
-  weekend_effect_male(q25) |> mutate(sex = "Male", share = "p25"),
-  weekend_effect_male(q75) |> mutate(sex = "Male", share = "p75")) |>
+  weekend_effect_male(q25)   |> mutate(sex = "Male",   share = "p25"),
+  weekend_effect_male(q75)   |> mutate(sex = "Male",   share = "p75")
+) |>
   select(sex, share, estimate, conf.low, conf.high)
 
-change_weekend_effects_bysex = bind_rows(
+change_tab <- bind_rows(
   change_female |> mutate(sex = "Female"),
-  change_male |> mutate(sex = "Male")) |>
+  change_male   |> mutate(sex = "Male")
+) |>
   select(sex, estimate, conf.low, conf.high) |>
   rename(
     `Change in weekend effect from p25 to p75` = estimate,
     `CI low` = conf.low,
-    `CI high` = conf.high)
+    `CI high` = conf.high
+  )
 
-diff_weekend_effects_bysex = diff_change |>
+diff_tab <- diff_change |>
   transmute(
     Comparison = "Male - Female change from p25 to p75",
-    estimate, conf.low, conf.high)
-```
+    estimate, conf.low, conf.high
+  )
 
-```{r}
-print(weekend_effects_bysex)
-print(change_weekend_effects_bysex)
+kable(tab, digits = 3, caption = "Weekend effect on private leisure at the 25th and 75th percentiles of the female resource share")
+kable(change_tab, digits = 3, caption = "How the weekend effect changes when the female resource share rises from p25 to p75")
+kable(diff_tab, digits = 3, caption = "Difference between men and women in the p25-to-p75 change")
 ```
 
 
