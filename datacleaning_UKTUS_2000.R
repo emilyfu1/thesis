@@ -108,6 +108,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity1_is_childcare = whatdoing %in% childcare_actlines,
     activity1_is_work = whatdoing %in% work_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
+    activity1_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
     
     # secondary activity
     activity2_is_leisure = What_Oth1 %in% leisure_actlines,
@@ -118,6 +119,7 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity2_is_childcare = What_Oth1 %in% childcare_actlines,
     activity2_is_work = What_Oth1 %in% work_actlines,
     activity2_is_domestic = What_Oth1 %in% domestic_actlines,
+    activity2_is_otherdomestic = What_Oth1 %in% otherdomestic_actlines,
     
     # general: is leisure?
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
@@ -148,8 +150,8 @@ activity_summaries_2000 = data_activities_2000_long |>
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private) | activity_is_sleep, 
-    private_leisure_r = (activity_is_leisure_r & activity_private),
+    private_leisure = (activity_is_leisure & activity_private)| activity_is_sleep, 
+    private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
@@ -160,12 +162,14 @@ activity_summaries_2000 = data_activities_2000_long |>
     
     # general: is domestic?
     activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic),
     
     # is no-spouse childcare?
     childcare_nospouse = activity_ischildcare & activity_excludesspouse,
     
     # is no-spouse domestic?
-    domestic_nospouse = activity_isdomestic & activity_excludesspouse) |>
+    domestic_nospouse = activity_isdomestic & activity_excludesspouse,
+    otherdomestic_nospouse = activity_isotherdomestic & activity_excludesspouse) |>
   
   # add up time use in hours
   group_by(serial, pnum, is_weekend) |>
@@ -180,6 +184,8 @@ activity_summaries_2000 = data_activities_2000_long |>
     
     total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
     total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
+    total_otherdomestic = sum(eptime[activity_isotherdomestic], na.rm = TRUE)  / 60,
+    total_otherdomestic_nospouse = sum(eptime[otherdomestic_nospouse], na.rm = TRUE) / 60,
     
     total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
     .groups = "drop")
@@ -192,7 +198,28 @@ activity_summaries_2000 = data_activities_2000_long |>
 data_hh_2000 = read_dta(paste0(uktus_2000_direct, 
                                       "hhld_data_6.dta")) |>
   # make household identifier equivalent to 2015 data
-  mutate(serial = as.integer(paste0(sn2, "0", sn1)))
+  mutate(serial = as.integer(paste0(sn2, "0", sn1))) |>
+  
+  # help with childcare received? 
+  # only have this information at the household level and no information on duration
+  mutate(has_childcare_help = (hq9a01 == 1 | hq9a01 == 2 | hq9a01 == 3)) |>
+  
+  # help with other domestic tasks received?
+  mutate(has_otherdomestic_help = (hq9a02 == 1 | hq9a02 == 2 | hq9a02 == 3 |
+                                     hq9a03 == 1 | hq9a03 == 2 | hq9a03 == 3 |
+                                     hq9a04 == 1 | hq9a04 == 2 | hq9a04 == 3 |
+                                     hq9a05 == 1 | hq9a05 == 2 | hq9a05 == 3 |
+                                     hq9a06 == 1 | hq9a06 == 2 | hq9a06 == 3 |
+                                     hq9a07 == 1 | hq9a07 == 2 | hq9a07 == 3 |
+                                     hq9a08 == 1 | hq9a08 == 2 | hq9a08 == 3 |
+                                     hq9a09 == 1 | hq9a09 == 2 | hq9a09 == 3 |
+                                     hq9a10 == 1 | hq9a10 == 2 | hq9a10 == 3 |
+                                     hq9a11 == 1 | hq9a11 == 2 | hq9a11 == 3 |
+                                     hq9a12 == 1 | hq9a12 == 2 | hq9a12 == 3 |
+                                     hq9a13 == 1 | hq9a13 == 2 | hq9a13 == 3 |
+                                     hq9a14 == 1 | hq9a14 == 2 | hq9a14 == 3 |
+                                     hq9a15 == 1 | hq9a15 == 2 | hq9a15 == 3 |
+                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3))
 
 # relationships in individual data
 all_relationships_2000 = data_hh_2000 |>
@@ -268,69 +295,115 @@ kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
 
 spouse_pairs_2000 = find_spouse_pairs(all_relationships_2000)
 
-# pay band midpoints
-# Value = 0	Label = LESS THAN 217 POUNDS
-# Value = 1	Label = 217 TO LESS THAN 433 POUNDS
-# Value = 2	Label = 433 TO LESS THAN 867 POUNDS
-# Value = 3	Label = 867 TO LESS THAN 1,300 POUNDS
-# Value = 4	Label = 1,300 TO LESS THAN 1,733 POUNDS
-# Value = 5	Label = 1,733 TO LESS THAN 2,817 POUNDS
-# Value = 6	Label = 2,817 TO LESS THAN 3,417 POUNDS
-# Value = 7	Label = 3,417 TO LESS THAN 3,833 POUNDS
-# Value = 8	Label = 3,833 TO LESS THAN 4,583 POUNDS
-# Value = 9	Label = 4,583 TO LESS TAHN 6,667 POUNDS
-# Value = 10	Label = 6,667 POUNDS OR MORE
-# Value = 11	Label = DON'T KNOW
-# Value = 12	Label = REFUSED
-
+# pay band midpoints (monthly midpoints for q10x bands 0–10)
 q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 7000)
 
-# get working straight couples with valid education, and then split into 
+# get working straight couples with valid education, and then split into
 # parents and non-parents
 data_working_couples_2000 = data_individual_2000 |>
-  
+
   # keep only valid education
   filter(!is.na(educ)) |>
-  
+
   # show number of diaries and only keep diary month
   inner_join(individual_diaries_2000, by = c("serial", "pnum")) |>
   # merge with time use
   inner_join(activity_summaries_2000, by = c("serial", "pnum")) |>
-  
+
   # identify couples
   inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
-  
+
   # keep only people who fill out both diaries |>
   filter(num_diaries_filled == 2) |>
 
+  # dealing with all different wage/hours related variables
+
+  # working hours (paid hours only, used for converting pay to hourly wage)
   mutate(
-    
-    # clean main job earnings
-    emp_weekly_exact = if_else(q7 == 1 & q10 > 0, pay_to_weekly(q10, q11), NA_real_),
-    # emp_takehome_range = if_else(q7 == 1 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
-    emp_monthly_range = if_else(q7 == 1 & q11a %in% 0:10, q10x_mid[q11a + 1], NA_real_),
-    se_weekly_exact = if_else(q7 == 2 & q13c > 0, q13c / 4.33, NA_real_),
-    # se_weekly_range = if_else(q7 == 2 & q13d %in% 0:10, q10x_mid[q13d + 1], NA_real_),
-    
-    # calculate weekly earnings
-    NetWkly = case_when(q7 == 1 & q10 > 0 ~ emp_weekly_exact,
-                        # q7 == 1 & q10x %in% 0:10 ~ pay_to_weekly(emp_takehome_range, q11),
-                        q7 == 1 & q11a %in% 0:10 ~ emp_monthly_range / 4.33,
-                        q7 == 2 & q13c > 0 ~ se_weekly_exact,
-                        # q7 == 2 & q13d %in% 0:10 ~ se_weekly_range / 4.33,
-                        TRUE ~ NA_real_),
-    
-    # calculate wage (fill in for full-time)
-    HrWkAc = case_when((q8c == 1 | q13e == 1) ~ 40,
-                       (q8c == 2 | q13e == 2) ~ 20,
-                       TRUE ~ NA_real_),
-    wage = NetWkly / HrWkAc) |>
+    emp_hours = case_when(
+      q14b == 2 & q14c > 0 ~ as.numeric(q14c),
+      q14b == 1 & q14d > 0 ~ as.numeric(q14d) + if_else(q14e > 0, as.numeric(q14e), 0),
+      TRUE ~ NA_real_)) |>
+
+  # for employees
+  mutate(
+    # convert pay to weekly for standard periods (q11 1-5)
+    emp_pay_weekly_exact = case_when(
+      q7 == 1 & q10 >= 0 & q11 %in% 1:5 ~ pay_to_weekly(q10, q11),
+      TRUE ~ NA_real_),
+
+    # if paid by hours (q11 == 8), q10 / q11n gives direct hourly rate
+    emp_wage_exact = case_when(
+      q7 == 1 & q10 >= 0 & q11 == 8 & q11n > 0 ~ q10 / q11n,
+      q7 == 1 & !is.na(emp_pay_weekly_exact) & emp_hours > 0 ~ emp_pay_weekly_exact / emp_hours,
+      TRUE ~ NA_real_),
+
+    # banded fallback: q10x band index -> midpoint -> weekly -> hourly
+    pay_banded = if_else(q7 == 1 & q10 < 0 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
+    emp_pay_weekly_banded = pay_to_weekly(pay_banded, q11),
+    emp_wage_banded = if_else(
+      q7 == 1 & is.na(emp_wage_exact) & !is.na(emp_pay_weekly_banded) & emp_hours > 0,
+      emp_pay_weekly_banded / emp_hours,
+      NA_real_)) |>
+
+  # for self employed
+  mutate(
+    se_pay_weekly_exact = case_when(
+      q7 == 2 & q13c > 0 ~ q13c / 4.333,
+      TRUE ~ NA_real_),
+
+    # banded fallback: q13d is 1-indexed (1=<£215 ... 11=£6670+), same bands as q10x
+    se_pay_monthly_banded = if_else(q7 == 2 & q13c <= 0 & q13d %in% 1:11,
+                                    q10x_mid[q13d], NA_real_),
+    se_pay_weekly_banded = se_pay_monthly_banded / 4.333,
+
+    se_wage_exact = case_when(
+      q7 == 2 & !is.na(se_pay_weekly_exact) & emp_hours > 0 ~ se_pay_weekly_exact / emp_hours,
+      TRUE ~ NA_real_),
+
+    se_wage_banded = if_else(
+      q7 == 2 & is.na(se_wage_exact) & !is.na(se_pay_weekly_banded) & emp_hours > 0,
+      se_pay_weekly_banded / emp_hours,
+      NA_real_)) |>
+
+  # source of wage
+  mutate(
+    wage_source = case_when(
+      !is.na(emp_wage_exact) ~ "employee_exact",
+      !is.na(emp_wage_banded) ~ "employee_banded",
+      !is.na(se_wage_exact) ~ "self_employed_exact",
+      !is.na(se_wage_banded) ~ "self_employed_banded",
+      TRUE ~ NA_character_),
+
+    NetWkly = case_when(
+      wage_source == "employee_exact" ~ emp_pay_weekly_exact,
+      wage_source == "employee_banded" ~ emp_pay_weekly_banded,
+      wage_source == "self_employed_exact" ~ se_pay_weekly_exact,
+      wage_source == "self_employed_banded" ~ se_pay_weekly_banded,
+      TRUE ~ NA_real_),
+
+    wage = case_when(
+      wage_source == "employee_exact" ~ emp_wage_exact,
+      # wage_source == "employee_banded" ~ emp_wage_banded,
+      wage_source == "self_employed_exact" ~ se_wage_exact,
+      # wage_source == "self_employed_banded" ~ se_wage_banded,
+      TRUE ~ NA_real_)) |>
+
+  # actual hours worked (incl. unpaid overtime), kept for HrWkAc in vars_to_suffix
+  mutate(
+    q14c_c = if_else(q14c > 0, as.numeric(q14c), NA_real_),
+    q14d_c = if_else(q14d > 0, as.numeric(q14d), NA_real_),
+    q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),
+    q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
+
+    HrWkAc = case_when(
+      q14b == 2 ~ q14c_c,
+      q14b == 1 ~ q14d_c + q14e_c + q14f_c,
+      TRUE ~ NA_real_)) |>
   
-  # need people with positive wage
-  # group_by(serial) |>
-  # filter(wage > 0 & wage < 300) |>
-  filter(wage > 0) |>
-  # ungroup() |>
+  filter(wage > 0, wage < 100) |>
+
+  group_by(serial) |>
   
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
@@ -359,6 +432,10 @@ data_working_parents_2000 = data_working_couples_2000 |>
   inner_join(kids_age_dist_2000, by = c("serial")) |>
   inner_join(kids_age_wide_2000, by = c("serial")) |>
   
+  # merge information about domestic help
+  inner_join(data_hh_2000 |> select(serial, has_childcare_help, 
+                                    has_otherdomestic_help), by = c("serial")) |>
+  
   group_by(serial, is_weekend) |>
   
   # check for couples who both have time diaries (filter after both joins)
@@ -372,18 +449,23 @@ data_working_parents_2000 = data_working_couples_2000 |>
   # keep households with under-18 kids
   filter(kid_age_min < 18)
 
-# get non-parent couples
+# get non-parent couples (including empty nesters: hhtype4 5/8 with all kids >= 18)
 data_working_nonparents_2000 = data_working_couples_2000 |>
-  # keep only hetero couples without child in household
-  filter(hhtype4 %in% c(3,6)) |>
-  
+  # hhtype4 3/6: no children; hhtype4 5/8: children all >= 16 (check below for >= 18)
+  filter(hhtype4 %in% c(3, 5, 6, 8)) |>
+  # left join to get youngest kid age; NA means no children in household
+  left_join(kids_age_dist_2000 |> select(serial, kid_age_min), by = "serial") |>
+  # keep childless couples and empty nesters (youngest child >= 18)
+  filter(hhtype4 %in% c(3, 6) | kid_age_min >= 18) |>
+  select(-kid_age_min) |>
+
   group_by(serial, is_weekend) |>
-  
+
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
-  
-  ungroup() |> 
-  
+
+  ungroup() |>
+
   # only keep couples who both have time diaries (filter after joins)
   filter(spouse_present)
 

@@ -305,10 +305,35 @@ shares_parents_oppsex_r_2000 = add_shares_from_lm(parents_res_r_opposite_2000,
 
 ############################ Counterfactual analysis ###########################
 
-counterfactual_within = add_shares_from_lm(parents_res_within_2015, 
-                                           data=parents_est_data_2000, 
-                                           dev_type = "own",
-                                           data_type = "parents")
+# the 2000 sharing rule using the 2015 data
+counterfactual_2000sharing_2015data = add_shares_from_lm(
+  parents_res_within_2015, data=parents_est_data_2000, dev_type = "own",
+  data_type = "parents")
+
+# the 2015 sharing rule using the 2000 data
+counterfactual_2015sharing_2000data = add_shares_from_lm(
+  parents_res_within_2000, data=parents_est_data_2015, dev_type = "own",
+  data_type = "parents")
+
+# the main sharing rule (estimated using both years) using the 2000 data
+counterfactual_mainsharing_2000data = add_shares_from_lm(
+  parents_res_within_merged, data=parents_est_data_2000, dev_type = "own",
+  data_type = "parents")
+
+# the main sharing rule (estimated using both years) using the 2015 data
+counterfactual_mainsharing_2015data = add_shares_from_lm(
+  parents_res_within_merged, data=parents_est_data_2015, dev_type = "own",
+  data_type = "parents")
+
+# the 2000 sharing rule using all data
+counterfactual_2000sharing_alldata = add_shares_from_lm(
+  parents_res_within_2000, data=parents_est_data_merged, dev_type = "own",
+  data_type = "parents")
+
+# the 2015 sharing rule using all data
+counterfactual_2015sharing_alldata = add_shares_from_lm(
+  parents_res_within_2015, data=parents_est_data_merged, dev_type = "own",
+  data_type = "parents")
 
 ################################################################################
 ################################## NON-PARENTS #################################

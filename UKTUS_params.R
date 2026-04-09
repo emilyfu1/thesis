@@ -32,6 +32,7 @@ vars_to_suffix = c(
   "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", "total_domestic", 
+  "total_otherdomestic", "total_otherdomestic_nospouse",
   "total_domestic_nospouse", "total_childcare_nospouse", "total_work",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
   "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
@@ -43,44 +44,92 @@ vars_to_suffix = c(
 
 sleep_actlines = c(10, 110)
 
-personal_care_actlines = c(
-  ## --- Personal care, rest, eating ---
-  0,        # Unspecified personal care
-  111,      # Sleep: In bed not asleep
-  120,      # Sleep: Sick in bed
-  210,      # Eating
-  5310,     # Resting - time out
-  310,      # Other personal care: Wash and dress
-  300,      # Other personal care: Unspecified other personal care
-  390,      # Other personal care: Other specified personal care
-  3630)     # Personal services
+personal_care_actlines = c(0, # Unspecified personal care
+                           111, # Sleep: In bed not asleep
+                           120, # Sleep: Sick in bed
+                           210, # Eating
+                           1310, # Activities related to employment: Lunch break
+                           5310, # Resting - time out
+                           310, # Other personal care: Wash and dress
+                           300, # Other personal care: Unspecified other personal care
+                           390) # Other personal care: Other specified personal care
 
 sleep_personalcare = c(sleep_actlines, personal_care_actlines)
 
 # hobbies, social activities, entertainment
-restrict_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
+mainleisure_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
                       8211, 7190, 6170, 8219, 8221, 8222, 6179, 
                       8229, 6190, 5190, 7241, 5200, 7249, 7251,
                       5210, 1120, 5220, 5221, 5222, 5223, 5225,
                       8300, 5229, 8311, 5245, 8319, 5250, 7300,
                       7320, 7321, 7329, 6171, 6310, 6311, 8220,
                       5290, 5291, 7340, 5293, 5294, 5299, 1220,
-                      6144, 4300, 7390, 1310, 5295, 9520, 9440,
-                      7230, 9600, 9630, 7240, 3531, 9600, 9610,
-                      3615, 9820, 5224, 5230, 8310, 9620, 9630,
-                      4390, 8320, 7129, 8312, 8000, 7310, 7000,
-                      8212, 6000, 5000, 7322, 8110, 8120, 7100,
-                      7110, 7111, 7112, 7330, 7119, 7120, 7121, 
-                      6100, 7130, 6110, 6111, 7140, 6119, 6120,
-                      5100, 7150, 6312, 6130, 6131, 6132, 6142,
-                      5110, 7160, 9210, 6140, 6141, 8190, 6143,
-                      3330, 2210, 3330, 3410, 3440, 5140, 5246,
-                      7290, 7260, 6210, 6220, 9710, 9720, 3726,
-                      5240, 8100, 6200, 3140, 5241, 5242, 5243,
-                      5249, 9430, 4320, 3390, 3430, 3440)
+                      6144, 4300, 7390, 5295, 7230, 7240, 3531,
+                      3615, 9820, 5224, 5230, 8310, 4390, 8320, 
+                      7129, 8312, 8000, 7310, 7000, 8212, 6000, 
+                      5000, 7322, 8110, 8120, 7100, 7110, 7111, 
+                      7112, 7330, 7119, 7120, 7121, 6100, 7130, 
+                      6110, 6111, 7140, 6119, 6120, 5100, 7150, 
+                      6312, 6130, 6131, 6132, 6142, 5110, 7160, 
+                      6140, 6141, 8190, 6143)
+
+travel_leisure_actlines = c(9500, # Travel to visit friends/relatives in their homes not respondents household
+                            9620, # Travel related to hunting & fishing
+                            9510, # Travel related to other social activities
+                            9520, # Travel related to entertainment and culture
+                            9600, # Travel related to other leisure
+                            9610, # Travel related to physical exercise
+                            9630, # Travel related to productive exercise other than hunting & fishing
+                            9710, # Travel related to gambling
+                            9720, # Travel related to hobbies other than gambling
+                            9810, # Travel to holiday base
+                            9820) # Travel for day trip/just walk
+
+# leisure and borderline leisure activities not included in original paper
+additional_leisure = c(6210, # Hunting and fishing
+                       7220, # Computing - programming
+                       6200, # Unspecified productive exercise
+                       7231, # Information searching on the internet
+                       5241, # Borrowing books records audiotapes videotapes CDs VDs etc. from a library
+                       5242, # Reference to books and other library materials within a library
+                       5243, # Using internet in the library
+                       5249, # Other specified library activities
+                       6290, # Other specified productive exercise
+                       2210, # Free time study
+                       5240, # Unspecified library
+                       5244, # Using computers in the library other than internet use
+                       8100) # Unspecified reading
+
+# activities that may be considered leisure and domestic/non-market work
+borderline_leisure_domestic = c(3220, # Cleaning yard
+                                3410, # Gardening
+                                3440, # Walking the dog
+                                3490, # Other specified gardening and pet care
+                                3540) # Vehicle maintenance
+
+# decide whether to include additional items
+restrict_actlines = c(mainleisure_actlines, borderline_leisure_domestic, additional_leisure, travel_leisure_actlines)
+leisure_actlines = c(sleep_actlines, personal_care_actlines,
+                     restrict_actlines)
+
+# working at job
+work_actlines = c(
+  9110, # Travel in the course of work
+  9100, # Travel to/from work
+  9130, # Travel to work from a place other than home
+  4110, # Work for an organisation
+  4310, # Meetings
+  1000, # Unspecified employment
+  1300, # Unspecified activities related to employment
+  1390, # Other specified activities related to employment
+  1399, # Other unspecified activities related to employment
+  1100, # Main job: unspecified main job
+  1110, # work at main job
+  1210) # work at second job
 
 # childcare values
 childcare_actlines = c(
+  9210, # Travel related to education
   9230, # Travel escorting to/ from education
   9380, # Travel escorting a child (other than education)
   3800, # Unspecified childcare
@@ -94,22 +143,68 @@ childcare_actlines = c(
   9230, # Travel escorting to/ from education
   9380) # Travel escorting a child (other than education)
 
-# all leisure
-leisure_actlines = c(sleep_actlines, personal_care_actlines, restrict_actlines)
-
-# working at job
-work_actlines = c(
-  1110, # work at main job
-  1210) # work at second job
-
 # domestic work
-otherdomestic_actlines = c(3000, 3100, 3110, 3120, 3130, 3140, 3190, 3200, 3210,
-                           3220, 3230, 3250, 3290, 3300, 3310, 3320, 3390, 3400,
-                           3420, 3430, 3490, 3500, 3510, 3520, 3530, 3531, 3539,
-                           3540, 3590, 3600, 3610, 3611, 3612, 3613, 3614, 3619,
-                           3620, 3690, 3710, 3720, 3721, 3722, 3723, 3724, 3725,
-                           3726, 3727, 3729, 3910, 3911, 3914, 3919, 9310, 9360,
-                           9370, 9390, 9230)
+otherdomestic_actlines = c(4100, # Unspecified organisational work
+                           3100, # Unspecified food management
+                           3110, # Food preparation and baking
+                           3250, # Disposal of waste
+                           3130, # Dish washing
+                           6210, # Hunting and fishing
+                           3140, # Preserving
+                           9310, # Travel related to household care
+                           3190, # Other specified food management
+                           3200, # Unspecified household upkeep
+                           3210, # Cleaning dwelling
+                           3220, # Cleaning yard
+                           3230, # Heating and water
+                           3240, # Arranging household goods and materials
+                           3290, # Other or unspecified household upkeep
+                           3300, # Unspecified making and care for textiles
+                           3310, # Laundry
+                           3320, # Ironing
+                           3330, # Handicraft and producing textiles
+                           3390, # Other specified making and care for textiles
+                           3410, # Gardening
+                           3420, # Tending domestic animals
+                           3430, # Caring for pets
+                           3490, # Other specified gardening and pet care
+                           3500, # Unspecified construction and repairs
+                           3510, # House construction and renovation
+                           3520, # Repairs of dwelling
+                           6220, # Picking berries mushroom and herbs
+                           3530, # Making repairing and maintaining equipment
+                           3539, # Other specified making repairing and maintaining equipment
+                           3540, # Vehicle maintenance
+                           3590, # Other specified construction and repairs
+                           3600, # Unspecified shopping and services
+                           3610, # Unspecified shopping
+                           3611, # Shopping mainly for food
+                           3612, # Shopping mainly for clothing
+                           3613, # Shopping mainly related to accommodation
+                           3614, # Shopping or browsing at car boot sales or antique fairs
+                           3619, # Other specified shopping
+                           3620, # Commercial and administrative services
+                           4190, # Other specified organisational work
+                           3000, # Unspecified household and family care
+                           3690, # Other specified shopping and services
+                           3710, # Household management not using the internet
+                           3713, # Shopping for and ordering clothing via the internet
+                           3720, # Unspecified household management using the internet
+                           3721, # Shopping for and ordering unspecified goods and services via the internet
+                           3722, # Shopping for and ordering food via the internet
+                           3724, # Shopping for and ordering goods and services related to accommodation via the internet
+                           3725, # Shopping for and ordering mass media via the internet
+                           3726, # Shopping for and ordering entertainment via the internet
+                           3727, # Banking and bill paying via the internet
+                           3729, # Other specified household management using the internet
+                           3910, # Unspecified help to a non-dependent eg injured adult household member
+                           3911, # Physical care of a non-dependent e.g. injured adult household member
+                           3914, # Accompanying a non-dependent adult household member e.g. to hospital
+                           3919, # Other specified help to a non-dependent adult household member
+                           3920, # Unspecified help to a dependent adult household member
+                           3921, # Physical care of a dependent adult household member e.g. Alzheimic parent
+                           3924, # Accompanying a dependent adult household member e.g. Alzheimic
+                           3929) # Other specified help to a dependent adult household member
 
 # all domestic work
 domestic_actlines = c(childcare_actlines, otherdomestic_actlines)
