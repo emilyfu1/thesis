@@ -259,7 +259,7 @@ data_working_couples_2015 = data_individual_2015 |>
   ungroup() |>
   filter(spouse_present) |>
   mutate(is_spouse = !is_resp) |>
-  group_by(serial, pnum) |>
+  group_by(serial, pnum, is_weekend) |>
   mutate(
     total_leisure_exp = wage * sum(total_leisure),
     total_leisure_exp_r = wage * sum(total_leisure_r),
@@ -267,7 +267,7 @@ data_working_couples_2015 = data_individual_2015 |>
     private_leisure_exp_r = wage * sum(total_private_leisure_r),
     total_childcare_exp = wage * sum(total_childcare),
     nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
-    y_individual = wage * 24 * num_diaries_filled
+    y_individual = wage * 24
   ) |>
   ungroup()
 
@@ -430,7 +430,7 @@ parents_est_data_2015 = data_working_parents_2015 |>
   # since the expenditure variables are calculated across the entire survey 
   # period, it doesn't matter which one i drop
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(!is_weekend) |>
   ungroup() |>
   select(!is_weekend)
 
@@ -536,6 +536,6 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
   # since the expenditure variables are calculated across the entire survey 
   # period, it doesn't matter which one i drop
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(!is_weekend) |>
   ungroup() |>
   select(!is_weekend)
