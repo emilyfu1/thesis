@@ -359,9 +359,9 @@ data_working_couples_2000 = data_individual_2000 |>
 
     wage = case_when(
       wage_source == "employee_exact" ~ emp_wage_exact,
-      wage_source == "employee_banded" ~ emp_wage_banded,
+      # wage_source == "employee_banded" ~ emp_wage_banded,
       wage_source == "self_employed_exact" ~ se_wage_exact,
-      wage_source == "self_employed_banded" ~ se_wage_banded,
+      # wage_source == "self_employed_banded" ~ se_wage_banded,
       TRUE ~ NA_real_)) |>
 
   # actual hours worked (incl. unpaid overtime), kept for HrWkAc in vars_to_suffix
