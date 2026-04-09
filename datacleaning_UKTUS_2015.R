@@ -233,67 +233,26 @@ data_working_couples_2015 = data_individual_2015 |>
   filter(num_diaries_filled == 2) |>
   
   mutate(
-    # clean main-job hours
     emp_hours = if_else(HrWkAc > 0, as.numeric(HrWkAc), NA_real_),
     se_hours  = if_else(SEHrWkAc > 0, as.numeric(SEHrWkAc), NA_real_),
-    
-    # -------------------------
-    # EMPLOYEES
-    # -------------------------
-    emp_pay_weekly_exact = case_when(
-      Stat == 1 & NetPay > 0 & NetPayP %in% 1:5 ~ pay_to_weekly(NetPay, NetPayP),
-      TRUE ~ NA_real_),
-    
-    # if pay was reported for a written-in number of hours, use direct hourly pay
-    emp_wage_exact = case_when(
-      Stat == 1 & NetPay > 0 & NetPayP == 7 & NetPayHr > 0 ~ NetPay / NetPayHr,
-      Stat == 1 & !is.na(emp_pay_weekly_exact) & emp_hours > 0 ~ emp_pay_weekly_exact / emp_hours,
-      TRUE ~ NA_real_),
-    
-    # fallback: constructed monthly net pay
-    emp_pay_weekly_monthly = case_when(
-      Stat == 1 & is.na(emp_wage_exact) & NetWkly > 0 ~ NetWkly / 4.333,
-      TRUE ~ NA_real_),
-    
-    emp_wage_monthly_fallback = case_when(
-      Stat == 1 & is.na(emp_wage_exact) & !is.na(emp_pay_weekly_monthly) & emp_hours > 0 ~
-        emp_pay_weekly_monthly / emp_hours,
-      TRUE ~ NA_real_),
-    
-    # -------------------------
-    # SELF-EMPLOYED
-    # -------------------------
-    se_pay_weekly_exact = case_when(
-      Stat == 2 & SENetPay > 0 ~ SENetPay / 4.333,
-      TRUE ~ NA_real_),
-    
-    se_wage_exact = case_when(
-      Stat == 2 & !is.na(se_pay_weekly_exact) & se_hours > 0 ~ se_pay_weekly_exact / se_hours,
-      TRUE ~ NA_real_),
-    
-    # fill in wages
-    
-    # source tracker
-    wage_source = case_when(
-      !is.na(emp_wage_exact) ~ "employee_exact_lastpay",
-      !is.na(emp_wage_monthly_fallback) ~ "employee_monthly_constructed",
-      !is.na(se_wage_exact) ~ "selfemp_exact_monthly",
-      TRUE ~ NA_character_),
-    
+    emp_earn  = if_else(NetWkly > 0, as.numeric(NetWkly), NA_real_),
+    se_earn   = if_else(SENetPay > 0, as.numeric(SENetPay), NA_real_),
+
+    # NetWkly should be weekly earnings, but some annual salaries entered by mistake (> £8000)
     NetWkly = case_when(
-      wage_source == "employee_exact_lastpay" ~ emp_pay_weekly_exact,
-      wage_source == "employee_monthly_constructed" ~ emp_pay_weekly_monthly,
-      wage_source == "selfemp_exact_monthly" ~ se_pay_weekly_exact,
+      Stat == 1 & emp_earn > 8000 ~ emp_earn / 52,
+      Stat == 1 & emp_earn > 0   ~ emp_earn,
+      Stat == 2                  ~ se_earn / 4.33,
       TRUE ~ NA_real_),
-    
+
     wage = case_when(
-      wage_source == "employee_exact_lastpay" ~ emp_wage_exact,
-      # wage_source == "employee_monthly_constructed" ~ emp_wage_monthly_fallback,
-      # wage_source == "selfemp_exact_monthly" ~ se_wage_exact,
+      Stat == 1 & emp_earn > 8000 ~ (emp_earn / 52) / emp_hours,
+      Stat == 1 & emp_earn > 0 & emp_earn <= 8000 ~ emp_earn / emp_hours,
+      Stat == 2 ~ se_earn / (se_hours * 4.33),
       TRUE ~ NA_real_)) |>
-  
-  filter(wage > 0, wage < 300) |>
-  
+
+  filter(wage > 0, wage < 100) |>
+
   group_by(serial) |>
   filter(all(wage > 0)) |>
   mutate(spouse_present = spouse_pnum %in% pnum) |>

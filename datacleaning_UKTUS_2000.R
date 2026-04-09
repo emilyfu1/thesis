@@ -327,28 +327,41 @@ data_working_couples_2000 = data_individual_2000 |>
       q7 == 2 & q13c > 0 ~ q13c / 4.333,
       TRUE ~ NA_real_),
 
+    # banded fallback: q13d is 1-indexed (1=<£215 ... 11=£6670+), same bands as q10x
+    se_pay_monthly_banded = if_else(q7 == 2 & q13c <= 0 & q13d %in% 1:11,
+                                    q10x_mid[q13d], NA_real_),
+    se_pay_weekly_banded = se_pay_monthly_banded / 4.333,
+
     se_wage_exact = case_when(
       q7 == 2 & !is.na(se_pay_weekly_exact) & emp_hours > 0 ~ se_pay_weekly_exact / emp_hours,
-      TRUE ~ NA_real_)) |>
+      TRUE ~ NA_real_),
+
+    se_wage_banded = if_else(
+      q7 == 2 & is.na(se_wage_exact) & !is.na(se_pay_weekly_banded) & emp_hours > 0,
+      se_pay_weekly_banded / emp_hours,
+      NA_real_)) |>
 
   # source of wage
   mutate(
     wage_source = case_when(
       !is.na(emp_wage_exact) ~ "employee_exact",
       !is.na(emp_wage_banded) ~ "employee_banded",
-      !is.na(se_wage_exact) ~ "self_employed",
+      !is.na(se_wage_exact) ~ "self_employed_exact",
+      !is.na(se_wage_banded) ~ "self_employed_banded",
       TRUE ~ NA_character_),
 
     NetWkly = case_when(
       wage_source == "employee_exact" ~ emp_pay_weekly_exact,
       wage_source == "employee_banded" ~ emp_pay_weekly_banded,
-      wage_source == "self_employed" ~ se_pay_weekly_exact,
+      wage_source == "self_employed_exact" ~ se_pay_weekly_exact,
+      wage_source == "self_employed_banded" ~ se_pay_weekly_banded,
       TRUE ~ NA_real_),
 
     wage = case_when(
       wage_source == "employee_exact" ~ emp_wage_exact,
       wage_source == "employee_banded" ~ emp_wage_banded,
-      wage_source == "self_employed" ~ se_wage_exact,
+      wage_source == "self_employed_exact" ~ se_wage_exact,
+      wage_source == "self_employed_banded" ~ se_wage_banded,
       TRUE ~ NA_real_)) |>
 
   # actual hours worked (incl. unpaid overtime), kept for HrWkAc in vars_to_suffix
@@ -363,8 +376,8 @@ data_working_couples_2000 = data_individual_2000 |>
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,
       TRUE ~ NA_real_)) |>
   
-  filter(wage > 0 & wage < 300) |>
-  
+  filter(wage > 0, wage < 100) |>
+
   group_by(serial) |>
   
   # keep any households where both people are captured by this hourly wage

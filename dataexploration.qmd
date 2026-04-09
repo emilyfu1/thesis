@@ -731,11 +731,11 @@ Simple regressions: Given the amount each parent works, do weekends reallocate l
 etable(feols(
   total_private_leisure ~ 
     is_weekend * male * shareown_etahat_f
-  + is_weekend * total_work
+  + total_work
   # + is_weekend * total_otherdomestic
   + male * shareown_etahat_f
-  + has_young_child
-  + proportion_male_children
+  + is_weekend * male * has_young_child
+  + is_weekend * male * proportion_male_children
   # + has_childcare_help
   # + has_otherdomestic_help
   | sample + dgorpaf,
