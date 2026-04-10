@@ -401,7 +401,8 @@ data_working_couples_2000 = data_individual_2000 |>
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,
       TRUE ~ NA_real_)) |>
   
-  filter(wage > 0, wage < 100) |>
+  filter(wage > 0) |>
+  filter(emp_hours > 1) |>
 
   group_by(serial) |>
   
@@ -410,15 +411,13 @@ data_working_couples_2000 = data_individual_2000 |>
   
   # make sure time use EXPENDITURE is calculated for both days separately
   group_by(serial, pnum, is_weekend) |>
-  # individual expenditure calculated using time use
-  mutate(# leisure and childcare expenditure
-    total_leisure_exp = wage * total_leisure,
-    total_leisure_exp_r = wage * total_leisure_r,
-    private_leisure_exp = wage * total_private_leisure,
-    private_leisure_exp_r = wage * total_private_leisure_r,
-    total_childcare_exp = wage * total_childcare,
-    nospouse_childcare_exp = wage * total_childcare_nospouse,
-    # individual contribution to household budget
+  mutate(
+    total_leisure_exp = wage * sum(total_leisure),
+    total_leisure_exp_r = wage * sum(total_leisure_r),
+    private_leisure_exp = wage * sum(total_private_leisure),
+    private_leisure_exp_r = wage * sum(total_private_leisure_r),
+    total_childcare_exp = wage * sum(total_childcare),
+    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
     y_individual = wage * 24) |>
   ungroup()
 

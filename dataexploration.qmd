@@ -333,7 +333,7 @@ print(combined_plot_baseline)
 -   Here is a table with the marginal contributions of each household characteristic to the estimated sharing rule. Women’s resource shares are predicted higher in households with higher female hourly pay and lower male hourly pay, but the male wage effect is nearly twice as large. Higher wages shifts Pareto weights toward the female's preferences. The sharing rule is more responsive to increases in male earning capacity than female earning capacity. Nothing here is inconsistent with bargaining theory but small changes in wages don't impact shares that much.
 -   An increase in the age gap (a relatively older husband) means that the male age is relatively higher. This has a negative effect on the female resource share. This would be in line with bargaining theory because a relatively older husband has had more wage- and experience-gaining years
 - Older couples have more female-favoured allocations. This could be because older couples are more likely to have older children who require less time input, which increases their available outside options.
--   What's interesting is that the education effects are kind of the opposite of what was found for the couples without children. Increasing male education has a smaller positive effect and increasing female education has a relatively larger negative effect. In my work from earlier, each spouse allocates their time between market work, private leisure, and domestic production (childcare). Spouses may end up choosing to specialise in this setting by choosing an allocation where one spouse concentrates more on market work and the other concentrates more on domestic production. This decision would be based on which parent's time is more expensive in the labour market. A classic result is that educational attainment raises earnings, but more qualified women matching with more qualified men would mean any persistent gender wage gaps are defined relative to the man's wage. I'm already controlling for wages in this estimation, but higher qualifications can still signal (or cause) a woman having skills that would work in her favour in the household, so feels counter-intuitive. 
+-   What's interesting is that the education effects are kind of the opposite of what was found for the couples without children, although the effect of the female wage is not statistically significant. Increasing male education has a smaller positive effect and increasing female education has a relatively larger negative effect. In my work from earlier, each spouse allocates their time between market work, private leisure, and domestic production (childcare). Spouses may end up choosing to specialise in this setting by choosing an allocation where one spouse concentrates more on market work and the other concentrates more on domestic production. This decision would be based on which parent's time is more expensive in the labour market. A classic result is that educational attainment raises earnings, but more qualified women matching with more qualified men would mean any persistent gender wage gaps are defined relative to the man's wage. I'm already controlling for wages in this estimation, but higher qualifications can still signal (or cause) a woman having skills that would work in her favour in the household, so feels counter-intuitive. 
 - This could hint to some preference heterogeneity in the parent setting that is being assumed away (although neither are statistically significant). Remember I required that everyone in a household category (so all parents in two-parent households, for example) to have the same preferences for the privae assignable good, but it could be that more educated women in this household category place higher weight on child human capital relative to leisure. An increase in female education would raise the marginal utility of childcare and reduce her private leisure share without being a negative impact on relative bargaining power.
 - Using education as a distribution factor means making the assumption that education doesn't impact the preference parameter for leisure. This is probably not true for individual categories of leisure, but I don't see any reason it can't hold for leisure in general.
 -   Being in a wealthier region generally means female resource shares are larger, although this effect is quite small (could be that richer places tend to have older people or better employment options)
@@ -725,23 +725,34 @@ summary(men_weekend$total_private_leisure)
 print(sd(men_weekend$total_private_leisure))
 summary(women_weekend$total_private_leisure)
 print(sd(women_weekend$total_private_leisure))
+
+summary(men_weekday$total_work)
+print(sd(men_weekday$total_work))
+summary(women_weekday$total_work)
+print(sd(women_weekday$total_work))
+
+summary(men_weekend$total_work)
+print(sd(men_weekend$total_work))
+summary(women_weekend$total_work)
+print(sd(women_weekend$total_work))
 ```
 
 Simple regressions: Given the amount each parent works, do weekends reallocate leisure differently for males and females? I started off not conditioning on work hours. This uses private leisure (in hours) as the outcome variable
 ```{r}
-etable(feols(
+
+# re-estimate and save the model
+mod_weekend <- feols(
   total_private_leisure ~ 
     is_weekend * male * shareown_etahat_f
-  + total_work
-  + total_otherdomestic
-  + has_young_child
-  + proportion_male_children
-  + has_childcare_help
-  + has_otherdomestic_help
-  | sample + dgorpaf,
-  cluster = "serial",
-  data = reg_stacked
-))
+  + is_weekend * male * has_young_child
+  + is_weekend * male * proportion_male_children
+  + total_work |
+    sample + dgorpaf,
+  data = reg_stacked,
+  cluster = "serial"
+)
+
+etable(mod_weekend)
 ```
 
 ```{r}
@@ -754,7 +765,7 @@ spec_2 = feols(total_private_leisure ~ is_weekend * male * shareown_etahat_f |
                se = "cluster", cluster = "serial")
 
 spec_3 = feols(total_private_leisure ~ is_weekend * male * shareown_etahat_f
-               + is_weekend * total_work |
+               + total_work |
                  sample + dgorpaf, data = reg_stacked,
                se = "cluster", cluster = "serial")
 
@@ -771,18 +782,6 @@ The regression results above are not easy to interpret on their own
 Counterfactual predictions: How many hours of leisure change when female resource share increases from the 25th to the 75th percentile, holding child composition fixed
 ```{r}
 # stand-in code
-
-# re-estimate and save the model
-mod_weekend <- feols(
-  total_private_leisure ~ 
-    is_weekend * male * shareown_etahat_f +
-    is_weekend * male * proportion_male_children +
-    is_weekend * male * has_young_child +
-    total_work |
-    sample + dgorpaf,
-  data = reg_stacked,
-  cluster = "serial"
-)
 
 # clustered vcov
 V <- vcov(mod_weekend)

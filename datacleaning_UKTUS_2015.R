@@ -270,7 +270,8 @@ data_working_couples_2015 = data_individual_2015 |>
       Stat == 2 ~ se_earn / (se_hours * 4.33),
       TRUE ~ NA_real_)) |>
 
-  filter(wage > 0, wage < 100) |>
+  filter(wage > 0) |>
+  filter(emp_hours > 1 | se_hours > 1) |>
 
   mutate(is_spouse = !is_resp) |>
   group_by(serial, pnum, is_weekend) |>
@@ -298,7 +299,7 @@ data_working_parents_2015 = data_working_couples_2015 |>
   inner_join(data_hh_2015 |> select(serial, has_childcare_help, 
                                     has_otherdomestic_help), by = c("serial")) |>
 
-  group_by(serial, is_weekend) |>
+  group_by(serial) |>
   
   # check for couples who both have time diaries (filter after joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>
@@ -316,7 +317,7 @@ data_working_nonparents_2015 = data_working_couples_2015 |>
   # keep only hetero couples without child in household
   filter(NumChild == 0) |>
 
-  group_by(serial, is_weekend) |>
+  group_by(serial) |>
 
   # check for couples who both have time diaries (filter after both joins)
   mutate(spouse_present = spouse_pnum %in% pnum) |>

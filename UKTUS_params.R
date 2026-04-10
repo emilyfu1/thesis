@@ -102,30 +102,27 @@ additional_leisure = c(6210, # Hunting and fishing
 
 # activities that may be considered leisure and domestic/non-market work
 borderline_leisure_domestic = c(3220, # Cleaning yard
+                                3430, # Caring for pets
+                                3330, # Handicraft and producing textiles
+                                3140, # Preserving
+                                3390, # Other specified making and care for textiles
+                                6220, # Picking berries mushroom and herbs
                                 3410, # Gardening
                                 3440, # Walking the dog
                                 3490, # Other specified gardening and pet care
+                                3614, # Shopping or browsing at car boot sales or antique fairs
+                                3110, # Food preparation and baking
                                 3540) # Vehicle maintenance
 
 # decide whether to include additional items
-restrict_actlines = c(mainleisure_actlines, borderline_leisure_domestic, additional_leisure, travel_leisure_actlines)
+restrict_actlines = c(mainleisure_actlines, additional_leisure)
 leisure_actlines = c(sleep_actlines, personal_care_actlines,
                      restrict_actlines)
 
 # working at job
 work_actlines = c(
-  9110, # Travel in the course of work
-  9100, # Travel to/from work
-  9130, # Travel to work from a place other than home
-  4110, # Work for an organisation
-  4310, # Meetings
-  1000, # Unspecified employment
-  1300, # Unspecified activities related to employment
-  1390, # Other specified activities related to employment
-  1399, # Other unspecified activities related to employment
   1100, # Main job: unspecified main job
-  1110, # work at main job
-  1210) # work at second job
+  1110) # work at main job
 
 # childcare values
 childcare_actlines = c(
@@ -151,7 +148,6 @@ otherdomestic_actlines = c(4100, # Unspecified organisational work
                            3130, # Dish washing
                            6210, # Hunting and fishing
                            3140, # Preserving
-                           9310, # Travel related to household care
                            3190, # Other specified food management
                            3200, # Unspecified household upkeep
                            3210, # Cleaning dwelling
@@ -183,7 +179,6 @@ otherdomestic_actlines = c(4100, # Unspecified organisational work
                            3613, # Shopping mainly related to accommodation
                            3614, # Shopping or browsing at car boot sales or antique fairs
                            3619, # Other specified shopping
-                           3620, # Commercial and administrative services
                            4190, # Other specified organisational work
                            3000, # Unspecified household and family care
                            3690, # Other specified shopping and services
