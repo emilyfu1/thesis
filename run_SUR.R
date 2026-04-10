@@ -335,6 +335,81 @@ counterfactual_2015sharing_alldata = add_shares_from_lm(
   parents_res_within_2015, data=parents_est_data_merged, dev_type = "own",
   data_type = "parents")
 
+########################## merge with sharing_est_data #########################
+
+parents_est_data_merged_shares = inner_join(shares_parents_ownsex_r_merged$data,
+                                            parents_est_data_merged,
+                                            by=c('serial')) |>
+  rename(shareown_etahat_f_r = shareown_etahat_f,
+         shareown_etahat_m_r = shareown_etahat_m) |>
+  inner_join(shares_parents_ownsex_merged$data, by=c('serial')) |>
+  mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
+                                     private_leisure_exp_r_m) / y,
+         share_budget_leisure = (private_leisure_exp_f + 
+                                   private_leisure_exp_m) / y)
+
+###################### merge with individual/day level data ####################
+
+reg_stacked = bind_rows(
+  data_working_parents_2000 |>
+    transmute(
+      serial,
+      sample = "2000",
+      dgorpaf,
+      pnum,
+      is_weekend = as.integer(is_weekend), # dummy
+      male = as.integer(male), # dummy
+      has_childcare_help = as.integer(has_childcare_help),
+      has_otherdomestic_help = as.integer(has_otherdomestic_help),
+      wage, 
+      total_work,
+      total_otherdomestic,
+      total_private_leisure,
+      total_private_leisure_r,
+      total_childcare_nospouse,
+      total_childcare),
+  data_working_parents_2015 |>
+    transmute(
+      serial,
+      dgorpaf,
+      pnum,
+      sample = "2015",
+      is_weekend = as.integer(is_weekend),
+      male = as.integer(male),
+      has_childcare_help = as.integer(has_childcare_help),
+      has_otherdomestic_help = as.integer(has_otherdomestic_help),
+      wage,
+      total_work,
+      total_otherdomestic,
+      total_private_leisure,
+      total_private_leisure_r,
+      total_childcare_nospouse,
+      total_childcare)) |>
+  # time dummies
+  mutate(dummy_2000 = ifelse(sample == "2000", 1, 0),
+         dummy_2015 = ifelse(sample == "2015", 1, 0)) |>
+  
+  # merge with resource share estimates
+  inner_join(parents_est_data_merged_shares, 
+             by=c("serial", "sample", "dgorpaf")) |>
+  
+  # only personal care
+  mutate(total_private_personalcare = total_private_leisure - total_private_leisure_r) |>
+  
+  # leisure expenditure as outcome
+  mutate(private_leisure_exp = total_private_leisure * wage,
+         private_leisure_exp_r = total_private_leisure_r * wage) |>
+  
+  # individual identifiers
+  group_by(sample, serial, pnum) |>
+  mutate(individual_id = row_number()) |>
+  ungroup() |>
+  
+  # child under five in household
+  mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
+         proportion_male_children = num_kids_male / num_kids_total,
+         has_young_child = n_kid_aged_0_2 + n_kid_aged_3_5 + n_kid_aged_6_10 > 0)
+
 ################################################################################
 ################################## NON-PARENTS #################################
 ################################################################################
@@ -605,6 +680,19 @@ shares_nonparents_oppsex_r_2000 = add_shares_from_lm(nonparents_res_r_opposite_2
                                               data=nonparents_est_data_2000, 
                                               dev_type = "opp",
                                               data_type = "nonparents")
+
+########################## merge with sharing_est_data #########################
+
+nonparents_est_data_merged_shares = inner_join(shares_parents_ownsex_r_merged$data,
+                                               parents_est_data_merged,
+                                               by=c('serial')) |>
+  rename(shareown_etahat_f_r = shareown_etahat_f,
+         shareown_etahat_m_r = shareown_etahat_m) |>
+  inner_join(shares_parents_ownsex_merged$data, by=c('serial')) |>
+  mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
+                                     private_leisure_exp_r_m) / y,
+         share_budget_leisure = (private_leisure_exp_f + 
+                                   private_leisure_exp_m) / y)
 
 ################################################################################
 ###################################### BOTH ####################################

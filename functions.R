@@ -427,33 +427,33 @@ plot_share_densities = function(data,
                                 bw = "nrd0",
                                 alpha = 0.5,
                                 restrict_leisure = TRUE) {
-  
-  # construct column names
-  col_m = paste0(prefix, dev_type, "_etahat_m")
-  col_f = paste0(prefix, dev_type, "_etahat_f")
-  
-  # reshape to long for ggplot
-  plot_data = data |>
-    select(all_of(c(col_m, col_f))) |>
-    pivot_longer(cols = everything(),
-                        names_to = "sex",
-                        values_to = "share") |>
-    mutate(sex = case_when(sex == col_m ~ "Male",
-                           sex == col_f ~ "Female"))
-  
-  # leisure excluding sleep and personal care
-  if (restrict_leisure == FALSE) {
-    label = "Including personal care and sleep"
-  } else {
-    label = "Excluding personal care and sleep"
-  }
-  
+
   # label 
   if (dev_type == "opp") {
     dev_label = "opposite"
   } else {
     dev_label = dev_type
   }
+  
+  # leisure excluding sleep and personal care
+  if (restrict_leisure == FALSE) {
+    label = "Including personal care and sleep"
+    col_m = paste0(prefix, dev_type, "_etahat_m")
+    col_f = paste0(prefix, dev_type, "_etahat_f")
+  } else {
+    label = "Excluding personal care and sleep"
+    col_m = paste0(prefix, dev_type, "_etahat_m_r")
+    col_f = paste0(prefix, dev_type, "_etahat_f_r")
+  }
+  
+  # reshape to long for ggplot
+  plot_data = data |>
+    select(all_of(c(col_m, col_f))) |>
+    pivot_longer(cols = everything(),
+                 names_to = "sex",
+                 values_to = "share") |>
+    mutate(sex = case_when(sex == col_m ~ "Male",
+                           sex == col_f ~ "Female"))
   
   ggplot(plot_data, aes(x = share, fill = sex, colour = sex)) +
     geom_density(alpha = alpha, bw = bw, linewidth = 1, na.rm = TRUE) +
@@ -731,6 +731,99 @@ marginal_impacts = function(res, data, rows_map, data_type = "parents") {
 }
 
 `%||%` = function(x, y) if (!is.null(x)) x else ys
+
+# calculating fake people
+
+# helper: estimate + delta-method CI for any linear combination b'w
+lincom_ci = function(model, weights, V = vcov(model), level = 0.95) {
+  b = coef(model)
+  w = rep(0, length(b))
+  names(w) = names(b)
+  w[names(weights)] = weights
+  
+  est = sum(w * b)
+  se  = sqrt(as.numeric(t(w) %*% V %*% w))
+  z   = qnorm(1 - (1 - level) / 2)
+  
+  tibble(
+    estimate = est,
+    std.error = se,
+    conf.low = est - z * se,
+    conf.high = est + z * se
+  )
+}
+
+
+# weekend effect for WOMEN at share q and young-child status yc
+weekend_effect_female = function(q, yc) {
+  lincom_ci(
+    spec_4,
+    c(
+      setNames(1, b_w),
+      setNames(q, b_ws),
+      setNames(yc, b_wy),
+      setNames(yc * q, b_wsy),
+      setNames(help_childcare, b_whc),
+      setNames(help_domestic, b_whd)
+    ),
+    V = V
+  )
+}
+
+# weekend effect for MEN at share q and young-child status yc
+weekend_effect_male = function(q, yc) {
+  lincom_ci(
+    spec_4,
+    c(
+      setNames(1, b_w),
+      setNames(1, b_wm),
+      setNames(q, b_ws),
+      setNames(q, b_wms),
+      setNames(yc, b_wy),
+      setNames(yc, b_wmy),
+      setNames(yc * q, b_wsy),
+      setNames(help_childcare, b_whc),
+      setNames(help_domestic, b_whd)
+    ),
+    V = V
+  )
+}
+
+# change in weekend effect from p25 to p75 for WOMEN, conditional on yc
+change_female = function(yc) {
+  lincom_ci(
+    spec_4,
+    c(
+      setNames(dq, b_ws),
+      setNames(yc * dq, b_wsy)
+    ),
+    V = V
+  )
+}
+
+# change in weekend effect from p25 to p75 for MEN, conditional on yc
+change_male = function(yc) {
+  lincom_ci(
+    spec_4,
+    c(
+      setNames(dq, b_ws),
+      setNames(dq, b_wms),
+      setNames(yc * dq, b_wsy)
+    ),
+    V = V
+  )
+}
+
+# male - female difference in the p25 -> p75 change, conditional on yc
+diff_change = function(yc) {
+  lincom_ci(
+    spec_4,
+    c(
+      setNames(dq, b_wms)
+    ),
+    V = V
+  )
+}
 
 ########################## Archive: import FRED data ###########################
 

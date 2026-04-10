@@ -361,19 +361,19 @@ print(marginal_impacts_nonparents)
 - Since parents and non-parents are technically in the same household category, I'm using the same linear approximation for both. However, the characteristics of children in the household are likely to impact outside options as well so there could be omitted variables here
 ```{r fig.width=10, fig.height=8}
 
-narrowleisure_shares_2000 = plot_share_densities(shares_parents_ownsex_r_2000$data, 
+narrowleisure_shares_2000 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2000"), 
                                             dev_type = "own",
                                             restrict_leisure = TRUE)
 
-broadleisure_shares_2000 = plot_share_densities(shares_parents_ownsex_2000$data, 
+broadleisure_shares_2000 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2000"), 
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
-narrowleisure_shares_2015 = plot_share_densities(shares_parents_ownsex_r_2015$data, 
+narrowleisure_shares_2015 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2015"), 
                                             dev_type = "own",
                                             restrict_leisure = TRUE)
 
-broadleisure_shares_2015 = plot_share_densities(shares_parents_ownsex_2015$data, 
+broadleisure_shares_2015 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2015"),  
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
@@ -402,19 +402,19 @@ print(combined_plot_years)
 Non-parents:
 ```{r fig.width=10, fig.height=8}
 
-narrowleisure_shares_2000 = plot_share_densities(shares_nonparents_ownsex_r_2000$data, 
+narrowleisure_shares_2000 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2000"), 
                                             dev_type = "own",
                                             restrict_leisure = TRUE)
 
-broadleisure_shares_2000 = plot_share_densities(shares_nonparents_ownsex_2000$data, 
+broadleisure_shares_2000 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2000"),
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
-narrowleisure_shares_2015 = plot_share_densities(shares_nonparents_ownsex_r_2015$data, 
+narrowleisure_shares_2015 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2015"),
                                             dev_type = "own",
                                             restrict_leisure = TRUE)
 
-broadleisure_shares_2015 = plot_share_densities(shares_nonparents_ownsex_2015$data, 
+broadleisure_shares_2015 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2015"),
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
@@ -447,15 +447,6 @@ print(combined_plot_years)
 ```{r}
 # check budget share on private leisure correlated w/ estimated resource shares
 
-# merge with sharing_est_data
-parents_est_data_merged_shares = inner_join(shares_parents_ownsex_r_merged$data,
-                                parents_est_data_merged,
-                                by=c('serial')) |>
-  mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
-           private_leisure_exp_r_m) / y,
-         share_budget_leisure = (private_leisure_exp_f + 
-           private_leisure_exp_m) / y)
-
 print("test of correlations: estimated resource shares and total private leisure expenditure (including personal care and sleep")
 # correlation of estimated resource shares (broad leisure definition)
 cor.test(parents_est_data_merged_shares$share_budget_leisure, 
@@ -464,7 +455,7 @@ cor.test(parents_est_data_merged_shares$share_budget_leisure,
 print("test of correlations: estimated resource shares and total private leisure expenditure (excluding personal care and sleep")
 # (narrow leisure definition)
 cor.test(parents_est_data_merged_shares$share_budget_leisure_r, 
-         parents_est_data_merged_shares$shareown_etahat_f)
+         parents_est_data_merged_shares$shareown_etahat_f_r)
 ```
 
 
@@ -486,67 +477,6 @@ cor.test(parents_est_data_merged_shares$share_budget_leisure_r,
 
 - See if women with lower or higher relative bargaining are already providing a lot on the weekdays.
 ```{r}
-reg_stacked = bind_rows(
-  data_working_parents_2000 |>
-    transmute(
-      serial,
-      sample = "2000",
-      dgorpaf,
-      pnum,
-      is_weekend = as.integer(is_weekend), # dummy
-      male = as.integer(male), # dummy
-      has_childcare_help = as.integer(has_childcare_help),
-      has_otherdomestic_help = as.integer(has_otherdomestic_help),
-      wage, 
-      total_work,
-      total_otherdomestic,
-      total_private_leisure,
-      total_private_leisure_r,
-      total_childcare_nospouse,
-      total_childcare),
-  data_working_parents_2015 |>
-    transmute(
-      serial,
-      dgorpaf,
-      pnum,
-      sample = "2015",
-      is_weekend = as.integer(is_weekend),
-      male = as.integer(male),
-      has_childcare_help = as.integer(has_childcare_help),
-      has_otherdomestic_help = as.integer(has_otherdomestic_help),
-      wage,
-      total_work,
-      total_otherdomestic,
-      total_private_leisure,
-      total_private_leisure_r,
-      total_childcare_nospouse,
-      total_childcare)) |>
-  # time dummies
-  mutate(dummy_2000 = ifelse(sample == "2000", 1, 0),
-         dummy_2015 = ifelse(sample == "2015", 1, 0)) |>
-  
-  # merge with resource share estimates
-  inner_join(parents_est_data_merged_shares, 
-             by=c("serial", "sample", "dgorpaf")) |>
-  
-  # only personal care
-  mutate(total_private_personalcare = total_private_leisure - total_private_leisure_r) |>
-  
-  # leisure expenditure as outcome
-  mutate(private_leisure_exp = total_private_leisure * wage,
-         private_leisure_exp_r = total_private_leisure_r * wage) |>
-  
-  # individual identifiers
-  group_by(sample, serial, pnum) |>
-  mutate(individual_id = row_number()) |>
-  ungroup() |>
-  
-  # child under five in household
-  mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
-         proportion_male_children = num_kids_male / num_kids_total,
-         has_young_child = n_kid_aged_0_2 + n_kid_aged_3_5 + n_kid_aged_6_10 > 0)
-
-
 timeuse_long = reg_stacked |>
   filter(male %in% c(0, 1), is_weekend %in% c(0, 1)) |>
   transmute(
@@ -556,21 +486,27 @@ timeuse_long = reg_stacked |>
     total_childcare_nospouse,
     total_private_leisure,
     total_private_leisure_r,
-    total_childcare) |>
+    total_childcare,
+    total_work,
+    total_otherdomestic) |>
   pivot_longer(
     cols = c(total_childcare_nospouse, total_private_leisure, 
-             total_private_leisure_r, total_childcare),
+             total_private_leisure_r, total_childcare, total_work, 
+             total_otherdomestic),
     names_to = "activity",
     values_to = "hours") |>
   mutate(
     activity = factor(
       activity,
       levels = c("total_childcare_nospouse", "total_private_leisure", 
-                 "total_private_leisure_r", "total_childcare"),
+                 "total_private_leisure_r", "total_childcare", "total_work", 
+                 "total_otherdomestic"),
       labels = c("Childcare (without spouse present)", 
                  "Private leisure",
                  "Private leisure (excluding sleep and personal care)",
-                 "Childcare")))
+                 "Childcare",
+                 "Market work",
+                 "Domestic work excluding childcare")))
 ```
 
 Resource shares and child characteristics:
@@ -638,7 +574,9 @@ print(num_split)
 ```{r warning = FALSE, message = FALSE, fig.width=15, fig.height=6}
 # on the weekend, how do women spend their time scattered by estimated bargaining power
 ggplot(timeuse_long |> filter(activity %in% c("Childcare", 
-                                              "Private leisure")),
+                                              "Private leisure (excluding sleep and personal care)",
+                                              "Market work",
+                                              "Domestic work excluding childcare")),
        aes(x = shareown_etahat_f, y = hours, colour = activity)) +
   geom_point(alpha = 1) +
   scale_x_continuous(limits = c(0, 1)) +
@@ -670,7 +608,7 @@ share_lookup = tibble(
 
 # for each percentile point, take the closest observations
 # n_closest controls how many observations you average over
-n_closest = 30
+n_closest = 50
 
 table_percentiles = crossing(
   timeuse_long,
@@ -695,7 +633,7 @@ table_hours_wide = table_percentiles |>
     names_from = percentile,
     values_from = mean_hours) |>
   arrange(day, sex, activity) |>
-  filter(activity %in% c("Childcare", "Private leisure"))
+  filter(activity %in% c("Childcare", "Private leisure", "Market work", "Domestic work excluding childcare"))
 
 print(table_hours_wide)
 ```
@@ -740,19 +678,21 @@ print(sd(women_weekend$total_work))
 Simple regressions: Given the amount each parent works, do weekends reallocate leisure differently for males and females? I started off not conditioning on work hours. This uses private leisure (in hours) as the outcome variable
 ```{r}
 
-# re-estimate and save the model
-mod_weekend <- feols(
-  total_private_leisure ~ 
-    is_weekend * male * shareown_etahat_f
-  + is_weekend * male * has_young_child
-  + is_weekend * male * proportion_male_children
-  + total_work |
-    sample + dgorpaf,
+etable(feols(total_private_leisure ~ 
+    # CORE: bargaining + gender
+    is_weekend * male * shareown_etahat_f * has_young_child
+    
+    # CONSTRAINT RELAXATION
+  + is_weekend * has_childcare_help
+  + is_weekend * has_otherdomestic_help
+    
+    # TIME CONTROLS
+  + total_work
+  + total_otherdomestic
+    
+  | sample + dgorpaf,
   data = reg_stacked,
-  cluster = "serial"
-)
-
-etable(mod_weekend)
+  cluster = "serial"))
 ```
 
 ```{r}
@@ -765,9 +705,29 @@ spec_2 = feols(total_private_leisure ~ is_weekend * male * shareown_etahat_f |
                se = "cluster", cluster = "serial")
 
 spec_3 = feols(total_private_leisure ~ is_weekend * male * shareown_etahat_f
-               + total_work |
+               + total_work + total_otherdomestic |
                  sample + dgorpaf, data = reg_stacked,
                se = "cluster", cluster = "serial")
+
+spec_4 = feols(total_private_leisure ~ 
+    # CORE: bargaining + gender
+    is_weekend * male * shareown_etahat_f
+    
+    # CHILDCARE DEMAND
+  + is_weekend * has_young_child * male
+  + is_weekend * has_young_child * shareown_etahat_f
+    
+    # CONSTRAINT RELAXATION
+  + is_weekend * has_childcare_help
+  + is_weekend * has_otherdomestic_help
+    
+    # TIME CONTROLS
+  + total_work
+  + total_otherdomestic
+    
+  | sample + dgorpaf,
+  data = reg_stacked,
+  cluster = "serial")
 
 etable(spec_1)
 
@@ -775,143 +735,85 @@ etable(spec_2)
 
 etable(spec_3)
 
-```
+etable(spec_4)
 
+```
+```{r}
+names(coef(spec_4))
+```
 
 The regression results above are not easy to interpret on their own
 Counterfactual predictions: How many hours of leisure change when female resource share increases from the 25th to the 75th percentile, holding child composition fixed
 ```{r}
-# stand-in code
-
 # clustered vcov
-V <- vcov(mod_weekend)
-
-# helper: estimate + delta-method CI for any linear combination b'w
-lincom_ci <- function(model, weights, V = vcov(model), level = 0.95) {
-  b <- coef(model)
-  w <- rep(0, length(b))
-  names(w) <- names(b)
-  w[names(weights)] <- weights
-  
-  est <- sum(w * b)
-  se  <- sqrt(as.numeric(t(w) %*% V %*% w))
-  z   <- qnorm(1 - (1 - level) / 2)
-  
-  tibble(
-    estimate = est,
-    std.error = se,
-    conf.low = est - z * se,
-    conf.high = est + z * se
-  )
-}
+V = vcov(spec_4)
 
 # percentiles of female resource share
-q25 <- quantile(reg_stacked$shareown_etahat_f, 0.25, na.rm = TRUE)
-q75 <- quantile(reg_stacked$shareown_etahat_f, 0.75, na.rm = TRUE)
-dq  <- as.numeric(q75 - q25)
+q25 = quantile(reg_stacked$shareown_etahat_f, 0.25, na.rm = TRUE)
+q75 = quantile(reg_stacked$shareown_etahat_f, 0.75, na.rm = TRUE)
+dq  = as.numeric(q75 - q25)
 
-# choose a "typical" household for the other interacted controls
-pmc_typical   <- mean(reg_stacked$proportion_male_children, na.rm = TRUE)
-young_typical <- as.numeric(mean(reg_stacked$has_young_child, na.rm = TRUE) >= 0.5)
+# coefficient names for spec_4
+b_w      = "is_weekend"
+b_wm     = "is_weekend:male"
+b_ws     = "is_weekend:shareown_etahat_f"
+b_wms    = "is_weekend:male:shareown_etahat_f"
 
-# coefficient names (check these with names(coef(mod_weekend)) if needed)
-b_w      <- "is_weekend"
-b_wm     <- "is_weekend:male"
-b_ws     <- "is_weekend:shareown_etahat_f"
-b_wms    <- "is_weekend:male:shareown_etahat_f"
-b_wp     <- "is_weekend:proportion_male_children"
-b_wmp    <- "is_weekend:male:proportion_male_children"
-b_wh     <- "is_weekend:has_young_childTRUE"
-b_wmh    <- "is_weekend:male:has_young_childTRUE"
+b_wy     = "is_weekend:has_young_childTRUE"
+b_wmy    = "is_weekend:male:has_young_childTRUE"
+b_wsy    = "is_weekend:shareown_etahat_f:has_young_childTRUE"
 
-# weekend effect for WOMEN at a given share:
-# E[weekend - weekday | female, share = q, controls fixed]
-weekend_effect_female <- function(q) {
-  lincom_ci(
-    mod_weekend,
-    c(
-      setNames(1, b_w),
-      setNames(q, b_ws),
-      setNames(pmc_typical, b_wp),
-      setNames(young_typical, b_wh)
-    ),
-    V = V
-  )
-}
+b_whc    = "is_weekend:has_childcare_help"
+b_whd    = "is_weekend:has_otherdomestic_help"
 
-# weekend effect for MEN at a given share:
-weekend_effect_male <- function(q) {
-  lincom_ci(
-    mod_weekend,
-    c(
-      setNames(1, b_w),
-      setNames(1, b_wm),
-      setNames(q, b_ws),
-      setNames(q, b_wms),
-      setNames(pmc_typical, b_wp),
-      setNames(pmc_typical, b_wmp),
-      setNames(young_typical, b_wh),
-      setNames(young_typical, b_wmh)
-    ),
-    V = V
-  )
-}
+# you want help = 0, so these contribute nothing
+help_childcare = 0
+help_domestic  = 0
 
-# change in the weekend effect when female share rises from p25 to p75
-# women: dq * beta(is_weekend:share)
-change_female <- lincom_ci(
-  mod_weekend,
-  c(setNames(dq, b_ws)),
-  V = V
-)
 
-# men: dq * [beta(is_weekend:share) + beta(is_weekend:male:share)]
-change_male <- lincom_ci(
-  mod_weekend,
-  c(
-    setNames(dq, b_ws),
-    setNames(dq, b_wms)
-  ),
-  V = V
-)
 
-# male - female difference in the p25->p75 change
-# = dq * beta(is_weekend:male:share)
-diff_change <- lincom_ci(
-  mod_weekend,
-  c(setNames(dq, b_wms)),
-  V = V
-)
+# build level table: no young child (yc = 0) and young child (yc = 1)
+tab = bind_rows(
+  weekend_effect_female(q25, 0) |> mutate(sex = "Female", young_child = "No",  share = "p25"),
+  weekend_effect_female(q75, 0) |> mutate(sex = "Female", young_child = "No",  share = "p75"),
+  weekend_effect_male(q25,   0) |> mutate(sex = "Male",   young_child = "No",  share = "p25"),
+  weekend_effect_male(q75,   0) |> mutate(sex = "Male",   young_child = "No",  share = "p75"),
 
-# build the table
-tab <- bind_rows(
-  weekend_effect_female(q25) |> mutate(sex = "Female", share = "p25"),
-  weekend_effect_female(q75) |> mutate(sex = "Female", share = "p75"),
-  weekend_effect_male(q25)   |> mutate(sex = "Male",   share = "p25"),
-  weekend_effect_male(q75)   |> mutate(sex = "Male",   share = "p75")
+  weekend_effect_female(q25, 1) |> mutate(sex = "Female", young_child = "Yes", share = "p25"),
+  weekend_effect_female(q75, 1) |> mutate(sex = "Female", young_child = "Yes", share = "p75"),
+  weekend_effect_male(q25,   1) |> mutate(sex = "Male",   young_child = "Yes", share = "p25"),
+  weekend_effect_male(q75,   1) |> mutate(sex = "Male",   young_child = "Yes", share = "p75")
 ) |>
-  select(sex, share, estimate, conf.low, conf.high)
+  select(young_child, sex, share, estimate, conf.low, conf.high)
 
-change_tab <- bind_rows(
-  change_female |> mutate(sex = "Female"),
-  change_male   |> mutate(sex = "Male")
+# build change table
+change_tab = bind_rows(
+  change_female(0) |> mutate(sex = "Female", young_child = "No"),
+  change_male(0)   |> mutate(sex = "Male",   young_child = "No"),
+  change_female(1) |> mutate(sex = "Female", young_child = "Yes"),
+  change_male(1)   |> mutate(sex = "Male",   young_child = "Yes")
 ) |>
-  select(sex, estimate, conf.low, conf.high) |>
+  select(young_child, sex, estimate, conf.low, conf.high) |>
   rename(
     `Change in weekend effect from p25 to p75` = estimate,
     `CI low` = conf.low,
     `CI high` = conf.high
   )
 
-diff_tab <- diff_change |>
+# optional: male-female differential in the change
+diff_tab = bind_rows(
+  diff_change(0) |> mutate(young_child = "No"),
+  diff_change(1) |> mutate(young_child = "Yes")
+) |>
   transmute(
+    young_child,
     Comparison = "Male - Female change from p25 to p75",
     estimate, conf.low, conf.high
   )
 
-kable(tab, digits = 3, caption = "Weekend effect on private leisure at the 25th and 75th percentiles of the female resource share")
-kable(change_tab, digits = 3, caption = "How the weekend effect changes when the female resource share rises from p25 to p75")
-kable(diff_tab, digits = 3, caption = "Difference between men and women in the p25-to-p75 change")
+tab
+change_tab
+diff_tab
 ```
 
 
