@@ -150,12 +150,13 @@ activity_summaries_2000 = data_activities_2000_long |>
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private)| activity_is_sleep, 
+    private_leisure = (activity_is_leisure & activity_private) | activity_is_sleep, 
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              wit1 == 1 | wit2 == 1),
+    # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
+    #                           wit1 == 1 | wit2 == 1),
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | wit1 == 1 | wit2 == 1),
     
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work),
@@ -313,9 +314,6 @@ data_working_couples_2000 = data_individual_2000 |>
   # identify couples
   inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
 
-  # keep only people who fill out both diaries |>
-  filter(num_diaries_filled == 2) |>
-
   # dealing with all different wage/hours related variables
 
   # working hours (paid hours only, used for converting pay to hourly wage)
@@ -384,9 +382,9 @@ data_working_couples_2000 = data_individual_2000 |>
 
     wage = case_when(
       wage_source == "employee_exact" ~ emp_wage_exact,
-      # wage_source == "employee_banded" ~ emp_wage_banded,
+      wage_source == "employee_banded" ~ emp_wage_banded,
       wage_source == "self_employed_exact" ~ se_wage_exact,
-      # wage_source == "self_employed_banded" ~ se_wage_banded,
+      wage_source == "self_employed_banded" ~ se_wage_banded,
       TRUE ~ NA_real_)) |>
 
   # actual hours worked (incl. unpaid overtime), kept for HrWkAc in vars_to_suffix
@@ -401,10 +399,16 @@ data_working_couples_2000 = data_individual_2000 |>
       q14b == 1 ~ q14d_c + q14e_c + q14f_c,
       TRUE ~ NA_real_)) |>
   
-  filter(wage > 0) |>
-  filter(emp_hours > 1) |>
-
+  # ensure both complete 2 diaries AND one of each type
+  group_by(serial, pnum) |>
+  filter(n_distinct(is_weekend) == 2) |>
+  ungroup() |>
+  
+  # enforce working condition
   group_by(serial) |>
+  filter(all(wage > 0)) |>
+  filter(all((emp_hours > 1))) |>
+  ungroup() |>
   
   # indicate whether someone is the spouse
   mutate(is_spouse = !is_resp) |>
@@ -451,12 +455,13 @@ data_working_parents_2000 = data_working_couples_2000 |>
 # get non-parent couples (including empty nesters: hhtype4 5/8 with all kids >= 18)
 data_working_nonparents_2000 = data_working_couples_2000 |>
   # hhtype4 3/6: no children; hhtype4 5/8: children all >= 16 (check below for >= 18)
-  filter(hhtype4 %in% c(3, 5, 6, 8)) |>
   # left join to get youngest kid age; NA means no children in household
   left_join(kids_age_dist_2000 |> select(serial, kid_age_min), by = "serial") |>
   # keep childless couples and empty nesters (youngest child >= 18)
-  filter(hhtype4 %in% c(3, 6) | kid_age_min >= 18) |>
-  select(-kid_age_min) |>
+  filter((hhtype4 %in% c(3, 6) | kid_age_min >= 18) & numadult == 2) |>
+  # select(-kid_age_min) |>
+  
+  # filter(hhtype4 %in% c(3, 6)) |>
 
   group_by(serial, is_weekend) |>
 

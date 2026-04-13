@@ -291,11 +291,11 @@ print(t.test(shares_parents_ownsex_merged$data$shareown_etahat_f,
 - All estimates fall within the unit interval. This isn't something I can impose by construction, so the fact that this linear estimation method provides shares that can reasonably be interpreted as a percentage of resources so in this (limited) sense the model does appear to fit the data well. This is some hint that the structural restrictions implied by the collective model are broadly consistent with the data.
 ```{r fig.width=10, fig.height=8}
 
-narrowleisure_shares_p = plot_share_densities(shares_parents_ownsex_r_merged$data, 
+narrowleisure_shares_p = plot_share_densities(parents_est_data_merged_shares, 
                                             dev_type = "own",
                                             restrict_leisure = TRUE)
 
-broadleisure_shares_p = plot_share_densities(shares_parents_ownsex_merged$data, 
+broadleisure_shares_p = plot_share_densities(parents_est_data_merged_shares, 
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
@@ -308,10 +308,10 @@ combined_plot_p =
       plot.title = element_text(face = "bold", size = 14),
       plot.subtitle = element_text(size = 11)))
 
-narrowleisure_shares_np = plot_share_densities(shares_nonparents_ownsex_r_merged$data, 
+narrowleisure_shares_np = plot_share_densities(nonparents_est_data_merged_shares, 
                                             dev_type = "own")
 
-broadleisure_shares_np = plot_share_densities(shares_nonparents_ownsex_merged$data, 
+broadleisure_shares_np = plot_share_densities(nonparents_est_data_merged_shares, 
                                            dev_type = "own",
                                            restrict_leisure = FALSE)
 
@@ -601,9 +601,9 @@ share_points = quantile(
 
 share_lookup = tibble(
   prob = share_probs,
-  percentile = c("p10 fem. resource share", "p25 fem. resource share", 
-                 "p50 fem. resource share", "p75 fem. resource share", 
-                 "p90 fem. resource share"),
+  percentile = c("p10 fem. share", "p25 fem. share", 
+                 "p50 fem. share", "p75 fem. share", 
+                 "p90 fem. share"),
   share_value = as.numeric(share_points))
 
 # for each percentile point, take the closest observations
@@ -679,17 +679,7 @@ Simple regressions: Given the amount each parent works, do weekends reallocate l
 ```{r}
 
 etable(feols(total_private_leisure ~ 
-    # CORE: bargaining + gender
-    is_weekend * male * shareown_etahat_f * has_young_child
-    
-    # CONSTRAINT RELAXATION
-  + is_weekend * has_childcare_help
-  + is_weekend * has_otherdomestic_help
-    
-    # TIME CONTROLS
-  + total_work
-  + total_otherdomestic
-    
+  is_weekend
   | sample + dgorpaf,
   data = reg_stacked,
   cluster = "serial"))
@@ -767,8 +757,8 @@ b_whc    = "is_weekend:has_childcare_help"
 b_whd    = "is_weekend:has_otherdomestic_help"
 
 # you want help = 0, so these contribute nothing
-help_childcare = 0
-help_domestic  = 0
+help_childcare = 1
+help_domestic  = 1
 
 
 

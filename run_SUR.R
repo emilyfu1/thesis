@@ -367,7 +367,9 @@ reg_stacked = bind_rows(
       total_private_leisure,
       total_private_leisure_r,
       total_childcare_nospouse,
-      total_childcare),
+      total_childcare,
+      private_leisure_exp,
+      private_leisure_exp_r),
   data_working_parents_2015 |>
     transmute(
       serial,
@@ -384,7 +386,9 @@ reg_stacked = bind_rows(
       total_private_leisure,
       total_private_leisure_r,
       total_childcare_nospouse,
-      total_childcare)) |>
+      total_childcare,
+      private_leisure_exp,
+      private_leisure_exp_r)) |>
   # time dummies
   mutate(dummy_2000 = ifelse(sample == "2000", 1, 0),
          dummy_2015 = ifelse(sample == "2015", 1, 0)) |>
@@ -395,10 +399,6 @@ reg_stacked = bind_rows(
   
   # only personal care
   mutate(total_private_personalcare = total_private_leisure - total_private_leisure_r) |>
-  
-  # leisure expenditure as outcome
-  mutate(private_leisure_exp = total_private_leisure * wage,
-         private_leisure_exp_r = total_private_leisure_r * wage) |>
   
   # individual identifiers
   group_by(sample, serial, pnum) |>
@@ -683,12 +683,12 @@ shares_nonparents_oppsex_r_2000 = add_shares_from_lm(nonparents_res_r_opposite_2
 
 ########################## merge with sharing_est_data #########################
 
-nonparents_est_data_merged_shares = inner_join(shares_parents_ownsex_r_merged$data,
-                                               parents_est_data_merged,
+nonparents_est_data_merged_shares = inner_join(shares_nonparents_ownsex_r_merged$data,
+                                               nonparents_est_data_merged,
                                                by=c('serial')) |>
   rename(shareown_etahat_f_r = shareown_etahat_f,
          shareown_etahat_m_r = shareown_etahat_m) |>
-  inner_join(shares_parents_ownsex_merged$data, by=c('serial')) |>
+  inner_join(shares_nonparents_ownsex_merged$data, by=c('serial')) |>
   mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
                                      private_leisure_exp_r_m) / y,
          share_budget_leisure = (private_leisure_exp_f + 

@@ -37,7 +37,7 @@ activity_summaries_2015 = data_activities_2015 |>
     activity1_is_sleep = whatdoing %in% sleep_actlines,
     activity1_is_personalcare = whatdoing %in% personal_care_actlines,
     activity1_is_personalcare_sleep = whatdoing %in% sleep_personalcare,
-    activity1_is_childcare = whatdoing %in% childcare_actlines | WithChild != 0,
+    activity1_is_childcare = whatdoing %in% childcare_actlines,
     activity1_is_work = whatdoing %in% work_actlines,
     activity1_is_domestic = whatdoing %in% domestic_actlines,
     activity1_is_otherdomestic = whatdoing %in% otherdomestic_actlines,
@@ -79,7 +79,7 @@ activity_summaries_2015 = data_activities_2015 |>
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
                              activity3_is_leisure | activity4_is_leisure),
     activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
-                               activity3_is_leisure_r | activity4_is_leisure),
+                               activity3_is_leisure_r | activity4_is_leisure_r),
     
     # general: is leisure? (trying something)
     # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
@@ -119,7 +119,7 @@ activity_summaries_2015 = data_activities_2015 |>
     
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              activity3_is_childcare | activity4_is_childcare),
+                              activity3_is_childcare | activity4_is_childcare) | WithChild == 1,
   
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work | 
@@ -249,7 +249,6 @@ data_working_couples_2015 = data_individual_2015 |>
   inner_join(diarymonth_households_2015, by = c("serial", "pnum")) |>
   inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
   inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
-  filter(num_diaries_filled == 2) |>
   
   mutate(
     emp_hours = if_else(HrWkAc > 0, as.numeric(HrWkAc), NA_real_),
@@ -269,9 +268,17 @@ data_working_couples_2015 = data_individual_2015 |>
       Stat == 1 & emp_earn > 0 & emp_earn <= 8000 ~ emp_earn / emp_hours,
       Stat == 2 ~ se_earn / (se_hours * 4.33),
       TRUE ~ NA_real_)) |>
-
-  filter(wage > 0) |>
-  filter(emp_hours > 1 | se_hours > 1) |>
+  
+  # ensure both complete 2 diaries AND one of each type
+  group_by(serial, pnum) |>
+  filter(n_distinct(is_weekend) == 2) |>
+  ungroup() |>
+  
+  # enforce working condition
+  group_by(serial) |>
+  filter(all(wage > 0)) |>
+  filter(all((emp_hours > 1) | (se_hours > 1))) |>
+  ungroup() |>
 
   mutate(is_spouse = !is_resp) |>
   group_by(serial, pnum, is_weekend) |>
@@ -357,7 +364,7 @@ parents_est_data_2015 = data_working_parents_2015 |>
   # fill in annual income, household budget, average age, age gap
   mutate(income_annual = if_else(Income > 0, # treat don't know and refused
                                  Income * 12,
-                                 (NetWkly_f + NetWkly_f)*52),
+                                 (NetWkly_f + NetWkly_m)*52),
          y = y_individual_f + y_individual_m,
          avgage = (DVAge_f + DVAge_m)/2,
          agegap_m = DVAge_m - DVAge_f) |>
@@ -477,7 +484,7 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
   # fill in annual income, household budget, average age, age gap
   mutate(income_annual = if_else(Income > 0, # treat don't know and refused
                                  Income * 12,
-                                 (NetWkly_f + NetWkly_f)*52),
+                                 (NetWkly_f + NetWkly_m)*52),
          y = y_individual_f + y_individual_m,
          avgage = (DVAge_f + DVAge_m)/2,
          agegap_m = DVAge_m - DVAge_f) |>

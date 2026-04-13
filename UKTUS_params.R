@@ -122,13 +122,16 @@ leisure_actlines = c(sleep_actlines, personal_care_actlines,
 # working at job
 work_actlines = c(
   1100, # Main job: unspecified main job
-  1110) # work at main job
+  1000, # Unspecified employment
+  1110, # work at main job
+  1210, # work at second job
+  1300, # Activities related to employment: Unspecified activities related to employment
+  1390, # Activities related to employment: Other specified activities related to employment
+  1399) # Activities related to employment: Other unspecified activities related to employment
 
 # childcare values
 childcare_actlines = c(
-  9210, # Travel related to education
   9230, # Travel escorting to/ from education
-  9380, # Travel escorting a child (other than education)
   3800, # Unspecified childcare
   3810, # Unspecified physical care & supervision of a child
   3811, # Feeding the child
