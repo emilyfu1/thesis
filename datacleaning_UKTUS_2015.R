@@ -120,6 +120,8 @@ activity_summaries_2015 = data_activities_2015 |>
     # general: is childcare?
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
                               activity3_is_childcare | activity4_is_childcare) | WithChild == 1,
+    # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
+    #                           activity3_is_childcare | activity4_is_childcare),
   
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work | 
@@ -282,6 +284,7 @@ data_working_couples_2015 = data_individual_2015 |>
 
   mutate(is_spouse = !is_resp) |>
   group_by(serial, pnum, is_weekend) |>
+  # group_by(serial, pnum) |>
   mutate(
     total_leisure_exp = wage * sum(total_leisure),
     total_leisure_exp_r = wage * sum(total_leisure_r),
@@ -290,6 +293,7 @@ data_working_couples_2015 = data_individual_2015 |>
     total_childcare_exp = wage * sum(total_childcare),
     nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
     y_individual = wage * 24) |>
+    # y_individual = wage * 48) |>
   ungroup()
 
 # parents
@@ -458,13 +462,21 @@ parents_est_data_2015 = data_working_parents_2015 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc,
          Bx_dev_ageyoungest = y * dev_ageyoungest,
-         Bx_dev_numkids = y * dev_numkids) |>
+         Bx_dev_numkids = y * dev_numkids)
   
+parents_est_data_2015_weekday = parents_est_data_2015 |>
   # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
   ungroup() |>
   select(!is_weekend)
+
+parents_est_data_2015_weekend = parents_est_data_2015 |>
+  # keep only weekday data
+  group_by(serial) |>
+    filter(is_weekend) |>
+    ungroup() |>
+    select(!is_weekend)
 
 # work in progress!
 nonparents_est_data_2015 = data_working_nonparents_2015 |>
@@ -563,10 +575,18 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc) |>
-  
+         Bx_dev_gdppc = y * dev_gdppc)
+
+nonparents_est_data_2015_weekday = nonparents_est_data_2015 |>
   # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
+  ungroup() |>
+  select(!is_weekend)
+
+nonparents_est_data_2015_weekend = nonparents_est_data_2015 |>
+  # keep only weekend data
+  group_by(serial) |>
+  filter(is_weekend) |>
   ungroup() |>
   select(!is_weekend)

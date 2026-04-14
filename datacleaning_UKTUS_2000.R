@@ -415,6 +415,7 @@ data_working_couples_2000 = data_individual_2000 |>
   
   # make sure time use EXPENDITURE is calculated for both days separately
   group_by(serial, pnum, is_weekend) |>
+  # group_by(serial, pnum) |>
   mutate(
     total_leisure_exp = wage * sum(total_leisure),
     total_leisure_exp_r = wage * sum(total_leisure_r),
@@ -423,6 +424,7 @@ data_working_couples_2000 = data_individual_2000 |>
     total_childcare_exp = wage * sum(total_childcare),
     nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
     y_individual = wage * 24) |>
+    # y_individual = wage * 48) |>
   ungroup()
 
 # parents
@@ -597,11 +599,19 @@ parents_est_data_2000 = data_working_parents_2000 |>
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc,
          Bx_dev_ageyoungest = y * dev_ageyoungest,
-         Bx_dev_numkids = y * dev_numkids) |>
-  
+         Bx_dev_numkids = y * dev_numkids)
+
+parents_est_data_2000_weekday = parents_est_data_2000 |>
   # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
+  ungroup() |>
+  select(!is_weekend)
+
+parents_est_data_2000_weekend = parents_est_data_2000 |>
+  # keep only weekday data
+  group_by(serial) |>
+  filter(is_weekend) |>
   ungroup() |>
   select(!is_weekend)
 
@@ -700,10 +710,18 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
-         Bx_dev_gdppc = y * dev_gdppc) |>
-  
+         Bx_dev_gdppc = y * dev_gdppc)
+
+nonparents_est_data_2000_weekday = nonparents_est_data_2000 |>
   # keep only weekday data
   group_by(serial) |>
   filter(!is_weekend) |>
+  ungroup() |>
+  select(!is_weekend)
+
+nonparents_est_data_2000_weekend = nonparents_est_data_2000 |>
+  # keep only weekday data
+  group_by(serial) |>
+  filter(is_weekend) |>
   ungroup() |>
   select(!is_weekend)
