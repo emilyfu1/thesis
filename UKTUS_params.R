@@ -31,11 +31,10 @@ region_map = unlist(as.list(region_codes), use.names = TRUE)
 vars_to_suffix = c(
   "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
-  "total_private_leisure_r", "total_childcare", "total_domestic", 
-  "total_otherdomestic", "total_otherdomestic_nospouse",
-  "total_domestic_nospouse", "total_childcare_nospouse", "total_work",
+  "total_private_leisure_r", "total_childcare", 
+  "total_otherdomestic", "total_work",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
-  "private_leisure_exp_r", "total_childcare_exp", "nospouse_childcare_exp",
+  "private_leisure_exp_r", "total_childcare_exp", "total_otherdomestic_exp",
   "y_individual", "pnum", "spouse_pnum")
 
 ################################################################################
@@ -115,7 +114,7 @@ borderline_leisure_domestic = c(3220, # Cleaning yard
                                 3540) # Vehicle maintenance
 
 # decide whether to include additional items
-restrict_actlines = c(mainleisure_actlines, additional_leisure)
+restrict_actlines = c(mainleisure_actlines)
 leisure_actlines = c(sleep_actlines, personal_care_actlines,
                      restrict_actlines)
 

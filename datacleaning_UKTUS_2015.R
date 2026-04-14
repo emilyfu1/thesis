@@ -118,10 +118,11 @@ activity_summaries_2015 = data_activities_2015 |>
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              activity3_is_childcare | activity4_is_childcare) | WithChild == 1,
-    # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-    #                           activity3_is_childcare | activity4_is_childcare),
+    # includes any activity with a household child aged 0-7 present (WithChild)
+    # child aged 8-9 presence added separately below via children's own diaries
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare |
+                              activity3_is_childcare | activity4_is_childcare |
+                              WithChild == 1),
   
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work | 
@@ -132,13 +133,6 @@ activity_summaries_2015 = data_activities_2015 |>
                              activity3_is_domestic | activity4_is_domestic),
     activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
                              activity3_is_otherdomestic | activity4_is_otherdomestic),
-    
-    # is no-spouse childcare?
-    childcare_nospouse = activity_ischildcare & activity_excludesspouse,
-    
-    # is no-spouse domestic?
-    domestic_nospouse = activity_isdomestic & activity_excludesspouse,
-    otherdomestic_nospouse = activity_isotherdomestic & activity_excludesspouse,
     
     # make weekend identifier
     is_weekend = ddayw != 1) |>
@@ -152,13 +146,8 @@ activity_summaries_2015 = data_activities_2015 |>
     total_private_leisure_r = sum(eptime[private_leisure_r], na.rm = TRUE) / 60,
     
     total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
-    total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE) / 60,
-    
-    total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
-    total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
     
     total_otherdomestic = sum(eptime[activity_isotherdomestic], na.rm = TRUE)  / 60,
-    total_otherdomestic_nospouse = sum(eptime[otherdomestic_nospouse], na.rm = TRUE) / 60,
     
     total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
     .groups = "drop")
@@ -240,6 +229,93 @@ kids_age_dist_2015 = find_kid_ages(data_kids_2015)
 # get ages of each kid
 kids_age_wide_2015 = find_kid_ages_wide(data_kids_2015)
 
+# ---------------------------------------------------------------------------
+# Extend childcare to cover children aged 8-9 (WithChild only covers 0-7)
+#
+# Strategy: children aged 8-9 filled out their own time diaries and report
+# WithMother / WithFather when doing activities with each parent. We do an
+# episode-level interval-overlap join so that any parent episode overlapping
+# with such a child episode (and not already counted as childcare via
+# childcare_actlines or WithChild) is added to total_childcare.
+# ---------------------------------------------------------------------------
+
+# children aged 8-9 in the data
+kids_8_9_2015 = data_kids_2015 |>
+  filter(DVAge %in% 8:9) |>
+  select(serial, pnum)
+
+# sex of all individuals (to match child's WithMother/WithFather to correct parent)
+individual_sex_2015 = data_individual_2015 |>
+  select(serial, pnum, male)
+
+# Episode intervals where a child aged 8-9 reports being with their parent.
+# cumsum is computed before filtering so episode timing is correct.
+child_8_9_intervals = data_activities_2015 |>
+  semi_join(kids_8_9_2015, by = c("serial", "pnum")) |>
+  select(serial, pnum, ddayw, IMonth, IYear, eptime, WithMother, WithFather) |>
+  group_by(serial, pnum, ddayw, IMonth, IYear) |>
+  mutate(end_min = cumsum(eptime), start_min = end_min - eptime) |>
+  ungroup() |>
+  filter(WithMother == 1 | WithFather == 1)
+
+child_with_mother = child_8_9_intervals |>
+  filter(WithMother == 1) |>
+  select(serial, ddayw, IMonth, IYear, c_start = start_min, c_end = end_min)
+
+child_with_father = child_8_9_intervals |>
+  filter(WithFather == 1) |>
+  select(serial, ddayw, IMonth, IYear, c_start = start_min, c_end = end_min)
+
+# Parent episodes not already counted as childcare (activity-based or WithChild 0-7).
+# cumsum computed before filtering to preserve correct episode timing.
+parent_non_childcare_eps = data_activities_2015 |>
+  inner_join(individual_sex_2015, by = c("serial", "pnum")) |>
+  select(serial, pnum, ddayw, IMonth, IYear, eptime, male,
+         whatdoing, What_Oth1, What_Oth2, What_Oth3, WithChild, WithSpouse) |>
+  group_by(serial, pnum, ddayw, IMonth, IYear) |>
+  mutate(end_min = cumsum(eptime), start_min = end_min - eptime,
+         ep_id = row_number()) |>
+  ungroup() |>
+  filter(
+    !(whatdoing %in% childcare_actlines |
+        What_Oth1 %in% childcare_actlines |
+        What_Oth2 %in% childcare_actlines |
+        What_Oth3 %in% childcare_actlines),
+    WithChild == 0)
+
+# Interval overlap join: find parent episodes that overlap with a child aged 8-9
+# reporting being with that parent. Deduplicate before summing so an episode
+# overlapping multiple child episodes is counted only once.
+extra_childcare_eps = bind_rows(
+  parent_non_childcare_eps |>
+    filter(!male) |>
+    left_join(child_with_mother,
+              by = c("serial", "ddayw", "IMonth", "IYear"),
+              relationship = "many-to-many") |>
+    filter(!is.na(c_start), start_min < c_end, end_min > c_start),
+
+  parent_non_childcare_eps |>
+    filter(male) |>
+    left_join(child_with_father,
+              by = c("serial", "ddayw", "IMonth", "IYear"),
+              relationship = "many-to-many") |>
+    filter(!is.na(c_start), start_min < c_end, end_min > c_start)
+) |>
+  distinct(serial, pnum, ddayw, IMonth, IYear, ep_id, eptime, WithSpouse) |>
+  mutate(is_weekend = ddayw != 1) |>
+  group_by(serial, pnum, is_weekend) |>
+  summarise(
+    extra_childcare = sum(eptime, na.rm = TRUE) / 60,
+    .groups = "drop")
+
+# Patch activity_summaries_2015 with additional childcare from children aged 8-9
+activity_summaries_2015 = activity_summaries_2015 |>
+  left_join(extra_childcare_eps, by = c("serial", "pnum", "is_weekend")) |>
+  mutate(
+    total_childcare = total_childcare + replace_na(extra_childcare, 0),
+  ) |>
+  select(-extra_childcare)
+
 ############################## Parents and couples #############################
 
 # find spouse/partner pairs in data
@@ -291,7 +367,7 @@ data_working_couples_2015 = data_individual_2015 |>
     private_leisure_exp = wage * sum(total_private_leisure),
     private_leisure_exp_r = wage * sum(total_private_leisure_r),
     total_childcare_exp = wage * sum(total_childcare),
-    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
+    total_otherdomestic_exp = wage * sum(total_otherdomestic),
     y_individual = wage * 24) |>
     # y_individual = wage * 48) |>
   ungroup()
@@ -401,8 +477,8 @@ parents_est_data_2015 = data_working_parents_2015 |>
     total_childcare_exp_m = total_childcare_exp_m * deflator_2014,
     total_childcare_exp_f = total_childcare_exp_f * deflator_2014,
     
-    nospouse_childcare_exp_m = nospouse_childcare_exp_m * deflator_2014,
-    nospouse_childcare_exp_f = nospouse_childcare_exp_f * deflator_2014,
+    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2000,
+    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2000,
     
     # regional wealth
     income_annual = income_annual * deflator_2014) |>
@@ -524,6 +600,9 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
     
     private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2014,
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2014,
+    
+    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2000,
+    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2000,
     
     # regional wealth
     income_annual = income_annual * deflator_2014) |>

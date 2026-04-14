@@ -475,40 +475,7 @@ cor.test(parents_est_data_merged_shares$share_budget_leisure_r,
 - The estimated resource shares determine how household resources are allocated across members, but they do not by themselves identify whether lower individual expenditure on the private assignable good is driven by bargaining power, parent-specific preferences for child human capital, parent-specific productivity in childcare, or gendered expectations determining preference parameters.
 - See the mean estimated female resource shares among households with above/below-median male/female wages, above/below-median male/female educational attainment, above/below-median number of children, above/below-median childcare time
 
-- See if women with lower or higher relative bargaining are already providing a lot on the weekdays.
-```{r}
-timeuse_long = reg_stacked |>
-  filter(male %in% c(0, 1), is_weekend %in% c(0, 1)) |>
-  transmute(
-    shareown_etahat_f,
-    day = if_else(is_weekend == 1, "Weekend", "Weekday"),
-    sex = if_else(male == 1, "Men", "Women"),
-    total_childcare_nospouse,
-    total_private_leisure,
-    total_private_leisure_r,
-    total_childcare,
-    total_work,
-    total_otherdomestic) |>
-  pivot_longer(
-    cols = c(total_childcare_nospouse, total_private_leisure, 
-             total_private_leisure_r, total_childcare, total_work, 
-             total_otherdomestic),
-    names_to = "activity",
-    values_to = "hours") |>
-  mutate(
-    activity = factor(
-      activity,
-      levels = c("total_childcare_nospouse", "total_private_leisure", 
-                 "total_private_leisure_r", "total_childcare", "total_work", 
-                 "total_otherdomestic"),
-      labels = c("Childcare (without spouse present)", 
-                 "Private leisure",
-                 "Private leisure (excluding sleep and personal care)",
-                 "Childcare",
-                 "Market work",
-                 "Domestic work excluding childcare")))
-```
-
+See if women with lower or higher relative bargaining are already providing a lot on the weekdays.
 Resource shares and child characteristics:
 ```{r}
 # use parents_est_data_merged_shares find average of shareown_etahat_f at 
@@ -590,50 +557,34 @@ ggplot(timeuse_long |> filter(activity %in% c("Childcare",
 
 Table of this data instead:
 ```{r}
-# choose percentile points you want to report
-share_probs = c(0.10, 0.25, 0.50, 0.75, 0.90)
-
-# compute percentile cutoffs of the female resource share
-share_points = quantile(
-  timeuse_long$shareown_etahat_f,
-  probs = share_probs,
-  na.rm = TRUE)
-
-share_lookup = tibble(
-  prob = share_probs,
-  percentile = c("p10 fem. share", "p25 fem. share", 
-                 "p50 fem. share", "p75 fem. share", 
-                 "p90 fem. share"),
-  share_value = as.numeric(share_points))
-
-# for each percentile point, take the closest observations
-# n_closest controls how many observations you average over
-n_closest = 100
-
-table_percentiles = crossing(
-  timeuse_long,
-  share_lookup) |>
-  mutate(distance = abs(shareown_etahat_f - share_value)) |>
-  group_by(percentile, share_value, day, sex, activity) |>
-  slice_min(order_by = distance, n = n_closest, with_ties = FALSE) |>
+# compute mean time use within each quartile
+table_quartiles = timeuse_long |>
+  group_by(share_quartile, day, sex, activity) |>
   summarise(
     mean_hours = mean(hours, na.rm = TRUE),
     sd_hours = sd(hours, na.rm = TRUE),
     n = n(),
-    .groups = "drop") |>
+    .groups = "drop"
+  ) |>
   mutate(
-    share_value = round(share_value, 3),
     mean_hours = round(mean_hours, 2),
-    sd_hours = round(sd_hours, 2))
+    sd_hours = round(sd_hours, 2)
+  )
 
-# wide table with hours at each percentile
-table_hours_wide = table_percentiles |>
-  select(day, sex, activity, percentile, mean_hours) |>
+# reshape to wide format (like before)
+table_hours_wide = table_quartiles |>
+  select(day, sex, activity, share_quartile, mean_hours) |>
   pivot_wider(
-    names_from = percentile,
-    values_from = mean_hours) |>
+    names_from = share_quartile,
+    values_from = mean_hours
+  ) |>
   arrange(day, sex, activity) |>
-  filter(activity %in% c("Childcare", "Private leisure", "Market work", "Domestic work excluding childcare"))
+  filter(activity %in% c(
+    "Childcare",
+    "Private leisure",
+    "Market work",
+    "Domestic work excluding childcare"
+  ))
 
 print(table_hours_wide)
 ```
@@ -676,46 +627,51 @@ print(sd(women_weekend$total_work))
 ```
 
 Simple regressions: Given the amount each parent works, do weekends reallocate leisure differently for males and females? I started off not conditioning on work hours. This uses private leisure (in hours) as the outcome variable
-```{r}
-etable(feols(d_childcare ~ 
-    male * wage_ratio_f
-  | sample + dgorpaf,
-  data = reg_individual,
-  cluster = "serial"))
-
-etable(feols(d_private_leisure ~ 
-    male * wage_ratio_f
-    
-  | sample + dgorpaf,
-  data = reg_individual,
-  cluster = "serial"))
-
-etable(feols(d_work ~ 
-    male * wage_ratio_f
-    
-  | sample + dgorpaf,
-  data = reg_individual,
-  cluster = "serial"))
-
-etable(feols(d_otherdomestic ~ 
-    male * wage_ratio_f
-    
-  | sample + dgorpaf,
-  data = reg_individual,
-  cluster = "serial"))
-
-```
 
 ```{r}
-etable(feols(total_childcare ~ 
-      shareown_etahat_f
+etable(feols(total_work ~ is_weekend
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_childcare ~ is_weekend
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_private_leisure ~ is_weekend
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_otherdomestic ~ is_weekend
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 ```
 
 
+```{r}
+etable(feols(total_work ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
 
+etable(feols(total_childcare ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_private_leisure ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_otherdomestic ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+```
 
 
 # side quests

@@ -144,8 +144,6 @@ activity_summaries_2000 = data_activities_2000_long |>
     # private activity classifier (no relevant household members present)
     # activities where "who" isn't asked are considered private
     activity_private = (wit1 == 0 & wit2 == 0 & wit3 == 0),
-    # spouse not present (as equivalent as possible)
-    activity_excludesspouse = wit3 == 0,
     
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
@@ -156,21 +154,14 @@ activity_summaries_2000 = data_activities_2000_long |>
     # general: is childcare?
     # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
     #                           wit1 == 1 | wit2 == 1),
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | wit1 == 1 | wit2 == 1),
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare) | wit1 == 1,
     
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work),
     
     # general: is domestic?
     activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
-    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic),
-    
-    # is no-spouse childcare?
-    childcare_nospouse = activity_ischildcare & activity_excludesspouse,
-    
-    # is no-spouse domestic?
-    domestic_nospouse = activity_isdomestic & activity_excludesspouse,
-    otherdomestic_nospouse = activity_isotherdomestic & activity_excludesspouse) |>
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic)) |>
   
   # add up time use in hours
   group_by(serial, pnum, is_weekend) |>
@@ -181,12 +172,8 @@ activity_summaries_2000 = data_activities_2000_long |>
     total_private_leisure_r = sum(eptime[private_leisure_r], na.rm = TRUE) / 60,
     
     total_childcare = sum(eptime[activity_ischildcare], na.rm = TRUE)  / 60,
-    total_childcare_nospouse = sum(eptime[childcare_nospouse], na.rm = TRUE) / 60,
     
-    total_domestic = sum(eptime[activity_isdomestic], na.rm = TRUE)  / 60,
-    total_domestic_nospouse = sum(eptime[domestic_nospouse], na.rm = TRUE) / 60,
     total_otherdomestic = sum(eptime[activity_isotherdomestic], na.rm = TRUE)  / 60,
-    total_otherdomestic_nospouse = sum(eptime[otherdomestic_nospouse], na.rm = TRUE) / 60,
     
     total_work = sum(eptime[activity_iswork], na.rm = TRUE)  / 60,
     .groups = "drop")
@@ -283,6 +270,23 @@ data_individual_2000 = read_dta(paste0(uktus_2000_direct,
            
            # Missing / invalid
            TRUE ~ NA_real_))
+
+################################### Children ###################################
+
+# note: in 2000, this includes data for children aged 8 and up only
+
+# find all children in data with sex and age (includes adult kids)
+data_kids_2000 = find_kids(relationships_data = all_relationships_2000, 
+                           individual_data = data_individual_2000)
+
+# how many kids of each sex
+kids_counts_2000 = count_kids(data_kids_2000)
+
+# kid age distribution
+kids_age_dist_2000 = find_kid_ages(data_kids_2000)
+
+# get ages of each kid
+kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
 
 ############################## Parents and couples #############################
 
@@ -414,7 +418,7 @@ data_working_couples_2000 = data_individual_2000 |>
     private_leisure_exp = wage * sum(total_private_leisure),
     private_leisure_exp_r = wage * sum(total_private_leisure_r),
     total_childcare_exp = wage * sum(total_childcare),
-    nospouse_childcare_exp = wage * sum(total_childcare_nospouse),
+    total_otherdomestic_exp = wage * sum(total_otherdomestic),
     y_individual = wage * 24) |>
     # y_individual = wage * 48) |>
   ungroup()
@@ -523,8 +527,8 @@ parents_est_data_2000 = data_working_parents_2000 |>
     total_childcare_exp_m = total_childcare_exp_m * deflator_2000,
     total_childcare_exp_f = total_childcare_exp_f * deflator_2000,
     
-    nospouse_childcare_exp_m = nospouse_childcare_exp_m * deflator_2000,
-    nospouse_childcare_exp_f = nospouse_childcare_exp_f * deflator_2000,
+    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2000,
+    total_otherdomestic_exp_f = total_otherdomestic_exp_f * deflator_2000,
     
     # regional wealth
     income_annual = income_annual * deflator_2000) |>
@@ -644,6 +648,9 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
     
     private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2000,
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2000,
+    
+    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2000,
+    total_otherdomestic_exp_f = total_otherdomestic_exp_f * deflator_2000,
     
     # regional wealth
     income_annual = income_annual * deflator_2000) |>

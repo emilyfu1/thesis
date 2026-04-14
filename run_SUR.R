@@ -375,9 +375,10 @@ reg_stacked = bind_rows(
       total_otherdomestic,
       total_private_leisure,
       total_private_leisure_r,
-      total_childcare_nospouse,
       total_childcare,
       private_leisure_exp,
+      total_childcare_exp,
+      total_otherdomestic_exp,
       private_leisure_exp_r),
   data_working_parents_2015 |>
     transmute(
@@ -394,8 +395,9 @@ reg_stacked = bind_rows(
       total_otherdomestic,
       total_private_leisure,
       total_private_leisure_r,
-      total_childcare_nospouse,
       total_childcare,
+      total_childcare_exp,
+      total_otherdomestic_exp,
       private_leisure_exp,
       private_leisure_exp_r)) |>
   # time dummies
@@ -421,49 +423,38 @@ reg_stacked = bind_rows(
          proportion_male_children = num_kids_male / num_kids_total,
          has_young_child = num0_2 + num3_4 + num5_9 > 0)
 
-# individual level data
-reg_individual = reg_stacked |>
-  group_by(sample, serial, pnum) |>
+timeuse_long = reg_stacked |>
+  filter(male %in% c(0, 1), is_weekend %in% c(0, 1)) |>
+  transmute(
+    shareown_etahat_f,
+    day = if_else(is_weekend == 1, "Weekend", "Weekday"),
+    sex = if_else(male == 1, "Men", "Women"),
+    total_private_leisure,
+    total_private_leisure_r,
+    total_childcare,
+    total_work,
+    total_otherdomestic) |>
+  pivot_longer(
+    cols = c(total_private_leisure, total_private_leisure_r, 
+             total_childcare, total_work, total_otherdomestic),
+    names_to = "activity",
+    values_to = "hours") |>
   mutate(
-    
-    # weekday and weekend levels
-    work_weekday = total_work[is_weekend == 0][1],
-    work_weekend = total_work[is_weekend == 1][1],
-    
-    otherdom_weekday = total_otherdomestic[is_weekend == 0][1],
-    otherdom_weekend = total_otherdomestic[is_weekend == 1][1],
-    
-    pleisure_weekday = total_private_leisure[is_weekend == 0][1],
-    pleisure_weekend = total_private_leisure[is_weekend == 1][1],
-    
-    pleisure_r_weekday = total_private_leisure_r[is_weekend == 0][1],
-    pleisure_r_weekend = total_private_leisure_r[is_weekend == 1][1],
-    
-    childcare_ns_weekday = total_childcare_nospouse[is_weekend == 0][1],
-    childcare_ns_weekend = total_childcare_nospouse[is_weekend == 1][1],
-    
-    childcare_weekday = total_childcare[is_weekend == 0][1],
-    childcare_weekend = total_childcare[is_weekend == 1][1],
-    
-    pleisure_exp_weekday = private_leisure_exp[is_weekend == 0][1],
-    pleisure_exp_weekend = private_leisure_exp[is_weekend == 1][1],
-    
-    pleisure_exp_r_weekday = private_leisure_exp_r[is_weekend == 0][1],
-    pleisure_exp_r_weekend = private_leisure_exp_r[is_weekend == 1][1],
-    
-    # weekend - weekday differences
-    d_work = work_weekend - work_weekday,
-    d_otherdomestic = otherdom_weekend - otherdom_weekday,
-    d_private_leisure = pleisure_weekend - pleisure_weekday,
-    d_private_leisure_r = pleisure_r_weekend - pleisure_r_weekday,
-    d_childcare_nospouse = childcare_ns_weekend - childcare_ns_weekday,
-    d_childcare = childcare_weekend - childcare_weekday,
-    d_private_leisure_exp = pleisure_exp_weekend - pleisure_exp_weekday,
-    d_private_leisure_exp_r = pleisure_exp_r_weekend - pleisure_exp_r_weekday
-  ) |>
-  ungroup() |>
-  filter(is_weekend == 1) |>
-  ungroup()
+    activity = factor(
+      activity,
+      levels = c("total_private_leisure", 
+                 "total_private_leisure_r", "total_childcare", "total_work", 
+                 "total_otherdomestic"),
+      labels = c("Private leisure",
+                 "Private leisure (excluding sleep and personal care)",
+                 "Childcare",
+                 "Market work",
+                 "Domestic work excluding childcare")),
+    share_quartile = ntile(shareown_etahat_f, 4),
+    share_quartile = factor(
+      share_quartile,
+      levels = 1:4,
+      labels = c("p0–25", "p25–50", "p50–75", "p75–100")))
 
 ################################################################################
 ################################## NON-PARENTS #################################
