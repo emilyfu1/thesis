@@ -677,30 +677,42 @@ print(sd(women_weekend$total_work))
 
 Simple regressions: Given the amount each parent works, do weekends reallocate leisure differently for males and females? I started off not conditioning on work hours. This uses private leisure (in hours) as the outcome variable
 ```{r}
-etable(feols(total_childcare ~ 
-    is_weekend * male * shareown_etahat_f
-      + is_weekend * has_young_child
-      + is_weekend * has_childcare_help
-      + is_weekend * has_otherdomestic_help
+etable(feols(d_childcare ~ 
+    male * wage_ratio_f
+  | sample + dgorpaf,
+  data = reg_individual,
+  cluster = "serial"))
+
+etable(feols(d_private_leisure ~ 
+    male * wage_ratio_f
     
   | sample + dgorpaf,
-  data = reg_stacked,
+  data = reg_individual,
+  cluster = "serial"))
+
+etable(feols(d_work ~ 
+    male * wage_ratio_f
+    
+  | sample + dgorpaf,
+  data = reg_individual,
+  cluster = "serial"))
+
+etable(feols(d_otherdomestic ~ 
+    male * wage_ratio_f
+    
+  | sample + dgorpaf,
+  data = reg_individual,
   cluster = "serial"))
 
 ```
+
 ```{r}
-etable(feols(total_private_leisure ~ 
-    is_weekend * male * wage_ratio_f
-      + is_weekend * male * shareown_etahat_f
-      + is_weekend * male * has_childcare_help
-      + is_weekend * male * has_otherdomestic_help
-    
-  | sample + dgorpaf,
-  data = reg_stacked,
-  cluster = "serial"))
-
+etable(feols(total_childcare ~ 
+      shareown_etahat_f
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
 ```
-
 
 
 

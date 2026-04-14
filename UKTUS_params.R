@@ -121,6 +121,13 @@ leisure_actlines = c(sleep_actlines, personal_care_actlines,
 
 # working at job
 work_actlines = c(
+  4100, # Unspecified organisational work
+  4110, # Work for an organisation
+  4190, # Other specified organisational work
+  9110, # Travel in the course of work
+  9130, # Travel to work from home and back only
+  9140, # Travel to work from a place other than home
+  4310, # Meetings
   1100, # Main job: unspecified main job
   1000, # Unspecified employment
   1110, # work at main job

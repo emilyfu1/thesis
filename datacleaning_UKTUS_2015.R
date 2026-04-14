@@ -351,15 +351,13 @@ parents_est_data_2015 = data_working_parents_2015 |>
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
-    n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
-    n_kid_aged_11_13, n_kid_aged_14_17) |>
+    num0_2, num3_4, num5_9, num10_15, num16_17) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
     id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, Income, 
                 num_kids_male, num_kids_female,
                 kid_age_min, kid_age_max, kid_age_mean,
-                n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
-                n_kid_aged_11_13, n_kid_aged_14_17),
+                num0_2, num3_4, num5_9, num10_15, num16_17),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>

@@ -408,10 +408,8 @@ reg_stacked = bind_rows(
              by=c("serial", "sample", "dgorpaf", "is_weekend")) |>
   
   # wage ratio
-  mutate(wage_ratio_f = wage_f / (wage_m + wage_f)) |>
-  
-  # only personal care
-  mutate(total_private_personalcare = total_private_leisure - total_private_leisure_r) |>
+  mutate(wage_ratio_f = wage_f / (wage_m + wage_f),
+         childcare_ratio_f = total_childcare_f / (total_childcare_f + total_childcare_m)) |>
   
   # individual identifiers
   group_by(sample, serial, pnum) |>
@@ -421,7 +419,7 @@ reg_stacked = bind_rows(
   # child under five in household
   mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
          proportion_male_children = num_kids_male / num_kids_total,
-         has_young_child = n_kid_aged_0_2 + n_kid_aged_3_5 + n_kid_aged_6_10 > 0)
+         has_young_child = num0_2 + num3_4 + num5_9 > 0)
 
 # individual level data
 reg_individual = reg_stacked |>

@@ -220,7 +220,11 @@ data_hh_2000 = read_dta(paste0(uktus_2000_direct,
                                      hq9a13 == 1 | hq9a13 == 2 | hq9a13 == 3 |
                                      hq9a14 == 1 | hq9a14 == 2 | hq9a14 == 3 |
                                      hq9a15 == 1 | hq9a15 == 2 | hq9a15 == 3 |
-                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3))
+                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3)) |>
+  
+  # since children under 8 don't appear in survey, find child characteristics here
+  mutate(num_kids_total = num0_2 + num3_4 + num5_9 + num10_15 + num16_17,
+         kid_age_min = if_else(ageyngst < 18, ageyngst, NA_real_))
 
 # relationships in individual data
 all_relationships_2000 = data_hh_2000 |>
@@ -279,18 +283,6 @@ data_individual_2000 = read_dta(paste0(uktus_2000_direct,
            
            # Missing / invalid
            TRUE ~ NA_real_))
-
-################################### Children ###################################
-
-# find all children in data with sex and age (includes adult kids)
-data_kids_2000 = find_kids(relationships_data = all_relationships_2000, 
-                           individual_data = data_individual_2000)
-
-kids_counts_2000 = count_kids(data_kids_2000)
-
-kids_age_dist_2000 = find_kid_ages(data_kids_2000)
-
-kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
 
 ############################## Parents and couples #############################
 
@@ -432,14 +424,12 @@ data_working_parents_2000 = data_working_couples_2000 |>
   
   # keep only hetero couples with child in household, valid education
   filter(hhtype4 %in% c(4,5,7,8)) |>
-  # merge kid information 
-  inner_join(kids_counts_2000, by = c("serial")) |>
-  inner_join(kids_age_dist_2000, by = c("serial")) |>
-  inner_join(kids_age_wide_2000, by = c("serial")) |>
   
-  # merge information about domestic help
+  # merge information about domestic help and kids
   inner_join(data_hh_2000 |> select(serial, has_childcare_help, 
-                                    has_otherdomestic_help), by = c("serial")) |>
+                                    has_otherdomestic_help, 
+                                    num_kids_total, kid_age_min), 
+             by = c("serial")) |>
   
   group_by(serial, is_weekend) |>
   
@@ -488,17 +478,10 @@ parents_est_data_2000 = data_working_parents_2000 |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
-    num_kids_total, num_kids_male, num_kids_female,
-    kid_age_min, kid_age_max, kid_age_mean,
-    n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
-    n_kid_aged_11_13, n_kid_aged_14_17) |>
+    num_kids_total, kid_age_min) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
-    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, 
-                num_kids_male, num_kids_female,
-                kid_age_min, kid_age_max, kid_age_mean,
-                n_kid_aged_0_2, n_kid_aged_3_5, n_kid_aged_6_10,
-                n_kid_aged_11_13, n_kid_aged_14_17),
+    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, kid_age_min),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>

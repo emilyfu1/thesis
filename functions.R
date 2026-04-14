@@ -54,18 +54,18 @@ count_kids = function(data) {
 find_kid_ages = function(data) {
   kids_age_dist = data |>
     group_by(serial) |>
-    summarise(kid_age_min  = min(DVAge, na.rm = TRUE),
-              kid_age_max  = max(DVAge, na.rm = TRUE),
+    summarise(kid_age_min = min(DVAge, na.rm = TRUE),
+              kid_age_max = max(DVAge, na.rm = TRUE),
               kid_age_mean = mean(DVAge, na.rm = TRUE),
               
-              n_kid_aged_0_2 = sum(DVAge <= 2, na.rm = TRUE),
-              n_kid_aged_3_5 = sum(DVAge >= 3  & DVAge <= 5, na.rm = TRUE),
-              n_kid_aged_6_10 = sum(DVAge >= 6  & DVAge <= 10, na.rm = TRUE),
-              n_kid_aged_11_13  = sum(DVAge >= 11 & DVAge <= 13, na.rm = TRUE),
-              n_kid_aged_14_17 = sum(DVAge >= 14 & DVAge <= 17, na.rm = TRUE),
+              num0_2 = sum(DVAge <= 2, na.rm = TRUE),
+              num3_4 = sum(DVAge >= 3  & DVAge <= 4, na.rm = TRUE),
+              num5_9 = sum(DVAge >= 5  & DVAge <= 9, na.rm = TRUE),
+              num10_15  = sum(DVAge >= 10 & DVAge <= 15, na.rm = TRUE),
+              num16_17 = sum(DVAge >= 16 & DVAge <= 17, na.rm = TRUE),
               .groups = "drop") |>
-    select(serial, kid_age_min, kid_age_max, kid_age_mean, n_kid_aged_0_2,
-           n_kid_aged_3_5, n_kid_aged_6_10, n_kid_aged_11_13, n_kid_aged_14_17)
+    select(serial, kid_age_min, kid_age_max, kid_age_mean,
+           num0_2, num3_4, num5_9, num10_15, num16_17)
   
   return(kids_age_dist)
 }
