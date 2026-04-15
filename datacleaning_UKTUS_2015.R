@@ -121,8 +121,8 @@ activity_summaries_2015 = data_activities_2015 |>
     # includes any activity with a household child aged 0-7 present (WithChild)
     # child aged 8-9 presence added separately below via children's own diaries
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare |
-                              activity3_is_childcare | activity4_is_childcare |
-                              WithChild == 1),
+                              activity3_is_childcare | activity4_is_childcare)
+                              | WithChild == 1,
   
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work | 
@@ -135,7 +135,7 @@ activity_summaries_2015 = data_activities_2015 |>
                              activity3_is_otherdomestic | activity4_is_otherdomestic),
     
     # make weekend identifier
-    is_weekend = ddayw != 1) |>
+    is_weekend = if_else(ddayw != 1, 1, 0)) |>
   
   # add up time use in hours per interview day
   group_by(serial, pnum, is_weekend) |>
@@ -159,14 +159,14 @@ activity_summaries_2015 = data_activities_2015 |>
 # household data
 data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
   # help with childcare received? 
-  mutate(has_childcare_help = Help1 == 1 | Help2 == 1) |>
+  mutate(has_childcare_help = if_else(Help1 == 1 | Help2 == 1, 1, 0)) |>
   
   # help with other domestic tasks received?
-  mutate(has_otherdomestic_help = Help4 == 1 | Help5 == 1 | Help7 == 1 | 
+  mutate(has_otherdomestic_help = if_else(Help4 == 1 | Help5 == 1 | Help7 == 1 | 
            Help8 == 1 | Help10 == 1 | Help11 == 1 | Help13 == 1 | Help14 == 1 |
            Help16 == 1 | Help17 == 1 | Help19 == 1 | Help20 == 1 | Help22 == 1 | 
            Help23 == 1 | Help25 == 1 | Help26 == 1 | Help28 == 1 | Help29 == 1 |
-           Help31 == 1 | Help32 == 1)
+           Help31 == 1 | Help32 == 1, 1, 0))
 
 ################################################################################
 ############################ INDIVIDUAL-LEVEL DATA #############################
@@ -177,7 +177,7 @@ data_individual_2015 = read_dta(paste0(uktus_2015_direct,
                                        "uktus15_individual.dta")) |>
   # keep if observation has age, sex
   filter(DVAge >= 0, DMSex >= 0) |>
-  mutate(male = DMSex == 1, # sex dummy
+  mutate(male = if_else(DMSex == 1, 1, 0), # sex dummy
          is_resp = pnum == SelPer, # indicate respondent
          
          # Highest qualification obtained, simplified into three categories. 
@@ -288,21 +288,20 @@ parent_non_childcare_eps = data_activities_2015 |>
 # overlapping multiple child episodes is counted only once.
 extra_childcare_eps = bind_rows(
   parent_non_childcare_eps |>
-    filter(!male) |>
+    filter(male == 0) |>
     left_join(child_with_mother,
               by = c("serial", "ddayw", "IMonth", "IYear"),
               relationship = "many-to-many") |>
     filter(!is.na(c_start), start_min < c_end, end_min > c_start),
 
   parent_non_childcare_eps |>
-    filter(male) |>
+    filter(male == 1) |>
     left_join(child_with_father,
               by = c("serial", "ddayw", "IMonth", "IYear"),
               relationship = "many-to-many") |>
-    filter(!is.na(c_start), start_min < c_end, end_min > c_start)
-) |>
+    filter(!is.na(c_start), start_min < c_end, end_min > c_start)) |>
   distinct(serial, pnum, ddayw, IMonth, IYear, ep_id, eptime, WithSpouse) |>
-  mutate(is_weekend = ddayw != 1) |>
+  mutate(is_weekend = if_else(ddayw != 1, 1, 0)) |>
   group_by(serial, pnum, is_weekend) |>
   summarise(
     extra_childcare = sum(eptime, na.rm = TRUE) / 60,
@@ -312,8 +311,7 @@ extra_childcare_eps = bind_rows(
 activity_summaries_2015 = activity_summaries_2015 |>
   left_join(extra_childcare_eps, by = c("serial", "pnum", "is_weekend")) |>
   mutate(
-    total_childcare = total_childcare + replace_na(extra_childcare, 0),
-  ) |>
+    total_childcare = total_childcare + replace_na(extra_childcare, 0)) |>
   select(-extra_childcare)
 
 ############################## Parents and couples #############################
@@ -421,7 +419,7 @@ data_working_nonparents_2015 = data_working_couples_2015 |>
 parents_est_data_2015 = data_working_parents_2015 |>
   zap_labels() |>
   # letter for creating variable names
-  mutate(sex_tag = if_else(male, "m", "f")) |>
+  mutate(sex_tag = if_else(male == 1, "m", "f")) |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, Income, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
@@ -541,14 +539,14 @@ parents_est_data_2015 = data_working_parents_2015 |>
 parents_est_data_2015_weekday = parents_est_data_2015 |>
   # keep only weekday data
   group_by(serial) |>
-  filter(!is_weekend) |>
+  filter(is_weekend == 0) |>
   ungroup() |>
   select(!is_weekend)
 
 parents_est_data_2015_weekend = parents_est_data_2015 |>
   # keep only weekday data
   group_by(serial) |>
-    filter(is_weekend) |>
+    filter(is_weekend == 1) |>
     ungroup() |>
     select(!is_weekend)
 
@@ -556,7 +554,7 @@ parents_est_data_2015_weekend = parents_est_data_2015 |>
 nonparents_est_data_2015 = data_working_nonparents_2015 |>
   zap_labels() |>
   # letter for creating variable names
-  mutate(sex_tag = if_else(male, "m", "f")) |>
+  mutate(sex_tag = if_else(male == 1, "m", "f")) |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, Income, all_of(vars_to_suffix)) |>
   pivot_wider(
@@ -657,13 +655,13 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
 nonparents_est_data_2015_weekday = nonparents_est_data_2015 |>
   # keep only weekday data
   group_by(serial) |>
-  filter(!is_weekend) |>
+  filter(is_weekend == 0) |>
   ungroup() |>
   select(!is_weekend)
 
 nonparents_est_data_2015_weekend = nonparents_est_data_2015 |>
   # keep only weekend data
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(is_weekend == 1) |>
   ungroup() |>
   select(!is_weekend)

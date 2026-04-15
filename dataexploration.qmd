@@ -537,25 +537,7 @@ print(child_split)
 print(num_split)
 ```
 
-- Some descriptive visuals about what people are doing, but I don't think this s a particularly good way to show things. It just looks like women tend to supply more childcare in general but they could also be more likely to work fewer hours on weekdays. Anyone with older kids or pre-daycare aged kids probably won't have much of a difference here
-```{r warning = FALSE, message = FALSE, fig.width=15, fig.height=6}
-# on the weekend, how do women spend their time scattered by estimated bargaining power
-ggplot(timeuse_long |> filter(activity %in% c("Childcare", 
-                                              "Private leisure (excluding sleep and personal care)",
-                                              "Market work",
-                                              "Domestic work excluding childcare")),
-       aes(x = shareown_etahat_f, y = hours, colour = activity)) +
-  geom_point(alpha = 1) +
-  scale_x_continuous(limits = c(0, 1)) +
-  facet_grid(day ~ sex) +
-  labs(
-    x = "Estimated Female Resource Share",
-    y = "Hours",
-    color = "Activity") +
-  theme_minimal()
-```
-
-Table of this data instead:
+Table of time use data:
 ```{r}
 # compute mean time use within each quartile
 table_quartiles = timeuse_long |>
@@ -672,6 +654,32 @@ etable(feols(total_otherdomestic ~ is_weekend * male
       data = reg_stacked,
       cluster = "serial"))
 ```
+```{r}
+etable(feols(total_work ~ is_weekend * male * shareown_etahat_f + 
+               has_childcare_help + has_otherdomestic_help
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_childcare ~ is_weekend * male * shareown_etahat_f + 
+               has_childcare_help + has_otherdomestic_help
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_private_leisure ~ is_weekend * male * shareown_etahat_f + 
+               has_childcare_help + has_otherdomestic_help
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+
+etable(feols(total_otherdomestic ~ is_weekend * male * shareown_etahat_f + 
+               has_childcare_help + has_otherdomestic_help
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
+```
+
 
 
 # side quests

@@ -82,7 +82,7 @@ data_activities_2000_long = data_activities_2000_wide |>
          IMonth = dmonth, IYear = dyear, whatdoing = act1, What_Oth1 = act2) |>
   
   # make weekend identifier
-  mutate(is_weekend = ddayw > 5)
+  mutate(is_weekend = if_else(ddayw > 5, 1, 0))
   
 
 # only keep information collected at the same point as the time use data
@@ -190,10 +190,10 @@ data_hh_2000 = read_dta(paste0(uktus_2000_direct,
   
   # help with childcare received? 
   # only have this information at the household level and no information on duration
-  mutate(has_childcare_help = (hq9a01 == 1 | hq9a01 == 2 | hq9a01 == 3)) |>
+  mutate(has_childcare_help = if_else(hq9a01 == 1 | hq9a01 == 2 | hq9a01 == 3, 1, 0)) |>
   
   # help with other domestic tasks received?
-  mutate(has_otherdomestic_help = (hq9a02 == 1 | hq9a02 == 2 | hq9a02 == 3 |
+  mutate(has_otherdomestic_help = if_else(hq9a02 == 1 | hq9a02 == 2 | hq9a02 == 3 |
                                      hq9a03 == 1 | hq9a03 == 2 | hq9a03 == 3 |
                                      hq9a04 == 1 | hq9a04 == 2 | hq9a04 == 3 |
                                      hq9a05 == 1 | hq9a05 == 2 | hq9a05 == 3 |
@@ -207,7 +207,7 @@ data_hh_2000 = read_dta(paste0(uktus_2000_direct,
                                      hq9a13 == 1 | hq9a13 == 2 | hq9a13 == 3 |
                                      hq9a14 == 1 | hq9a14 == 2 | hq9a14 == 3 |
                                      hq9a15 == 1 | hq9a15 == 2 | hq9a15 == 3 |
-                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3)) |>
+                                     hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3, 1, 0)) |>
   
   # since children under 8 don't appear in survey, find child characteristics here
   mutate(num_kids_total = num0_2 + num3_4 + num5_9 + num10_15 + num16_17,
@@ -249,7 +249,7 @@ data_individual_2000 = read_dta(paste0(uktus_2000_direct,
   
   # make gender and respondent dummies
   mutate(is_resp = pnum == hrp_per,
-         male = DMSex == 1) |>
+         male = if_else(DMSex == 1, 1, 0)) |>
   
   # keep if observation has age, sex
   filter(DMSex != 3, DVAge >= 0) |>
@@ -478,14 +478,15 @@ data_working_nonparents_2000 = data_working_couples_2000 |>
 parents_est_data_2000 = data_working_parents_2000 |>
   zap_labels() |>
   # letter for creating variable names
-  mutate(sex_tag = if_else(male, "m", "f")) |>
+  mutate(sex_tag = if_else(male == 1, "m", "f")) |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
-    num_kids_total, kid_age_min) |>
+    num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
-    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, kid_age_min),
+    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, kid_age_min,
+                num0_2, num3_4, num5_9, num10_15, num16_17),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
@@ -591,14 +592,14 @@ parents_est_data_2000 = data_working_parents_2000 |>
 parents_est_data_2000_weekday = parents_est_data_2000 |>
   # keep only weekday data
   group_by(serial) |>
-  filter(!is_weekend) |>
+  filter(is_weekend == 0) |>
   ungroup() |>
   select(!is_weekend)
 
 parents_est_data_2000_weekend = parents_est_data_2000 |>
   # keep only weekday data
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(is_weekend == 1) |>
   ungroup() |>
   select(!is_weekend)
 
@@ -606,7 +607,7 @@ parents_est_data_2000_weekend = parents_est_data_2000 |>
 nonparents_est_data_2000 = data_working_nonparents_2000 |>
   zap_labels() |>
   # letter for creating variable names
-  mutate(sex_tag = if_else(male, "m", "f")) |>
+  mutate(sex_tag = if_else(male == 1, "m", "f")) |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, all_of(vars_to_suffix)) |>
   pivot_wider(
@@ -705,13 +706,13 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
 nonparents_est_data_2000_weekday = nonparents_est_data_2000 |>
   # keep only weekday data
   group_by(serial) |>
-  filter(!is_weekend) |>
+  filter(is_weekend == 0) |>
   ungroup() |>
   select(!is_weekend)
 
 nonparents_est_data_2000_weekend = nonparents_est_data_2000 |>
   # keep only weekday data
   group_by(serial) |>
-  filter(is_weekend) |>
+  filter(is_weekend == 1) |>
   ungroup() |>
   select(!is_weekend)

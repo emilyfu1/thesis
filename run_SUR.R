@@ -366,10 +366,10 @@ reg_stacked = bind_rows(
       sample = "2000",
       dgorpaf,
       pnum,
-      is_weekend = as.integer(is_weekend), # dummy
-      male = as.integer(male), # dummy
-      has_childcare_help = as.integer(has_childcare_help),
-      has_otherdomestic_help = as.integer(has_otherdomestic_help),
+      is_weekend,
+      male,
+      has_childcare_help,
+      has_otherdomestic_help,
       wage, 
       total_work,
       total_otherdomestic,
@@ -379,17 +379,18 @@ reg_stacked = bind_rows(
       private_leisure_exp,
       total_childcare_exp,
       total_otherdomestic_exp,
-      private_leisure_exp_r),
+      private_leisure_exp_r,
+      num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17),
   data_working_parents_2015 |>
     transmute(
       serial,
       dgorpaf,
       pnum,
       sample = "2015",
-      is_weekend = as.integer(is_weekend),
-      male = as.integer(male),
-      has_childcare_help = as.integer(has_childcare_help),
-      has_otherdomestic_help = as.integer(has_otherdomestic_help),
+      is_weekend,
+      male,
+      has_childcare_help,
+      has_otherdomestic_help,
       wage,
       total_work,
       total_otherdomestic,
@@ -399,19 +400,14 @@ reg_stacked = bind_rows(
       total_childcare_exp,
       total_otherdomestic_exp,
       private_leisure_exp,
-      private_leisure_exp_r)) |>
+      private_leisure_exp_r,
+      num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17)) |>
   # time dummies
   mutate(dummy_2000 = ifelse(sample == "2000", 1, 0),
-         dummy_2015 = ifelse(sample == "2015", 1, 0),
-         day_type = if_else(is_weekend == 1, "weekend", "weekday")) |>
+         dummy_2015 = ifelse(sample == "2015", 1, 0)) |>
   
   # merge with resource share estimates
-  inner_join(parents_est_data_merged_shares, 
-             by=c("serial", "sample", "dgorpaf", "is_weekend")) |>
-  
-  # wage ratio
-  mutate(wage_ratio_f = wage_f / (wage_m + wage_f),
-         childcare_ratio_f = total_childcare_f / (total_childcare_f + total_childcare_m)) |>
+  inner_join(shares_parents_ownsex_r_merged$data, by=c("serial")) |>
   
   # individual identifiers
   group_by(sample, serial, pnum) |>
@@ -420,8 +416,7 @@ reg_stacked = bind_rows(
   
   # child under five in household
   mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
-         proportion_male_children = num_kids_male / num_kids_total,
-         has_young_child = num0_2 + num3_4 + num5_9 > 0)
+         has_young_child = ifelse(num0_2 + num3_4 + num5_9 > 0, 1, 0))
 
 timeuse_long = reg_stacked |>
   filter(male %in% c(0, 1), is_weekend %in% c(0, 1)) |>
