@@ -70,7 +70,7 @@ mainleisure_actlines = c(5120, 6149, 6150, 5292, 5130, 6160, 8210,
                       7112, 7330, 7119, 7120, 7121, 6100, 7130, 
                       6110, 6111, 7140, 6119, 6120, 5100, 7150, 
                       6312, 6130, 6131, 6132, 6142, 5110, 7160, 
-                      6140, 6141, 8190, 6143)
+                      6140, 6141, 8190, 6143, 3410, 8100)
 
 travel_leisure_actlines = c(9500, # Travel to visit friends/relatives in their homes not respondents household
                             9620, # Travel related to hunting & fishing
@@ -85,8 +85,9 @@ travel_leisure_actlines = c(9500, # Travel to visit friends/relatives in their h
                             9820) # Travel for day trip/just walk
 
 # leisure and borderline leisure activities not included in original paper
-additional_leisure = c(6210, # Hunting and fishing
-                       7220, # Computing - programming
+additional_leisure = c(7220, # Computing - programming
+                       7250, # Unspecified other computing
+                       7259, # Other specified computing
                        6200, # Unspecified productive exercise
                        7231, # Information searching on the internet
                        5241, # Borrowing books records audiotapes videotapes CDs VDs etc. from a library
@@ -96,13 +97,13 @@ additional_leisure = c(6210, # Hunting and fishing
                        6290, # Other specified productive exercise
                        2210, # Free time study
                        5240, # Unspecified library
-                       5244, # Using computers in the library other than internet use
-                       8100) # Unspecified reading
+                       5244) # Using computers in the library other than internet use
 
 # activities that may be considered leisure and domestic/non-market work
 borderline_leisure_domestic = c(3220, # Cleaning yard
                                 3430, # Caring for pets
                                 3330, # Handicraft and producing textiles
+                                6210, # Hunting and fishing
                                 3140, # Preserving
                                 3390, # Other specified making and care for textiles
                                 6220, # Picking berries mushroom and herbs
@@ -110,7 +111,6 @@ borderline_leisure_domestic = c(3220, # Cleaning yard
                                 3440, # Walking the dog
                                 3490, # Other specified gardening and pet care
                                 3614, # Shopping or browsing at car boot sales or antique fairs
-                                3110, # Food preparation and baking
                                 3540) # Vehicle maintenance
 
 # decide whether to include additional items
@@ -169,7 +169,6 @@ otherdomestic_actlines = c(4100, # Unspecified organisational work
                            3320, # Ironing
                            3330, # Handicraft and producing textiles
                            3390, # Other specified making and care for textiles
-                           3410, # Gardening
                            3420, # Tending domestic animals
                            3430, # Caring for pets
                            3490, # Other specified gardening and pet care

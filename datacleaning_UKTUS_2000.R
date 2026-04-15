@@ -229,7 +229,7 @@ all_relationships_2000 = data_hh_2000 |>
   # dummy type of relationship
   mutate(pnum_is_spouse = relation_to_pnum < 3,
          pnum_is_child = relation_to_pnum >=3 & relation_to_pnum <= 5,
-         pnum_is_parent = relation_to_pnum >= 7 & relation_to_pnum <= 9)
+         pnum_is_parent = relation_to_pnum == 7)
 
 ################################################################################
 ############################ INDIVIDUAL-LEVEL DATA #############################
@@ -426,14 +426,14 @@ data_working_couples_2000 = data_individual_2000 |>
 # parents
 data_working_parents_2000 = data_working_couples_2000 |>
   
-  # keep only hetero couples with child in household, valid education
-  filter(hhtype4 %in% c(4,5,7,8)) |>
-  
   # merge information about domestic help and kids
-  inner_join(data_hh_2000 |> select(serial, has_childcare_help, 
+  inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
                                     has_otherdomestic_help, 
                                     num_kids_total, kid_age_min), 
              by = c("serial")) |>
+  
+  # keep only hetero couples with child in household, valid education
+  filter(hhtype3 %in% c(3, 4, 11, 12)) |>
   
   group_by(serial, is_weekend) |>
   
@@ -446,7 +446,13 @@ data_working_parents_2000 = data_working_couples_2000 |>
   filter(spouse_present) |>
   
   # keep households with under-18 kids
-  filter(kid_age_min < 18)
+  filter(kid_age_min < 18) |>
+  
+  # more child information
+  mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
+         num_under_5 = num0_2 + num3_4,
+         num_under_10 = num0_2 + num3_4 + num5_9,
+         has_young_child = ifelse(num_under_10 > 0, 1, 0))
 
 # get non-parent couples (including empty nesters: hhtype4 5/8 with all kids >= 18)
 data_working_nonparents_2000 = data_working_couples_2000 |>
@@ -482,11 +488,15 @@ parents_est_data_2000 = data_working_parents_2000 |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
-    num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17) |>
+    num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17,
+    has_childcare_help, has_otherdomestic_help, child_under_five, num_under_5, 
+    num_under_10, has_young_child) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
     id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, kid_age_min,
-                num0_2, num3_4, num5_9, num10_15, num16_17),
+                num0_2, num3_4, num5_9, num10_15, num16_17,
+                has_childcare_help, has_otherdomestic_help, child_under_five, 
+                num_under_5, num_under_10, has_young_child),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>

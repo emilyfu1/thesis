@@ -76,33 +76,35 @@ activity_summaries_2015 = data_activities_2015 |>
     activity4_is_otherdomestic = What_Oth3 %in% otherdomestic_actlines,
     
     # general: is leisure?
-    activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
-                             activity3_is_leisure | activity4_is_leisure),
-    activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
-                               activity3_is_leisure_r | activity4_is_leisure_r),
+    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
+    #                          activity3_is_leisure | activity4_is_leisure),
+    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
+    #                            activity3_is_leisure_r | activity4_is_leisure_r),
     
-    # general: is leisure? (trying something)
-    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
-    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure),
+    # general: is leisure?
+    activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
+    activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure),
     
     # general: is sleep (only)?
-    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
-                           activity3_is_sleep | activity4_is_sleep),
-    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
+    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
+    #                        activity3_is_sleep | activity4_is_sleep),
+    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
     
     # general: is personal care (only)?
+    # activity_is_personalcare = (activity1_is_personalcare | 
+    #                               activity2_is_personalcare | 
+    #                               activity3_is_personalcare | 
+    #                               activity4_is_personalcare),
     activity_is_personalcare = (activity1_is_personalcare | 
-                                  activity2_is_personalcare | 
-                                  activity3_is_personalcare | 
-                                  activity4_is_personalcare),
-    # activity_is_personalcare = (activity1_is_personalcare | activity2_is_personalcare),
+                                  activity2_is_personalcare),
     
     # general: is personal care OR sleep?
+    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
+    #                               activity2_is_personalcare_sleep | 
+    #                               activity3_is_personalcare_sleep | 
+    #                               activity4_is_personalcare_sleep),
     activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
-                                  activity2_is_personalcare_sleep | 
-                                  activity3_is_personalcare_sleep | 
-                                  activity4_is_personalcare_sleep),
-    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | activity2_is_personalcare_sleep),
+                                        activity2_is_personalcare_sleep),
     
     # private (no relevant household members present)
     # activities where "who" isn't asked are considered private
@@ -120,19 +122,25 @@ activity_summaries_2015 = data_activities_2015 |>
     # general: is childcare?
     # includes any activity with a household child aged 0-7 present (WithChild)
     # child aged 8-9 presence added separately below via children's own diaries
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare |
-                              activity3_is_childcare | activity4_is_childcare)
-                              | WithChild == 1,
+    # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare |
+    #                           activity3_is_childcare | activity4_is_childcare)
+    #                           | WithChild == 1,
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare) | 
+      WithChild == 1,
   
     # general: is work?
-    activity_iswork = (activity1_is_work | activity2_is_work | 
-                         activity3_is_work | activity4_is_work),
+    # activity_iswork = (activity1_is_work | activity2_is_work | 
+    #                      activity3_is_work | activity4_is_work),
+    activity_iswork = (activity1_is_work | activity2_is_work),
     
     # general: is domestic?
-    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
-                             activity3_is_domestic | activity4_is_domestic),
-    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
-                             activity3_is_otherdomestic | activity4_is_otherdomestic),
+    # activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
+    #                          activity3_is_domestic | activity4_is_domestic),
+    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    # activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
+    #                          activity3_is_otherdomestic | activity4_is_otherdomestic),
+    activity_isotherdomestic = (activity1_is_otherdomestic | 
+                                  activity2_is_otherdomestic),
     
     # make weekend identifier
     is_weekend = if_else(ddayw != 1, 1, 0)) |>
@@ -212,7 +220,7 @@ all_relationships_2015 = data_individual_2015 |>
   # dummy type of relationship
   mutate(pnum_is_spouse = relation_to_pnum <= 3,
          pnum_is_child = relation_to_pnum >=4 & relation_to_pnum <= 6,
-         pnum_is_parent = relation_to_pnum >= 8 & relation_to_pnum <= 10)
+         pnum_is_parent = relation_to_pnum == 8)
 
 ################################### Children ###################################
 
@@ -372,8 +380,6 @@ data_working_couples_2015 = data_individual_2015 |>
 
 # parents
 data_working_parents_2015 = data_working_couples_2015 |>
-  # keep only hetero couples with child in household
-  filter(NumChild > 0) |>
   
   # merge kid information 
   inner_join(kids_counts_2015, by = c("serial")) |>
@@ -395,7 +401,13 @@ data_working_parents_2015 = data_working_couples_2015 |>
   filter(spouse_present) |>
 
   # keep households with under-18 kids
-  filter(kid_age_min < 18) 
+  filter(kid_age_min < 18) |>
+  
+  # more child information
+  mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
+         num_under_5 = num0_2 + num3_4,
+         num_under_10 = num0_2 + num3_4 + num5_9,
+         has_young_child = ifelse(num_under_10 > 0, 1, 0))
 
 # get non-parent couples
 data_working_nonparents_2015 = data_working_couples_2015 |>
@@ -425,13 +437,17 @@ parents_est_data_2015 = data_working_parents_2015 |>
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
     kid_age_min, kid_age_max, kid_age_mean,
-    num0_2, num3_4, num5_9, num10_15, num16_17) |>
+    num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help, 
+    has_otherdomestic_help, child_under_five, num_under_5, 
+    num_under_10, has_young_child) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
     id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, Income, 
                 num_kids_male, num_kids_female,
                 kid_age_min, kid_age_max, kid_age_mean,
-                num0_2, num3_4, num5_9, num10_15, num16_17),
+                num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help,
+                has_otherdomestic_help, child_under_five, num_under_5, 
+                num_under_10, has_young_child),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
