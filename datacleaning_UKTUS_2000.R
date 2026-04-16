@@ -155,13 +155,16 @@ activity_summaries_2000 = data_activities_2000_long |>
     # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
     #                           wit1 == 1 | wit2 == 1),
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare) | wit1 == 1,
+    # activity_ischildcare = activity1_is_childcare | wit1 == 1,
     
     # general: is work?
     activity_iswork = (activity1_is_work | activity2_is_work),
     
     # general: is domestic?
     activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    # activity_isdomestic = activity1_is_domestic,
     activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic)) |>
+    # activity_isotherdomestic = activity1_is_otherdomestic) |>
   
   # add up time use in hours
   group_by(serial, pnum, is_weekend) |>
@@ -293,7 +296,7 @@ kids_age_wide_2000 = find_kid_ages_wide(data_kids_2000)
 spouse_pairs_2000 = find_spouse_pairs(all_relationships_2000)
 
 # pay band midpoints (monthly midpoints for q10x bands 0–10)
-q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 7000)
+q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 6667)
 
 # get working straight couples with valid education, and then split into
 # parents and non-parents
@@ -312,11 +315,13 @@ data_working_couples_2000 = data_individual_2000 |>
 
   # dealing with all different wage/hours related variables
 
-  # working hours (paid hours only, used for converting pay to hourly wage)
+  # all working hours (used for converting pay to hourly wage)
   mutate(
-    emp_hours = case_when(
+    HrWkAc = case_when(
       q14b == 2 & q14c > 0 ~ as.numeric(q14c),
-      q14b == 1 & q14d > 0 ~ as.numeric(q14d) + if_else(q14e > 0, as.numeric(q14e), 0),
+      q14b == 1 & q14d > 0 ~ as.numeric(q14d) + 
+        if_else(q14e > 0, as.numeric(q14e), 0) + 
+        if_else(q14f > 0, as.numeric(q14f), 0),
       TRUE ~ NA_real_)) |>
 
   # for employees
@@ -329,15 +334,15 @@ data_working_couples_2000 = data_individual_2000 |>
     # if paid by hours (q11 == 8), q10 / q11n gives direct hourly rate
     emp_wage_exact = case_when(
       q7 == 1 & q10 >= 0 & q11 == 8 & q11n > 0 ~ q10 / q11n,
-      q7 == 1 & !is.na(emp_pay_weekly_exact) & emp_hours > 0 ~ emp_pay_weekly_exact / emp_hours,
+      q7 == 1 & !is.na(emp_pay_weekly_exact) & HrWkAc > 0 ~ emp_pay_weekly_exact / HrWkAc,
       TRUE ~ NA_real_),
 
     # banded fallback: q10x band index -> midpoint -> weekly -> hourly
     pay_banded = if_else(q7 == 1 & q10 < 0 & q10x %in% 0:10, q10x_mid[q10x + 1], NA_real_),
     emp_pay_weekly_banded = pay_to_weekly(pay_banded, q11),
     emp_wage_banded = if_else(
-      q7 == 1 & is.na(emp_wage_exact) & !is.na(emp_pay_weekly_banded) & emp_hours > 0,
-      emp_pay_weekly_banded / emp_hours,
+      q7 == 1 & is.na(emp_wage_exact) & !is.na(emp_pay_weekly_banded) & HrWkAc > 0,
+      emp_pay_weekly_banded / HrWkAc,
       NA_real_)) |>
 
   # for self employed
@@ -352,12 +357,12 @@ data_working_couples_2000 = data_individual_2000 |>
     se_pay_weekly_banded = se_pay_monthly_banded / 4.333,
 
     se_wage_exact = case_when(
-      q7 == 2 & !is.na(se_pay_weekly_exact) & emp_hours > 0 ~ se_pay_weekly_exact / emp_hours,
+      q7 == 2 & !is.na(se_pay_weekly_exact) & HrWkAc > 0 ~ se_pay_weekly_exact / HrWkAc,
       TRUE ~ NA_real_),
 
     se_wage_banded = if_else(
-      q7 == 2 & is.na(se_wage_exact) & !is.na(se_pay_weekly_banded) & emp_hours > 0,
-      se_pay_weekly_banded / emp_hours,
+      q7 == 2 & is.na(se_wage_exact) & !is.na(se_pay_weekly_banded) & HrWkAc > 0,
+      se_pay_weekly_banded / HrWkAc,
       NA_real_)) |>
 
   # source of wage
@@ -382,28 +387,16 @@ data_working_couples_2000 = data_individual_2000 |>
       wage_source == "self_employed_exact" ~ se_wage_exact,
       wage_source == "self_employed_banded" ~ se_wage_banded,
       TRUE ~ NA_real_)) |>
-
-  # actual hours worked (incl. unpaid overtime), kept for HrWkAc in vars_to_suffix
-  mutate(
-    q14c_c = if_else(q14c > 0, as.numeric(q14c), NA_real_),
-    q14d_c = if_else(q14d > 0, as.numeric(q14d), NA_real_),
-    q14e_c = if_else(q14e > 0, as.numeric(q14e), 0),
-    q14f_c = if_else(q14f > 0, as.numeric(q14f), 0),
-
-    HrWkAc = case_when(
-      q14b == 2 ~ q14c_c,
-      q14b == 1 ~ q14d_c + q14e_c + q14f_c,
-      TRUE ~ NA_real_)) |>
   
   # ensure both complete 2 diaries AND one of each type
   group_by(serial, pnum) |>
   filter(n_distinct(is_weekend) == 2) |>
   ungroup() |>
   
-  # enforce working condition
+  # enforce working condition (have to be working at least a little, and be earning positive wages)
+  # because the sample is working couples
   group_by(serial) |>
-  filter(all(wage > 0)) |>
-  filter(all((emp_hours > 1))) |>
+  filter(all(wage > 0), all(HrWkAc > 1)) |>
   ungroup() |>
   
   # indicate whether someone is the spouse
@@ -458,9 +451,13 @@ data_working_parents_2000 = data_working_couples_2000 |>
 data_working_nonparents_2000 = data_working_couples_2000 |>
   # hhtype4 3/6: no children; hhtype4 5/8: children all >= 16 (check below for >= 18)
   # left join to get youngest kid age; NA means no children in household
-  left_join(kids_age_dist_2000 |> select(serial, kid_age_min), by = "serial") |>
-  # keep childless couples and empty nesters (youngest child >= 18)
-  filter((hhtype4 %in% c(3, 6) | kid_age_min >= 18) & numadult == 2) |>
+  # merge information about domestic help and kids
+  inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
+                                    has_otherdomestic_help, 
+                                    num_kids_total, kid_age_min), 
+             by = c("serial")) |>
+  # keep couples with no cohabiting children
+  filter((num_kids_total == 0)) |>
   # select(-kid_age_min) |>
   
   # filter(hhtype4 %in% c(3, 6)) |>
@@ -569,7 +566,7 @@ parents_est_data_2000 = data_working_parents_2000 |>
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    dev_gdppc = income_annual - rgdppc,
+    dev_gdppc = rgdppc - mean(rgdppc, na.rm = TRUE),
     
     # deviation of youngest child age
     dev_ageyoungest = kid_age_min - mean(kid_age_min, na.rm = TRUE),
@@ -691,7 +688,7 @@ nonparents_est_data_2000 = data_working_nonparents_2000 |>
     dev_agegap = agegap_m - mean(agegap_m, na.rm = TRUE),
     
     # deviation of household from regional wealth 
-    dev_gdppc = income_annual - rgdppc) |>
+    dev_gdppc = rgdppc - mean(rgdppc, na.rm = TRUE)) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,

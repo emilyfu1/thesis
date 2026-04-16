@@ -244,7 +244,7 @@ get_household_level_2015 = function(couplesdata, regionalwealth, parents) {
     # fill in annual income, household budget, average age, age gap
     mutate(income_annual = if_else(Income > 0, # treat don't know and refused
                                    Income * 12,
-                                   (NetWkly_f + NetWkly_f)*52),
+                                   (NetWkly_f + NetWkly_m)*52),
            y = y_individual_f + y_individual_m,
            avgage = (DVAge_f + DVAge_m)/2,
            agegap_m = DVAge_m - DVAge_f) |>
@@ -442,8 +442,8 @@ plot_share_densities = function(data,
     col_f = paste0(prefix, dev_type, "_etahat_f")
   } else {
     label = "Excluding personal care and sleep"
-    col_m = paste0(prefix, dev_type, "_etahat_m_r")
-    col_f = paste0(prefix, dev_type, "_etahat_f_r")
+    col_m = paste0(prefix, dev_type, "_etahat_r_m")
+    col_f = paste0(prefix, dev_type, "_etahat_r_f")
   }
   
   # reshape to long for ggplot
