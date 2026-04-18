@@ -481,10 +481,7 @@ parents_est_data_2015 = data_working_parents_2015 |>
     total_childcare_exp_f = total_childcare_exp_f * deflator_2014,
     
     total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2014,
-    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2014,
-    
-    # regional wealth
-    income_annual = income_annual * deflator_2014) |>
+    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2014) |>
   
   # deviations from means of household-level characteristics
   mutate(
@@ -493,18 +490,6 @@ parents_est_data_2015 = data_working_parents_2015 |>
     dev_wage_m_only = wage_m - mean(wage_m, na.rm = TRUE),
     dev_educ_f_only = educ_f - mean(educ_f, na.rm = TRUE),
     dev_educ_m_only = educ_m - mean(educ_m, na.rm = TRUE),
-    
-    # deviations of education and age for both sexes (maybe change this to opposite sexes)
-    dev_wage_f_all = wage_f - mean(c(wage_f, wage_m), na.rm = TRUE),
-    dev_wage_m_all = wage_m - mean(c(wage_f, wage_m), na.rm = TRUE),
-    dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
-    dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
-    
-    # deviations of education and age from opposite sex
-    dev_wage_f_opp = wage_f - mean(wage_m, na.rm = TRUE),
-    dev_wage_m_opp = wage_m - mean(wage_f, na.rm = TRUE),
-    dev_educ_f_opp = educ_f - mean(educ_m, na.rm = TRUE),
-    dev_educ_m_opp = educ_m - mean(educ_f, na.rm = TRUE),
     
     # deviations of average age of couple and age gap
     dev_avgage = avgage - mean(avgage, na.rm = TRUE),
@@ -524,16 +509,6 @@ parents_est_data_2015 = data_working_parents_2015 |>
          Bx_dev_wage_m_only = y * dev_wage_m_only,
          Bx_dev_educ_f_only = y * dev_educ_f_only,
          Bx_dev_educ_m_only = y * dev_educ_m_only,
-         
-         Bx_dev_wage_f_all = y * dev_wage_f_all,
-         Bx_dev_wage_m_all = y * dev_wage_m_all,
-         Bx_dev_educ_f_all = y * dev_educ_f_all,
-         Bx_dev_educ_m_all = y * dev_educ_m_all,
-         
-         Bx_dev_wage_f_opp = y * dev_wage_f_opp,
-         Bx_dev_wage_m_opp = y * dev_wage_m_opp,
-         Bx_dev_educ_f_opp = y * dev_educ_f_opp,
-         Bx_dev_educ_m_opp = y * dev_educ_m_opp,
          
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
@@ -605,10 +580,7 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2014,
     
     total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2014,
-    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2014,
-    
-    # regional wealth
-    income_annual = income_annual * deflator_2014) |>
+    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2014) |>
   
   # deviations from means of household-level characteristics
   mutate(
@@ -617,18 +589,6 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
     dev_wage_m_only = wage_m - mean(wage_m, na.rm = TRUE),
     dev_educ_f_only = educ_f - mean(educ_f, na.rm = TRUE),
     dev_educ_m_only = educ_m - mean(educ_m, na.rm = TRUE),
-    
-    # deviations of education and age for both sexes (maybe change this to opposite sexes)
-    dev_wage_f_all = wage_f - mean(c(wage_f, wage_m), na.rm = TRUE),
-    dev_wage_m_all = wage_m - mean(c(wage_f, wage_m), na.rm = TRUE),
-    dev_educ_f_all = educ_f - mean(c(educ_f, educ_m), na.rm = TRUE),
-    dev_educ_m_all = educ_m - mean(c(educ_f, educ_m), na.rm = TRUE),
-    
-    # deviations of education and age from opposite sex
-    dev_wage_f_opp = wage_f - mean(wage_m, na.rm = TRUE),
-    dev_wage_m_opp = wage_m - mean(wage_f, na.rm = TRUE),
-    dev_educ_f_opp = educ_f - mean(educ_m, na.rm = TRUE),
-    dev_educ_m_opp = educ_m - mean(educ_f, na.rm = TRUE),
     
     # deviations of average age of couple and age gap
     dev_avgage = avgage - mean(avgage, na.rm = TRUE),
@@ -642,17 +602,7 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
          Bx_dev_wage_m_only = y * dev_wage_m_only,
          Bx_dev_educ_f_only = y * dev_educ_f_only,
          Bx_dev_educ_m_only = y * dev_educ_m_only,
-         
-         Bx_dev_wage_f_all = y * dev_wage_f_all,
-         Bx_dev_wage_m_all = y * dev_wage_m_all,
-         Bx_dev_educ_f_all = y * dev_educ_f_all,
-         Bx_dev_educ_m_all = y * dev_educ_m_all,
-         
-         Bx_dev_wage_f_opp = y * dev_wage_f_opp,
-         Bx_dev_wage_m_opp = y * dev_wage_m_opp,
-         Bx_dev_educ_f_opp = y * dev_educ_f_opp,
-         Bx_dev_educ_m_opp = y * dev_educ_m_opp,
-         
+
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc)
