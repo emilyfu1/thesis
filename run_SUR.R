@@ -438,8 +438,8 @@ reg_stacked = bind_rows(
   data_working_parents_2000 |>
     transmute(
       serial, sample = "2000", dgorpaf, pnum, is_weekend, male,
-      has_childcare_help, has_otherdomestic_help, wage, 
-      total_work, total_otherdomestic, total_private_leisure,
+      has_childcare_help, has_otherdomestic_help, wage, educ,
+      total_work, total_otherdomestic, total_private_leisure, total_sleep,
       total_private_leisure_r, total_childcare, private_leisure_exp, 
       total_childcare_exp, total_otherdomestic_exp, private_leisure_exp_r,
       num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17,
@@ -447,8 +447,8 @@ reg_stacked = bind_rows(
   data_working_parents_2015 |>
     transmute(
       serial, sample = "2015", dgorpaf, pnum, is_weekend, male,
-      has_childcare_help, has_otherdomestic_help, wage, 
-      total_work, total_otherdomestic, total_private_leisure,
+      has_childcare_help, has_otherdomestic_help, wage, educ,
+      total_work, total_otherdomestic, total_private_leisure, total_sleep,
       total_private_leisure_r, total_childcare, private_leisure_exp, 
       total_childcare_exp, total_otherdomestic_exp, private_leisure_exp_r,
       num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17,
@@ -468,10 +468,7 @@ reg_stacked = bind_rows(
              by=c("serial", "dgorpaf", "is_weekend")) |>
   
   mutate(over_75p_fem_share = if_else(shareown_etahat_f > quantile(shareown_etahat_f, 0.75), 1, 0),
-         over_75p_fem_share_r = if_else(shareown_etahat_r_f > quantile(shareown_etahat_f, 0.75), 1, 0)) |>
-  group_by(sample, serial, pnum) |>
-  mutate(individual_id = row_number()) |>
-  ungroup()
+         over_75p_fem_share_r = if_else(shareown_etahat_r_f > quantile(shareown_etahat_f, 0.75), 1, 0))
 
 # all time use
 timeuse_long = reg_stacked |>

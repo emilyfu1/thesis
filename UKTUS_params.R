@@ -32,7 +32,7 @@ vars_to_suffix = c(
   "wage", "educ", "NetWkly", "HrWkAc", "DVAge",
   "total_leisure", "total_leisure_r", "total_private_leisure",
   "total_private_leisure_r", "total_childcare", 
-  "total_otherdomestic", "total_work",
+  "total_otherdomestic", "total_work", "total_sleep",
   "total_leisure_exp", "total_leisure_exp_r", "private_leisure_exp",
   "private_leisure_exp_r", "total_childcare_exp", "total_otherdomestic_exp",
   "y_individual", "pnum", "spouse_pnum")
@@ -41,11 +41,9 @@ vars_to_suffix = c(
 ################################ ACTIVITY CODES ################################
 ################################################################################
 
-sleep_actlines = c(10, 110)
+sleep_actlines = c(10, 110, 111)
 
 personal_care_actlines = c(0, # Unspecified personal care
-                           111, # Sleep: In bed not asleep
-                           120, # Sleep: Sick in bed
                            210, # Eating
                            1310, # Activities related to employment: Lunch break
                            5310, # Resting - time out
@@ -120,20 +118,11 @@ leisure_actlines = c(sleep_actlines, personal_care_actlines,
 
 # working at job
 work_actlines = c(
-  4100, # Unspecified organisational work
-  4110, # Work for an organisation
-  4190, # Other specified organisational work
   9110, # Travel in the course of work
-  9130, # Travel to work from home and back only
-  9140, # Travel to work from a place other than home
-  4310, # Meetings
   1100, # Main job: unspecified main job
   1000, # Unspecified employment
   1110, # work at main job
-  1210, # work at second job
-  1300, # Activities related to employment: Unspecified activities related to employment
-  1390, # Activities related to employment: Other specified activities related to employment
-  1399) # Activities related to employment: Other unspecified activities related to employment
+  1210) # work at second job
 
 # childcare values
 childcare_actlines = c(
@@ -150,8 +139,7 @@ childcare_actlines = c(
   9380) # Travel escorting a child (other than education)
 
 # domestic work
-otherdomestic_actlines = c(4100, # Unspecified organisational work
-                           3100, # Unspecified food management
+otherdomestic_actlines = c(3100, # Unspecified food management
                            3110, # Food preparation and baking
                            3250, # Disposal of waste
                            3130, # Dish washing

@@ -82,21 +82,9 @@ data_activities_2000_long = data_activities_2000_wide |>
          IMonth = dmonth, IYear = dyear, whatdoing = act1, What_Oth1 = act2) |>
   
   # make weekend identifier
-  mutate(is_weekend = if_else(ddayw > 5, 1, 0))
+  mutate(is_weekend = if_else(ddayw > 5, 1, 0)) |>
   
-
-# only keep information collected at the same point as the time use data
-diarymonth_households_2000 = unique_interview_months(data_activities_2000_long)
-
-# find time diaries and number of diaries everyone completes
-individual_diaries_2000 = unique_interview_diaries(data_activities_2000_long)
-
-# finding time use
-activity_summaries_2000 = data_activities_2000_long |>
-  select(serial, pnum, is_weekend, IMonth, IYear, eptime, whatdoing, What_Oth1,
-         wit0, wit1, wit2, wit3, wit4, wit5, wit6) |>
-  
-  # secondary activities and stuff
+  # classify activities and stuff
   mutate(
     
     # primary activity
@@ -140,13 +128,12 @@ activity_summaries_2000 = data_activities_2000_long |>
     activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
                                         activity2_is_personalcare_sleep),
     # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep),
-
-    # private activity classifier (no relevant household members present)
-    # activities where "who" isn't asked are considered private
-    activity_private = (wit1 == 0 & wit2 == 0 & wit3 == 0),
     
+    # private activity classifier (no relevant household members present)
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
+    activity_private = ((wit1 == 0 & wit2 == 0 & wit3 == 0) | wit5 == 1),
+    
     # general: is private leisure?
     private_leisure = (activity_is_leisure & activity_private) | activity_is_sleep, 
     private_leisure_r = activity_is_leisure_r & activity_private,
@@ -154,21 +141,32 @@ activity_summaries_2000 = data_activities_2000_long |>
     # general: is childcare?
     # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
     #                           wit1 == 1 | wit2 == 1),
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare) | wit1 == 1,
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
+                              wit1 == 1) & !private_leisure, 
     # activity_ischildcare = activity1_is_childcare | wit1 == 1,
     
     # general: is work?
-    activity_iswork = (activity1_is_work | activity2_is_work),
+    activity_iswork = (activity1_is_work | activity2_is_work) & !private_leisure,
     
     # general: is domestic?
-    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic) & !private_leisure,
     # activity_isdomestic = activity1_is_domestic,
-    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic)) |>
-    # activity_isotherdomestic = activity1_is_otherdomestic) |>
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic) & !private_leisure)
+  # activity_isotherdomestic = activity1_is_otherdomestic) |>
   
+
+# only keep information collected at the same point as the time use data
+diarymonth_households_2000 = unique_interview_months(data_activities_2000_long)
+
+# find time diaries and number of diaries everyone completes
+individual_diaries_2000 = unique_interview_diaries(data_activities_2000_long)
+
+# finding time use
+activity_summaries_2000 = data_activities_2000_long |>
   # add up time use in hours
   group_by(serial, pnum, is_weekend) |>
   summarise(
+    total_sleep = sum(eptime[activity_is_sleep], na.rm = TRUE) / 60,
     total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE) / 60,
     total_private_leisure = sum(eptime[private_leisure], na.rm = TRUE) / 60,
     total_leisure_r = sum(eptime[activity_is_leisure_r], na.rm = TRUE) / 60,
@@ -414,19 +412,22 @@ data_working_couples_2000 = data_individual_2000 |>
     total_otherdomestic_exp = wage * sum(total_otherdomestic),
     y_individual = wage * 24) |>
     # y_individual = wage * 48) |>
-  ungroup()
-
-# parents
-data_working_parents_2000 = data_working_couples_2000 |>
+  ungroup() |>
   
   # merge information about domestic help and kids
   inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
                                     has_otherdomestic_help, 
                                     num_kids_total, kid_age_min), 
-             by = c("serial")) |>
+             by = c("serial"))
+
+# parents
+data_working_parents_2000 = data_working_couples_2000 |>
   
   # keep only hetero couples with child in household, valid education
-  filter(hhtype3 %in% c(3, 4, 11, 12)) |>
+  filter(hhtype3 %in% c(3, 11)) |>
+  
+  # keep households with under-18 kids
+  filter(num_kids_total > 0 & kid_age_min < 18) |>
   
   group_by(serial, is_weekend) |>
   
@@ -438,9 +439,6 @@ data_working_parents_2000 = data_working_couples_2000 |>
   # only keep couples who both have time diaries (filter after both joins)
   filter(spouse_present) |>
   
-  # keep households with under-18 kids
-  filter(kid_age_min < 18) |>
-  
   # more child information
   mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
          num_under_5 = num0_2 + num3_4,
@@ -449,18 +447,9 @@ data_working_parents_2000 = data_working_couples_2000 |>
 
 # get non-parent couples (including empty nesters: hhtype4 5/8 with all kids >= 18)
 data_working_nonparents_2000 = data_working_couples_2000 |>
-  # hhtype4 3/6: no children; hhtype4 5/8: children all >= 16 (check below for >= 18)
-  # left join to get youngest kid age; NA means no children in household
-  # merge information about domestic help and kids
-  inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
-                                    has_otherdomestic_help, 
-                                    num_kids_total, kid_age_min), 
-             by = c("serial")) |>
-  # keep couples with no cohabiting children
-  filter((num_kids_total == 0)) |>
-  # select(-kid_age_min) |>
   
-  # filter(hhtype4 %in% c(3, 6)) |>
+  # keep couples with no cohabiting children
+  filter(num_kids_total == 0) |>
 
   group_by(serial, is_weekend) |>
 

@@ -15,20 +15,7 @@ setwd(wd)
 ################################################################################
 
 # activity level data
-data_activities_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_diary_ep_long.dta"))
-
-# only keep information collected at the same point as the time use data
-diarymonth_households_2015 = unique_interview_months(data_activities_2015)
-
-# find time diaries and number of diaries everyone completes
-individual_diaries_2015 = unique_interview_diaries(data_activities_2015)
-
-# finding time use
-activity_summaries_2015 = data_activities_2015 |>
-  select(serial, pnum, ddayw, IMonth, IYear, eptime, whatdoing, What_Oth1, 
-         What_Oth2, What_Oth3, WithAlone, WithSpouse, WithChild, WithOther,
-         WithOtherYK, WithNA) |>
-  
+data_activities_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_diary_ep_long.dta")) |>
   # secondary activities and stuff
   mutate(
     # first activity
@@ -80,7 +67,7 @@ activity_summaries_2015 = data_activities_2015 |>
     #                          activity3_is_leisure | activity4_is_leisure),
     # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
     #                            activity3_is_leisure_r | activity4_is_leisure_r),
-
+    
     activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
     activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r),
     # activity_is_leisure = activity1_is_leisure,
@@ -114,16 +101,15 @@ activity_summaries_2015 = data_activities_2015 |>
     # activity_is_personalcare_sleep = activity1_is_personalcare_sleep,
     
     # private (no relevant household members present)
-    # activities where "who" isn't asked are considered private
-    activity_private = (WithSpouse == 0 & WithChild == 0 & WithOther == 0),
+    # note that sleep doesn't have accompanying copresence information
+    # so i will just classify it as private
+    activity_private = ((WithSpouse == 0 & WithChild == 0 & WithOther == 0) | WithNA == 1),
     # spouse not present
     activity_excludesspouse = WithSpouse == 0,
     
-    # note that sleep doesn't have accompanying copresence information
-    # so i will just classify it as private
+    
     # general: is private leisure?
-    private_leisure = (activity_is_leisure & activity_private) |
-      activity_is_sleep,
+    private_leisure = (activity_is_leisure & activity_private) | activity_is_sleep,
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
@@ -133,34 +119,43 @@ activity_summaries_2015 = data_activities_2015 |>
     #                           activity3_is_childcare | activity4_is_childcare)
     #                           | WithChild == 1,
     
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare) | 
-      WithChild == 1,
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
+                              WithChild == 1) & !private_leisure, 
     # activity_ischildcare = activity1_is_childcare | WithChild == 1,
-  
+    
     # general: is work?
     # activity_iswork = (activity1_is_work | activity2_is_work | 
     #                      activity3_is_work | activity4_is_work),
     
-    activity_iswork = (activity1_is_work | activity2_is_work),
+    activity_iswork = (activity1_is_work | activity2_is_work) & !private_leisure,
     # activity_iswork = activity1_is_work,
     
     # general: is domestic?
     # activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
     #                          activity3_is_domestic | activity4_is_domestic),
-    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic),
+    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic) & !private_leisure ,
     # activity_isdomestic = activity1_is_domestic,
     # activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
     #                          activity3_is_otherdomestic | activity4_is_otherdomestic),
     activity_isotherdomestic = (activity1_is_otherdomestic | 
-                                  activity2_is_otherdomestic),
+                                  activity2_is_otherdomestic) & !private_leisure,
     # activity_isotherdomestic = activity1_is_otherdomestic,
     
     # make weekend identifier
-    is_weekend = if_else(ddayw != 1, 1, 0)) |>
-  
+    is_weekend = if_else(ddayw != 1, 1, 0))
+
+# only keep information collected at the same point as the time use data
+diarymonth_households_2015 = unique_interview_months(data_activities_2015)
+
+# find time diaries and number of diaries everyone completes
+individual_diaries_2015 = unique_interview_diaries(data_activities_2015)
+
+# finding time use
+activity_summaries_2015 = data_activities_2015 |>
   # add up time use in hours per interview day
   group_by(serial, pnum, is_weekend) |>
   summarise(
+    total_sleep = sum(eptime[activity_is_sleep], na.rm = TRUE) / 60,
     total_leisure = sum(eptime[activity_is_leisure], na.rm = TRUE) / 60,
     total_private_leisure = sum(eptime[private_leisure], na.rm = TRUE) / 60,
     total_leisure_r = sum(eptime[activity_is_leisure_r], na.rm = TRUE) / 60,
@@ -273,11 +268,12 @@ individual_sex_2015 = data_individual_2015 |>
 # cumsum is computed before filtering so episode timing is correct.
 child_8_9_intervals = data_activities_2015 |>
   semi_join(kids_8_9_2015, by = c("serial", "pnum")) |>
-  select(serial, pnum, ddayw, IMonth, IYear, eptime, WithMother, WithFather) |>
+  select(serial, pnum, ddayw, IMonth, IYear, eptime, WithMother, WithFather,
+         private_leisure) |>
   group_by(serial, pnum, ddayw, IMonth, IYear) |>
   mutate(end_min = cumsum(eptime), start_min = end_min - eptime) |>
   ungroup() |>
-  filter(WithMother == 1 | WithFather == 1)
+  filter(WithMother == 1 | WithFather == 1, !private_leisure)
 
 child_with_mother = child_8_9_intervals |>
   filter(WithMother == 1) |>
@@ -299,9 +295,7 @@ parent_non_childcare_eps = data_activities_2015 |>
   ungroup() |>
   filter(
     !(whatdoing %in% childcare_actlines |
-        What_Oth1 %in% childcare_actlines |
-        What_Oth2 %in% childcare_actlines |
-        What_Oth3 %in% childcare_actlines),
+        What_Oth1 %in% childcare_actlines), 
     WithChild == 0)
 
 # Interval overlap join: find parent episodes that overlap with a child aged 8-9
@@ -387,7 +381,11 @@ data_working_couples_2015 = data_individual_2015 |>
     total_otherdomestic_exp = wage * sum(total_otherdomestic),
     y_individual = wage * 24) |>
     # y_individual = wage * 48) |>
-  ungroup()
+  ungroup() |>
+  
+  # merge information about domestic help
+  inner_join(data_hh_2015 |> select(serial, has_childcare_help, 
+                                    has_otherdomestic_help), by = c("serial"))
 
 # parents
 data_working_parents_2015 = data_working_couples_2015 |>
@@ -395,12 +393,12 @@ data_working_parents_2015 = data_working_couples_2015 |>
   # merge kid information 
   inner_join(kids_counts_2015, by = c("serial")) |>
   inner_join(kids_age_dist_2015, by = c("serial")) |>
-  inner_join(kids_age_wide_2015, by = c("serial")) |>
   
-  # merge information about domestic help
-  inner_join(data_hh_2015 |> select(serial, has_childcare_help, 
-                                    has_otherdomestic_help), by = c("serial")) |>
-
+  filter(dhhtype %in% c(2,3)) |>
+  
+  # keep households with under-18 kids
+  filter(NumChild > 0 & kid_age_min < 18) |>
+  
   group_by(serial) |>
   
   # check for couples who both have time diaries (filter after joins)
@@ -410,9 +408,6 @@ data_working_parents_2015 = data_working_couples_2015 |>
   
   # only keep couples who both have time diaries (filter after both joins)
   filter(spouse_present) |>
-
-  # keep households with under-18 kids
-  filter(kid_age_min < 18) |>
   
   # more child information
   mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
@@ -447,16 +442,14 @@ parents_est_data_2015 = data_working_parents_2015 |>
     serial, is_weekend, sex_tag, dgorpaf, Income, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
     num_kids_total, num_kids_male, num_kids_female,
-    kid_age_min, kid_age_max, kid_age_mean,
-    num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help, 
+    kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help, 
     has_otherdomestic_help, child_under_five, num_under_5, 
     num_under_10, has_young_child) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
     id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, Income, 
                 num_kids_male, num_kids_female,
-                kid_age_min, kid_age_max, kid_age_mean,
-                num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help,
+                kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help,
                 has_otherdomestic_help, child_under_five, num_under_5, 
                 num_under_10, has_young_child),
     names_from = sex_tag,
