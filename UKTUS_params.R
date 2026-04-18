@@ -5,6 +5,9 @@ setwd(wd)
 # import functions
 source("functions.R")
 
+# regional wealth
+source("regionalwealth.R")
+
 # directories
 data_direct = paste0(wd,"/uktus_data/")
 uktus_2000_direct = paste0(data_direct,"UKDA-4504-stata8_se/stata8_se/")

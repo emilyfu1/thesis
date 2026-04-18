@@ -1,50 +1,39 @@
-library(tidyverse)
-library(systemfit)
-
-# setwd
-wd = Sys.getenv("THESIS_WD")
-setwd(wd)
-
-# actlines and directories
-source("UKTUS_params.R")
-
-# functions
-source("functions.R")
-
-# data
-source("datacleaning_UKTUS_2015.R")
-source("datacleaning_UKTUS_2000.R")
+################################# Merging data #################################
 
 parents_est_data_merged = bind_rows(
   parents_est_data_2000 |> mutate(sample = "2000"), 
   parents_est_data_2015 |> mutate(sample = "2015"))
 
-parents_est_data_merged_weekday = bind_rows(
-  parents_est_data_2000_weekday |> mutate(sample = "2000"), 
-  parents_est_data_2015_weekday |> mutate(sample = "2015"))
+parents_est_data_merged_weekday = parents_est_data_merged |>
+  filter(is_weekend == 0)
 
-parents_est_data_merged_weekend = bind_rows(
-  parents_est_data_2000_weekend |> mutate(sample = "2000"), 
-  parents_est_data_2015_weekend |> mutate(sample = "2015"))
+parents_est_data_merged_weekend = parents_est_data_merged |>
+  filter(is_weekend == 1)
 
 nonparents_est_data_merged = bind_rows(
   nonparents_est_data_2000 |> mutate(sample = "2000"), 
   nonparents_est_data_2015 |> mutate(sample = "2015"))
 
-nonparents_est_data_merged_weekday = bind_rows(
-  nonparents_est_data_2000_weekday |> mutate(sample = "2000"), 
-  nonparents_est_data_2015_weekday |> mutate(sample = "2015"))
+nonparents_est_data_merged_weekday = nonparents_est_data_merged |>
+  filter(is_weekend == 0)
 
-nonparents_est_data_merged_weekend = bind_rows(
-  nonparents_est_data_2000_weekend |> mutate(sample = "2000"), 
-  nonparents_est_data_2015_weekend |> mutate(sample = "2015"))
+nonparents_est_data_merged_weekend = nonparents_est_data_merged |>
+  filter(is_weekend == 1)
 
 everyone_est_data_merged = bind_rows(
-  nonparents_est_data_merged_weekday |> mutate(is_parent = 0),
-  parents_est_data_merged_weekday |> mutate(is_parent = 1))
+  nonparents_est_data_merged |> mutate(is_parent = 0),
+  parents_est_data_merged |> mutate(is_parent = 1))
 
-everyone_est_data_2000 = everyone_est_data_merged |> filter(sample == "2000")
-everyone_est_data_2015 = everyone_est_data_merged |> filter(sample == "2015")
+everyone_est_data_merged_weekday = everyone_est_data_merged |>
+  filter(is_weekend == 0)
+
+everyone_est_data_merged_weekend = everyone_est_data_merged |>
+  filter(is_weekend == 1)
+
+everyone_est_data_2000 = everyone_est_data_merged_weekday |> 
+  filter(sample == "2000")
+everyone_est_data_2015 = everyone_est_data_merged_weekday |> 
+  filter(sample == "2015")
 
 
 ################################################################################
@@ -90,30 +79,30 @@ shares_parents_ownsex_r_merged = add_shares_from_lm(parents_res_r_within_merged,
 
 # including sleep and personal care
 parents_unres_within_2015 = systemfit(p_eqns_within, method = "SUR", 
-                                  data = parents_est_data_2015_weekday)
+                                  data = parents_est_data_2015)
 # excluding sleep and personal care
 parents_unres_r_within_2015 = systemfit(p_eqns_r_within, method = "SUR", 
-                                    data = parents_est_data_2015_weekday)
+                                    data = parents_est_data_2015)
 
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
 parents_res_within_2015 = systemfit(p_eqns_within, method = "SUR", 
-                                data = parents_est_data_2015_weekday,
+                                data = parents_est_data_2015,
                                 restrict.regMat = p_modReg_within)
 # excluding sleep and personal care
 parents_res_r_within_2015 = systemfit(p_eqns_r_within, method = "SUR", 
-                                  data = parents_est_data_2015_weekday, 
+                                  data = parents_est_data_2015, 
                                   restrict.regMat = p_modReg_within)
 
 ### calculate resource shares
 
 shares_parents_ownsex_2015 = add_shares_from_lm(parents_res_within_2015, 
-                                            data=parents_est_data_2015_weekday, 
+                                            data=parents_est_data_2015, 
                                             dev_type = "own",
                                             data_type = "parents")
 shares_parents_ownsex_r_2015 = add_shares_from_lm(parents_res_r_within_2015, 
-                                              data=parents_est_data_2015_weekday, 
+                                              data=parents_est_data_2015, 
                                               dev_type = "own",
                                               data_type = "parents")
 
@@ -123,30 +112,30 @@ shares_parents_ownsex_r_2015 = add_shares_from_lm(parents_res_r_within_2015,
 
 # including sleep and personal care
 parents_unres_within_2000 = systemfit(p_eqns_within, method = "SUR", 
-                                  data = parents_est_data_2000_weekday)
+                                  data = parents_est_data_2000)
 # excluding sleep and personal care
 parents_unres_r_within_2000 = systemfit(p_eqns_r_within, method = "SUR", 
-                                    data = parents_est_data_2000_weekday)
+                                    data = parents_est_data_2000)
 
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
 parents_res_within_2000 = systemfit(p_eqns_within, method = "SUR", 
-                                data = parents_est_data_2000_weekday,
+                                data = parents_est_data_2000,
                                 restrict.regMat = p_modReg_within)
 # excluding sleep and personal care
 parents_res_r_within_2000 = systemfit(p_eqns_r_within, method = "SUR", 
-                                  data = parents_est_data_2000_weekday, 
+                                  data = parents_est_data_2000, 
                                   restrict.regMat = p_modReg_within)
 
 ### calculate resource shares
 
 shares_parents_ownsex_2000 = add_shares_from_lm(parents_res_within_2000, 
-                                            data=parents_est_data_2000_weekday, 
+                                            data=parents_est_data_2000, 
                                             dev_type = "own",
                                             data_type = "parents")
 shares_parents_ownsex_r_2000 = add_shares_from_lm(parents_res_r_within_2000, 
-                                              data=parents_est_data_2000_weekday, 
+                                              data=parents_est_data_2000, 
                                               dev_type = "own",
                                               data_type = "parents")
 
@@ -156,22 +145,22 @@ shares_parents_ownsex_r_2000 = add_shares_from_lm(parents_res_r_within_2000,
 
 # the 2000 sharing rule using the 2015 data
 counterfactual_2000sharing_2015data = add_shares_from_lm(
-  parents_res_within_2000, data = parents_est_data_2015_weekday,
+  parents_res_within_2000, data = parents_est_data_2015,
   dev_type = "own", data_type = "parents")
 
 # the 2015 sharing rule using the 2000 data
 counterfactual_2015sharing_2000data = add_shares_from_lm(
-  parents_res_within_2015, data = parents_est_data_2000_weekday,
+  parents_res_within_2015, data = parents_est_data_2000,
   dev_type = "own", data_type = "parents")
 
 # the main sharing rule (estimated using both years) using the 2000 data
 counterfactual_mainsharing_2000data = add_shares_from_lm(
-  parents_res_within_merged, data=parents_est_data_2000_weekday, dev_type = "own",
+  parents_res_within_merged, data=parents_est_data_2000, dev_type = "own",
   data_type = "parents")
 
 # the main sharing rule (estimated using both years) using the 2015 data
 counterfactual_mainsharing_2015data = add_shares_from_lm(
-  parents_res_within_merged, data=parents_est_data_2015_weekday, dev_type = "own",
+  parents_res_within_merged, data=parents_est_data_2015, dev_type = "own",
   data_type = "parents")
 
 # the 2000 sharing rule using all data
@@ -188,22 +177,22 @@ counterfactual_2015sharing_alldata = add_shares_from_lm(
 
 # the 2000 sharing rule using the 2015 data
 counterfactual_2000sharing_2015data_r = add_shares_from_lm(
-  parents_res_r_within_2000, data = parents_est_data_2015_weekday,
+  parents_res_r_within_2000, data = parents_est_data_2015,
   dev_type = "own", data_type = "parents")
 
 # the 2015 sharing rule using the 2000 data
 counterfactual_2015sharing_2000data_r = add_shares_from_lm(
-  parents_res_r_within_2015, data = parents_est_data_2000_weekday,
+  parents_res_r_within_2015, data = parents_est_data_2000,
   dev_type = "own", data_type = "parents")
 
 # the main sharing rule (estimated using both years) using the 2000 data
 counterfactual_mainsharing_2000data_r = add_shares_from_lm(
-  parents_res_r_within_merged, data=parents_est_data_2000_weekday, dev_type = "own",
+  parents_res_r_within_merged, data=parents_est_data_2000, dev_type = "own",
   data_type = "parents")
 
 # the main sharing rule (estimated using both years) using the 2015 data
 counterfactual_mainsharing_2015data_r = add_shares_from_lm(
-  parents_res_r_within_merged, data=parents_est_data_2015_weekday, dev_type = "own",
+  parents_res_r_within_merged, data=parents_est_data_2015, dev_type = "own",
   data_type = "parents")
 
 # the 2000 sharing rule using all data
@@ -381,30 +370,30 @@ shares_nonparents_ownsex_r_merged = add_shares_from_lm(nonparents_res_r_within_m
 
 # including sleep and personal care
 nonparents_unres_within_2015 = systemfit(np_eqns_within, method = "SUR", 
-                                  data = nonparents_est_data_2015_weekday)
+                                  data = nonparents_est_data_2015)
 # excluding sleep and personal care
 nonparents_unres_r_within_2015 = systemfit(np_eqns_r_within, method = "SUR", 
-                                    data = nonparents_est_data_2015_weekday)
+                                    data = nonparents_est_data_2015)
 
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
 nonparents_res_within_2015 = systemfit(np_eqns_within, method = "SUR", 
-                                data = nonparents_est_data_2015_weekday,
+                                data = nonparents_est_data_2015,
                                 restrict.regMat = np_modReg_within)
 # excluding sleep and personal care
 nonparents_res_r_within_2015 = systemfit(np_eqns_r_within, method = "SUR", 
-                                  data = nonparents_est_data_2015_weekday, 
+                                  data = nonparents_est_data_2015, 
                                   restrict.regMat = np_modReg_within)
 
 ### calculate resource shares
 
 shares_nonparents_ownsex_2015 = add_shares_from_lm(nonparents_res_within_2015, 
-                                            data=nonparents_est_data_2015_weekday, 
+                                            data=nonparents_est_data_2015, 
                                             dev_type = "own",
                                             data_type = "nonparents")
 shares_nonparents_ownsex_r_2015 = add_shares_from_lm(nonparents_res_r_within_2015, 
-                                              data=nonparents_est_data_2015_weekday, 
+                                              data=nonparents_est_data_2015, 
                                               dev_type = "own",
                                               data_type = "nonparents")
 
@@ -414,36 +403,36 @@ shares_nonparents_ownsex_r_2015 = add_shares_from_lm(nonparents_res_r_within_201
 
 # including sleep and personal care
 nonparents_unres_within_2000 = systemfit(np_eqns_within, method = "SUR", 
-                                  data = nonparents_est_data_2000_weekday)
+                                  data = nonparents_est_data_2000)
 # excluding sleep and personal care
 nonparents_unres_r_within_2000 = systemfit(np_eqns_r_within, method = "SUR", 
-                                    data = nonparents_est_data_2000_weekday)
+                                    data = nonparents_est_data_2000)
 
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
 nonparents_res_within_2000 = systemfit(np_eqns_within, method = "SUR", 
-                                data = nonparents_est_data_2000_weekday,
+                                data = nonparents_est_data_2000,
                                 restrict.regMat = np_modReg_within)
 # excluding sleep and personal care
 nonparents_res_r_within_2000 = systemfit(np_eqns_r_within, method = "SUR", 
-                                  data = nonparents_est_data_2000_weekday, 
+                                  data = nonparents_est_data_2000, 
                                   restrict.regMat = np_modReg_within)
 
 ### calculate resource shares
 shares_nonparents_ownsex_2000 = add_shares_from_lm(nonparents_res_within_2000, 
-                                            data=nonparents_est_data_2000_weekday, 
+                                            data=nonparents_est_data_2000, 
                                             dev_type = "own",
                                             data_type = "nonparents")
 shares_nonparents_ownsex_r_2000 = add_shares_from_lm(nonparents_res_r_within_2000, 
-                                              data=nonparents_est_data_2000_weekday, 
+                                              data=nonparents_est_data_2000, 
                                               dev_type = "own",
                                               data_type = "nonparents")
 
 ########################## merge with sharing_est_data #########################
 
 nonparents_est_data_merged_shares = inner_join(shares_nonparents_ownsex_r_merged$data,
-                                               nonparents_est_data_merged_weekday,
+                                               nonparents_est_data_merged,
                                                by=c('serial')) |>
   rename(shareown_etahat_r_f = shareown_etahat_f,
          shareown_etahat_r_m = shareown_etahat_m) |>
@@ -463,30 +452,30 @@ nonparents_est_data_merged_shares = inner_join(shares_nonparents_ownsex_r_merged
 
 # including sleep and personal care
 everyone_unres_within_merged = systemfit(np_eqns_within, method = "SUR", 
-                                           data = everyone_est_data_merged)
+                                           data = everyone_est_data_merged_weekday)
 # excluding sleep and personal care
 everyone_unres_r_within_merged = systemfit(np_eqns_r_within, method = "SUR", 
-                                             data = everyone_est_data_merged)
+                                             data = everyone_est_data_merged_weekday)
 
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
 everyone_res_within_merged = systemfit(np_eqns_within, method = "SUR", 
-                                         data = everyone_est_data_merged,
+                                         data = everyone_est_data_merged_weekday,
                                          restrict.regMat = np_modReg_within)
 # excluding sleep and personal care
 everyone_res_r_within_merged = systemfit(np_eqns_r_within, method = "SUR", 
-                                           data = everyone_est_data_merged, 
+                                           data = everyone_est_data_merged_weekday, 
                                            restrict.regMat = np_modReg_within)
 
 ### calculate resource shares
 
 shares_everyone_ownsex_merged = add_shares_from_lm(everyone_res_within_merged, 
-                                                     data=everyone_est_data_merged, 
+                                                     data=everyone_est_data_merged_weekday, 
                                                      dev_type = "own",
                                                    data_type = "nonparents")
 shares_everyone_ownsex_r_merged = add_shares_from_lm(everyone_res_r_within_merged, 
-                                                       data=everyone_est_data_merged, 
+                                                       data=everyone_est_data_merged_weekday, 
                                                        dev_type = "own",
                                                      data_type = "nonparents")
 
@@ -556,3 +545,15 @@ shares_everyone_ownsex_r_2000 = add_shares_from_lm(everyone_res_r_within_2000,
                                                      dev_type = "own",
                                                    data_type = "nonparents")
 
+########################## merge with sharing_est_data #########################
+
+everyone_est_data_merged_shares = inner_join(shares_everyone_ownsex_r_merged$data,
+                                            everyone_est_data_merged,
+                                            by=c('serial')) |>
+  rename(shareown_etahat_r_f = shareown_etahat_f,
+         shareown_etahat_r_m = shareown_etahat_m) |>
+  inner_join(shares_everyone_ownsex_merged$data, by=c('serial')) |>
+  mutate(share_budget_leisure_r = (private_leisure_exp_r_f + 
+                                     private_leisure_exp_r_m) / y,
+         share_budget_leisure = (private_leisure_exp_f + 
+                                   private_leisure_exp_m) / y)

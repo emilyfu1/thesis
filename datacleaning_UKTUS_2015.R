@@ -1,15 +1,3 @@
-library(tidyverse)
-library(haven)
-
-# actlines and directories
-source("UKTUS_params.R")
-
-# regional wealth
-source("regionalwealth.R")
-
-# setwd
-setwd(wd)
-
 ################################################################################
 ############################## ACTIVITY-LEVEL DATA #############################
 ################################################################################
