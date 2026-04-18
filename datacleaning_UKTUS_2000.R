@@ -474,9 +474,8 @@ parents_est_data_2000 = data_working_parents_2000 |>
     names_sep = "_") |>
   inner_join(regionalwealth_2000, by = c("dgorpaf")) |>
   
-  # fill in annual income, household budget, average age, age gap
-  mutate(income_annual = (NetWkly_f + NetWkly_m)*52,
-         y = y_individual_f + y_individual_m,
+  # fill in household budget, average age, age gap
+  mutate(y = y_individual_f + y_individual_m,
          avgage = (DVAge_f + DVAge_m)/2,
          agegap_m = DVAge_m - DVAge_f) |>
   

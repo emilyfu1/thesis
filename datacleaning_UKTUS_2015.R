@@ -445,11 +445,8 @@ parents_est_data_2015 = data_working_parents_2015 |>
     names_sep = "_") |>
   inner_join(regionalwealth_2014, by = c("dgorpaf")) |>
   
-  # fill in annual income, household budget, average age, age gap
-  mutate(income_annual = if_else(Income > 0, # treat don't know and refused
-                                 Income * 12,
-                                 (NetWkly_f + NetWkly_m)*52),
-         y = y_individual_f + y_individual_m,
+  # fill in household budget, average age, age gap
+  mutate(y = y_individual_f + y_individual_m,
          avgage = (DVAge_f + DVAge_m)/2,
          agegap_m = DVAge_m - DVAge_f) |>
   select(!Income) |>
@@ -483,8 +480,8 @@ parents_est_data_2015 = data_working_parents_2015 |>
     total_childcare_exp_m = total_childcare_exp_m * deflator_2014,
     total_childcare_exp_f = total_childcare_exp_f * deflator_2014,
     
-    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2000,
-    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2000,
+    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2014,
+    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2014,
     
     # regional wealth
     income_annual = income_annual * deflator_2014) |>
@@ -607,8 +604,8 @@ nonparents_est_data_2015 = data_working_nonparents_2015 |>
     private_leisure_exp_r_m = private_leisure_exp_r_m * deflator_2014,
     private_leisure_exp_r_f = private_leisure_exp_r_f * deflator_2014,
     
-    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2000,
-    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2000,
+    total_otherdomestic_exp_m = total_otherdomestic_exp_m * deflator_2014,
+    total_otherdomestic_exp_f = total_otherdomestic_exp_m * deflator_2014,
     
     # regional wealth
     income_annual = income_annual * deflator_2014) |>
