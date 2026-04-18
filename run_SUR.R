@@ -47,9 +47,6 @@ everyone_est_data_2000 = everyone_est_data_merged |> filter(sample == "2000")
 everyone_est_data_2015 = everyone_est_data_merged |> filter(sample == "2015")
 
 
-
-# this is a super long block of code! work in progress to make it more efficient
-
 ################################################################################
 #################################### PARENTS ###################################
 ################################################################################
@@ -65,24 +62,6 @@ parents_unres_within_merged = systemfit(p_eqns_within, method = "SUR",
 parents_unres_r_within_merged = systemfit(p_eqns_r_within, method = "SUR", 
                                       data = parents_est_data_merged_weekday)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-parents_unres_between_merged = systemfit(p_eqns_between, method = "SUR", 
-                                     data = parents_est_data_merged_weekday)
-# excluding sleep and personal care
-parents_unres_r_between_merged = systemfit(p_eqns_r_between, method = "SUR", 
-                                       data = parents_est_data_merged_weekday)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-parents_unres_opposite_merged = systemfit(p_eqns_opposite, method = "SUR", 
-                                      data = parents_est_data_merged_weekday)
-# excluding sleep and personal care
-parents_unres_r_opposite_merged = systemfit(p_eqns_r_opposite, method = "SUR", 
-                                        data = parents_est_data_merged_weekday)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -94,38 +73,8 @@ parents_res_r_within_merged = systemfit(p_eqns_r_within, method = "SUR",
                                     data = parents_est_data_merged_weekday, 
                                     restrict.regMat = p_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-parents_res_between_merged = systemfit(p_eqns_between, method = "SUR", 
-                                   data = parents_est_data_merged_weekday,
-                                   restrict.regMat = p_modReg_between)
-# excluding sleep and personal care
-parents_res_r_between_merged = systemfit(p_eqns_r_between, method = "SUR", 
-                                     data = parents_est_data_merged_weekday,
-                                     restrict.regMat = p_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-parents_res_opposite_merged = systemfit(p_eqns_opposite, method = "SUR", 
-                                    data = parents_est_data_merged_weekday,
-                                    restrict.regMat = p_modReg_opposite)
-# excluding sleep and personal care
-parents_res_r_opposite_merged = systemfit(p_eqns_r_opposite, method = "SUR", 
-                                      data = parents_est_data_merged_weekday,
-                                      restrict.regMat = p_modReg_opposite)
-
 ### calculate resource shares 
 
-shares_parents_bothsex_merged = add_shares_from_lm(parents_res_between_merged, 
-                                               data=parents_est_data_merged_weekday, 
-                                               dev_type = "all",
-                                               data_type = "parents")
-shares_parents_bothsex_r_merged = add_shares_from_lm(parents_res_r_between_merged, 
-                                                 data=parents_est_data_merged_weekday, 
-                                                 dev_type = "all",
-                                                 data_type = "parents")
 shares_parents_ownsex_merged = add_shares_from_lm(parents_res_within_merged, 
                                               data=parents_est_data_merged_weekday, 
                                               dev_type = "own",
@@ -133,14 +82,6 @@ shares_parents_ownsex_merged = add_shares_from_lm(parents_res_within_merged,
 shares_parents_ownsex_r_merged = add_shares_from_lm(parents_res_r_within_merged, 
                                                 data=parents_est_data_merged_weekday, 
                                                 dev_type = "own",
-                                                data_type = "parents")
-shares_parents_oppsex_merged = add_shares_from_lm(parents_res_opposite_merged, 
-                                              data=parents_est_data_merged_weekday, 
-                                              dev_type = "opp",
-                                              data_type = "parents")
-shares_parents_oppsex_r_merged = add_shares_from_lm(parents_res_r_opposite_merged, 
-                                                data=parents_est_data_merged_weekday, 
-                                                dev_type = "opp",
                                                 data_type = "parents")
 
 ################################## Using 2015 ##################################
@@ -154,24 +95,6 @@ parents_unres_within_2015 = systemfit(p_eqns_within, method = "SUR",
 parents_unres_r_within_2015 = systemfit(p_eqns_r_within, method = "SUR", 
                                     data = parents_est_data_2015_weekday)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-parents_unres_between_2015 = systemfit(p_eqns_between, method = "SUR", 
-                                   data = parents_est_data_2015_weekday)
-# excluding sleep and personal care
-parents_unres_r_between_2015 = systemfit(p_eqns_r_between, method = "SUR", 
-                                     data = parents_est_data_2015_weekday)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-parents_unres_opposite_2015 = systemfit(p_eqns_opposite, method = "SUR", 
-                                    data = parents_est_data_2015_weekday)
-# excluding sleep and personal care
-parents_unres_r_opposite_2015 = systemfit(p_eqns_opposite, method = "SUR", 
-                                      data = parents_est_data_2015_weekday)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -183,38 +106,8 @@ parents_res_r_within_2015 = systemfit(p_eqns_r_within, method = "SUR",
                                   data = parents_est_data_2015_weekday, 
                                   restrict.regMat = p_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-parents_res_between_2015 = systemfit(p_eqns_between, method = "SUR", 
-                                 data = parents_est_data_2015_weekday,
-                                 restrict.regMat = p_modReg_between)
-# excluding sleep and personal care
-parents_res_r_between_2015 = systemfit(p_eqns_r_between, method = "SUR", 
-                                   data = parents_est_data_2015_weekday,
-                                   restrict.regMat = p_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-parents_res_opposite_2015 = systemfit(p_eqns_opposite, method = "SUR", 
-                                  data = parents_est_data_2015_weekday,
-                                  restrict.regMat = p_modReg_opposite)
-# excluding sleep and personal care
-parents_res_r_opposite_2015 = systemfit(p_eqns_r_opposite, method = "SUR", 
-                                    data = parents_est_data_2015_weekday,
-                                    restrict.regMat = p_modReg_opposite)
-
 ### calculate resource shares
 
-shares_parents_bothsex_2015 = add_shares_from_lm(parents_res_between_2015, 
-                                             data=parents_est_data_2015_weekday, 
-                                             dev_type = "all",
-                                             data_type = "parents")
-shares_parents_bothsex_r_2015 = add_shares_from_lm(parents_res_r_between_2015, 
-                                               data=parents_est_data_2015_weekday, 
-                                               dev_type = "all",
-                                               data_type = "parents")
 shares_parents_ownsex_2015 = add_shares_from_lm(parents_res_within_2015, 
                                             data=parents_est_data_2015_weekday, 
                                             dev_type = "own",
@@ -222,14 +115,6 @@ shares_parents_ownsex_2015 = add_shares_from_lm(parents_res_within_2015,
 shares_parents_ownsex_r_2015 = add_shares_from_lm(parents_res_r_within_2015, 
                                               data=parents_est_data_2015_weekday, 
                                               dev_type = "own",
-                                              data_type = "parents")
-shares_parents_oppsex_2015 = add_shares_from_lm(parents_res_opposite_2015, 
-                                            data=parents_est_data_2015_weekday, 
-                                            dev_type = "opp",
-                                            data_type = "parents")
-shares_parents_oppsex_r_2015 = add_shares_from_lm(parents_res_r_opposite_2015, 
-                                              data=parents_est_data_2015_weekday, 
-                                              dev_type = "opp",
                                               data_type = "parents")
 
 ################################## Using 2000 ##################################
@@ -243,24 +128,6 @@ parents_unres_within_2000 = systemfit(p_eqns_within, method = "SUR",
 parents_unres_r_within_2000 = systemfit(p_eqns_r_within, method = "SUR", 
                                     data = parents_est_data_2000_weekday)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-parents_unres_between_2000 = systemfit(p_eqns_between, method = "SUR", 
-                                   data = parents_est_data_2000_weekday)
-# excluding sleep and personal care
-parents_unres_r_between_2000 = systemfit(p_eqns_r_between, method = "SUR", 
-                                     data = parents_est_data_2000_weekday)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-parents_unres_opposite_2000 = systemfit(p_eqns_opposite, method = "SUR", 
-                                    data = parents_est_data_2000_weekday)
-# excluding sleep and personal care
-parents_unres_r_opposite_2000 = systemfit(p_eqns_r_opposite, method = "SUR", 
-                                      data = parents_est_data_2000_weekday)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -272,38 +139,8 @@ parents_res_r_within_2000 = systemfit(p_eqns_r_within, method = "SUR",
                                   data = parents_est_data_2000_weekday, 
                                   restrict.regMat = p_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-parents_res_between_2000 = systemfit(p_eqns_between, method = "SUR", 
-                                 data = parents_est_data_2000_weekday,
-                                 restrict.regMat = p_modReg_between)
-# excluding sleep and personal care
-parents_res_r_between_2000 = systemfit(p_eqns_r_between, method = "SUR", 
-                                   data = parents_est_data_2000_weekday,
-                                   restrict.regMat = p_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-parents_res_opposite_2000 = systemfit(p_eqns_opposite, method = "SUR", 
-                                  data = parents_est_data_2000_weekday,
-                                  restrict.regMat = p_modReg_opposite)
-# excluding sleep and personal care
-parents_res_r_opposite_2000 = systemfit(p_eqns_r_opposite, method = "SUR", 
-                                    data = parents_est_data_2000_weekday,
-                                    restrict.regMat = p_modReg_opposite)
-
 ### calculate resource shares
 
-shares_parents_bothsex_2000 = add_shares_from_lm(parents_res_between_2000, 
-                                             data=parents_est_data_2000_weekday, 
-                                             dev_type = "all",
-                                             data_type = "parents")
-shares_parents_bothsex_r_2000 = add_shares_from_lm(parents_res_r_between_2000, 
-                                               data=parents_est_data_2000_weekday, 
-                                               dev_type = "all",
-                                               data_type = "parents")
 shares_parents_ownsex_2000 = add_shares_from_lm(parents_res_within_2000, 
                                             data=parents_est_data_2000_weekday, 
                                             dev_type = "own",
@@ -311,14 +148,6 @@ shares_parents_ownsex_2000 = add_shares_from_lm(parents_res_within_2000,
 shares_parents_ownsex_r_2000 = add_shares_from_lm(parents_res_r_within_2000, 
                                               data=parents_est_data_2000_weekday, 
                                               dev_type = "own",
-                                              data_type = "parents")
-shares_parents_oppsex_2000 = add_shares_from_lm(parents_res_opposite_2000, 
-                                            data=parents_est_data_2000_weekday, 
-                                            dev_type = "opp",
-                                            data_type = "parents")
-shares_parents_oppsex_r_2000 = add_shares_from_lm(parents_res_r_opposite_2000, 
-                                              data=parents_est_data_2000_weekday, 
-                                              dev_type = "opp",
                                               data_type = "parents")
 
 ############################ Counterfactual analysis ###########################
@@ -524,24 +353,6 @@ nonparents_unres_within_merged = systemfit(np_eqns_within, method = "SUR",
 nonparents_unres_r_within_merged = systemfit(np_eqns_r_within, method = "SUR", 
                                       data = nonparents_est_data_merged_weekday)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-nonparents_unres_between_merged = systemfit(np_eqns_between, method = "SUR", 
-                                     data = nonparents_est_data_merged_weekday)
-# excluding sleep and personal care
-nonparents_unres_r_between_merged = systemfit(np_eqns_r_between, method = "SUR", 
-                                       data = nonparents_est_data_merged_weekday)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-nonparents_unres_opposite_merged = systemfit(np_eqns_opposite, method = "SUR", 
-                                      data = nonparents_est_data_merged_weekday)
-# excluding sleep and personal care
-nonparents_unres_r_opposite_merged = systemfit(np_eqns_opposite, method = "SUR", 
-                                        data = nonparents_est_data_merged_weekday)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -553,38 +364,8 @@ nonparents_res_r_within_merged = systemfit(np_eqns_r_within, method = "SUR",
                                     data = nonparents_est_data_merged_weekday, 
                                     restrict.regMat = np_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-nonparents_res_between_merged = systemfit(np_eqns_between, method = "SUR", 
-                                   data = nonparents_est_data_merged_weekday,
-                                   restrict.regMat = np_modReg_between)
-# excluding sleep and personal care
-nonparents_res_r_between_merged = systemfit(np_eqns_r_between, method = "SUR", 
-                                     data = nonparents_est_data_merged_weekday,
-                                     restrict.regMat = np_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-nonparents_res_opposite_merged = systemfit(np_eqns_opposite, method = "SUR", 
-                                    data = nonparents_est_data_merged_weekday,
-                                    restrict.regMat = np_modReg_opposite)
-# excluding sleep and personal care
-nonparents_res_r_opposite_merged = systemfit(np_eqns_r_opposite, method = "SUR", 
-                                      data = nonparents_est_data_merged_weekday,
-                                      restrict.regMat = np_modReg_opposite)
-
 ### calculate resource shares
 
-shares_nonparents_bothsex_merged = add_shares_from_lm(nonparents_res_between_merged, 
-                                               data=nonparents_est_data_merged_weekday, 
-                                               dev_type = "all",
-                                               data_type = "nonparents")
-shares_nonparents_bothsex_r_merged = add_shares_from_lm(nonparents_res_r_between_merged, 
-                                                 data=nonparents_est_data_merged_weekday, 
-                                                 dev_type = "all",
-                                                 data_type = "nonparents")
 shares_nonparents_ownsex_merged = add_shares_from_lm(nonparents_res_within_merged, 
                                               data=nonparents_est_data_merged_weekday, 
                                               dev_type = "own",
@@ -592,14 +373,6 @@ shares_nonparents_ownsex_merged = add_shares_from_lm(nonparents_res_within_merge
 shares_nonparents_ownsex_r_merged = add_shares_from_lm(nonparents_res_r_within_merged, 
                                                 data=nonparents_est_data_merged_weekday, 
                                                 dev_type = "own",
-                                                data_type = "nonparents")
-shares_nonparents_oppsex_merged = add_shares_from_lm(nonparents_res_opposite_merged, 
-                                              data=nonparents_est_data_merged_weekday, 
-                                              dev_type = "opp",
-                                              data_type = "nonparents")
-shares_nonparents_oppsex_r_merged = add_shares_from_lm(nonparents_res_r_opposite_merged, 
-                                                data=nonparents_est_data_merged_weekday, 
-                                                dev_type = "opp",
                                                 data_type = "nonparents")
 
 ################################## Using 2015 ##################################
@@ -613,24 +386,6 @@ nonparents_unres_within_2015 = systemfit(np_eqns_within, method = "SUR",
 nonparents_unres_r_within_2015 = systemfit(np_eqns_r_within, method = "SUR", 
                                     data = nonparents_est_data_2015_weekday)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-nonparents_unres_between_2015 = systemfit(np_eqns_between, method = "SUR", 
-                                   data = nonparents_est_data_2015_weekday)
-# excluding sleep and personal care
-nonparents_unres_r_between_2015 = systemfit(np_eqns_r_between, method = "SUR", 
-                                     data = nonparents_est_data_2015_weekday)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-nonparents_unres_opposite_2015 = systemfit(np_eqns_opposite, method = "SUR", 
-                                    data = nonparents_est_data_2015_weekday)
-# excluding sleep and personal care
-nonparents_unres_r_opposite_2015 = systemfit(np_eqns_opposite, method = "SUR", 
-                                      data = nonparents_est_data_2015_weekday)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -642,38 +397,8 @@ nonparents_res_r_within_2015 = systemfit(np_eqns_r_within, method = "SUR",
                                   data = nonparents_est_data_2015_weekday, 
                                   restrict.regMat = np_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-nonparents_res_between_2015 = systemfit(np_eqns_between, method = "SUR", 
-                                 data = nonparents_est_data_2015_weekday,
-                                 restrict.regMat = np_modReg_between)
-# excluding sleep and personal care
-nonparents_res_r_between_2015 = systemfit(np_eqns_r_between, method = "SUR", 
-                                   data = nonparents_est_data_2015_weekday,
-                                   restrict.regMat = np_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-nonparents_res_opposite_2015 = systemfit(np_eqns_opposite, method = "SUR", 
-                                  data = nonparents_est_data_2015_weekday,
-                                  restrict.regMat = np_modReg_opposite)
-# excluding sleep and personal care
-nonparents_res_r_opposite_2015 = systemfit(np_eqns_r_opposite, method = "SUR", 
-                                    data = nonparents_est_data_2015_weekday,
-                                    restrict.regMat = np_modReg_opposite)
-
 ### calculate resource shares
 
-shares_nonparents_bothsex_2015 = add_shares_from_lm(nonparents_res_between_2015, 
-                                             data=nonparents_est_data_2015_weekday, 
-                                             dev_type = "all",
-                                             data_type = "nonparents")
-shares_nonparents_bothsex_r_2015 = add_shares_from_lm(nonparents_res_r_between_2015, 
-                                               data=nonparents_est_data_2015_weekday, 
-                                               dev_type = "all",
-                                               data_type = "nonparents")
 shares_nonparents_ownsex_2015 = add_shares_from_lm(nonparents_res_within_2015, 
                                             data=nonparents_est_data_2015_weekday, 
                                             dev_type = "own",
@@ -681,14 +406,6 @@ shares_nonparents_ownsex_2015 = add_shares_from_lm(nonparents_res_within_2015,
 shares_nonparents_ownsex_r_2015 = add_shares_from_lm(nonparents_res_r_within_2015, 
                                               data=nonparents_est_data_2015_weekday, 
                                               dev_type = "own",
-                                              data_type = "nonparents")
-shares_nonparents_oppsex_2015 = add_shares_from_lm(nonparents_res_opposite_2015, 
-                                            data=nonparents_est_data_2015_weekday, 
-                                            dev_type = "opp",
-                                            data_type = "nonparents")
-shares_nonparents_oppsex_r_2015 = add_shares_from_lm(nonparents_res_r_opposite_2015, 
-                                              data=nonparents_est_data_2015_weekday, 
-                                              dev_type = "opp",
                                               data_type = "nonparents")
 
 ################################## Using 2000 ##################################
@@ -702,24 +419,6 @@ nonparents_unres_within_2000 = systemfit(np_eqns_within, method = "SUR",
 nonparents_unres_r_within_2000 = systemfit(np_eqns_r_within, method = "SUR", 
                                     data = nonparents_est_data_2000_weekday)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-nonparents_unres_between_2000 = systemfit(np_eqns_between, method = "SUR", 
-                                   data = nonparents_est_data_2000_weekday)
-# excluding sleep and personal care
-nonparents_unres_r_between_2000 = systemfit(np_eqns_r_between, method = "SUR", 
-                                     data = nonparents_est_data_2000_weekday)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-nonparents_unres_opposite_2000 = systemfit(np_eqns_opposite, method = "SUR", 
-                                    data = nonparents_est_data_2000_weekday)
-# excluding sleep and personal care
-nonparents_unres_r_opposite_2000 = systemfit(np_eqns_opposite, method = "SUR", 
-                                      data = nonparents_est_data_2000_weekday)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -731,38 +430,7 @@ nonparents_res_r_within_2000 = systemfit(np_eqns_r_within, method = "SUR",
                                   data = nonparents_est_data_2000_weekday, 
                                   restrict.regMat = np_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-nonparents_res_between_2000 = systemfit(np_eqns_between, method = "SUR", 
-                                 data = nonparents_est_data_2000_weekday,
-                                 restrict.regMat = np_modReg_between)
-# excluding sleep and personal care
-nonparents_res_r_between_2000 = systemfit(np_eqns_r_between, method = "SUR", 
-                                   data = nonparents_est_data_2000_weekday,
-                                   restrict.regMat = np_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-nonparents_res_opposite_2000 = systemfit(np_eqns_opposite, method = "SUR", 
-                                  data = nonparents_est_data_2000_weekday,
-                                  restrict.regMat = np_modReg_opposite)
-# excluding sleep and personal care
-nonparents_res_r_opposite_2000 = systemfit(np_eqns_r_opposite, method = "SUR", 
-                                    data = nonparents_est_data_2000_weekday,
-                                    restrict.regMat = np_modReg_opposite)
-
 ### calculate resource shares
-
-shares_nonparents_bothsex_2000 = add_shares_from_lm(nonparents_res_between_2000, 
-                                             data=nonparents_est_data_2000_weekday, 
-                                             dev_type = "all",
-                                             data_type = "nonparents")
-shares_nonparents_bothsex_r_2000 = add_shares_from_lm(nonparents_res_r_between_2000, 
-                                               data=nonparents_est_data_2000_weekday, 
-                                               dev_type = "all",
-                                               data_type = "nonparents")
 shares_nonparents_ownsex_2000 = add_shares_from_lm(nonparents_res_within_2000, 
                                             data=nonparents_est_data_2000_weekday, 
                                             dev_type = "own",
@@ -770,14 +438,6 @@ shares_nonparents_ownsex_2000 = add_shares_from_lm(nonparents_res_within_2000,
 shares_nonparents_ownsex_r_2000 = add_shares_from_lm(nonparents_res_r_within_2000, 
                                               data=nonparents_est_data_2000_weekday, 
                                               dev_type = "own",
-                                              data_type = "nonparents")
-shares_nonparents_oppsex_2000 = add_shares_from_lm(nonparents_res_opposite_2000, 
-                                            data=nonparents_est_data_2000_weekday, 
-                                            dev_type = "opp",
-                                            data_type = "nonparents")
-shares_nonparents_oppsex_r_2000 = add_shares_from_lm(nonparents_res_r_opposite_2000, 
-                                              data=nonparents_est_data_2000_weekday, 
-                                              dev_type = "opp",
                                               data_type = "nonparents")
 
 ########################## merge with sharing_est_data #########################
@@ -808,24 +468,6 @@ everyone_unres_within_merged = systemfit(np_eqns_within, method = "SUR",
 everyone_unres_r_within_merged = systemfit(np_eqns_r_within, method = "SUR", 
                                              data = everyone_est_data_merged)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-everyone_unres_between_merged = systemfit(np_eqns_between, method = "SUR", 
-                                            data = everyone_est_data_merged)
-# excluding sleep and personal care
-everyone_unres_r_between_merged = systemfit(np_eqns_r_between, method = "SUR", 
-                                              data = everyone_est_data_merged)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-everyone_unres_opposite_merged = systemfit(np_eqns_opposite, method = "SUR", 
-                                             data = everyone_est_data_merged)
-# excluding sleep and personal care
-everyone_unres_r_opposite_merged = systemfit(np_eqns_opposite, method = "SUR", 
-                                               data = everyone_est_data_merged)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -837,38 +479,8 @@ everyone_res_r_within_merged = systemfit(np_eqns_r_within, method = "SUR",
                                            data = everyone_est_data_merged, 
                                            restrict.regMat = np_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-everyone_res_between_merged = systemfit(np_eqns_between, method = "SUR", 
-                                          data = everyone_est_data_merged,
-                                          restrict.regMat = np_modReg_between)
-# excluding sleep and personal care
-everyone_res_r_between_merged = systemfit(np_eqns_r_between, method = "SUR", 
-                                            data = everyone_est_data_merged,
-                                            restrict.regMat = np_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-everyone_res_opposite_merged = systemfit(np_eqns_opposite, method = "SUR", 
-                                           data = everyone_est_data_merged,
-                                           restrict.regMat = np_modReg_opposite)
-# excluding sleep and personal care
-everyone_res_r_opposite_merged = systemfit(np_eqns_r_opposite, method = "SUR", 
-                                             data = everyone_est_data_merged,
-                                             restrict.regMat = np_modReg_opposite)
-
 ### calculate resource shares
 
-shares_everyone_bothsex_merged = add_shares_from_lm(everyone_res_between_merged, 
-                                                      data=everyone_est_data_merged, 
-                                                      dev_type = "all",
-                                                    data_type = "nonparents")
-shares_everyone_bothsex_r_merged = add_shares_from_lm(everyone_res_r_between_merged, 
-                                                        data=everyone_est_data_merged, 
-                                                        dev_type = "all",
-                                                      data_type = "nonparents")
 shares_everyone_ownsex_merged = add_shares_from_lm(everyone_res_within_merged, 
                                                      data=everyone_est_data_merged, 
                                                      dev_type = "own",
@@ -876,14 +488,6 @@ shares_everyone_ownsex_merged = add_shares_from_lm(everyone_res_within_merged,
 shares_everyone_ownsex_r_merged = add_shares_from_lm(everyone_res_r_within_merged, 
                                                        data=everyone_est_data_merged, 
                                                        dev_type = "own",
-                                                     data_type = "nonparents")
-shares_everyone_oppsex_merged = add_shares_from_lm(everyone_res_opposite_merged, 
-                                                     data=everyone_est_data_merged, 
-                                                     dev_type = "opp",
-                                                   data_type = "nonparents")
-shares_everyone_oppsex_r_merged = add_shares_from_lm(everyone_res_r_opposite_merged, 
-                                                       data=everyone_est_data_merged, 
-                                                       dev_type = "opp",
                                                      data_type = "nonparents")
 
 ################################## Using 2015 ##################################
@@ -897,24 +501,6 @@ everyone_unres_within_2015 = systemfit(np_eqns_within, method = "SUR",
 everyone_unres_r_within_2015 = systemfit(np_eqns_r_within, method = "SUR", 
                                            data = everyone_est_data_2015)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-everyone_unres_between_2015 = systemfit(np_eqns_between, method = "SUR", 
-                                          data = everyone_est_data_2015)
-# excluding sleep and personal care
-everyone_unres_r_between_2015 = systemfit(np_eqns_r_between, method = "SUR", 
-                                            data = everyone_est_data_2015)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-everyone_unres_opposite_2015 = systemfit(np_eqns_opposite, method = "SUR", 
-                                           data = everyone_est_data_2015)
-# excluding sleep and personal care
-everyone_unres_r_opposite_2015 = systemfit(np_eqns_opposite, method = "SUR", 
-                                             data = everyone_est_data_2015)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -926,38 +512,8 @@ everyone_res_r_within_2015 = systemfit(np_eqns_r_within, method = "SUR",
                                          data = everyone_est_data_2015, 
                                          restrict.regMat = np_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-everyone_res_between_2015 = systemfit(np_eqns_between, method = "SUR", 
-                                        data = everyone_est_data_2015,
-                                        restrict.regMat = np_modReg_between)
-# excluding sleep and personal care
-everyone_res_r_between_2015 = systemfit(np_eqns_r_between, method = "SUR", 
-                                          data = everyone_est_data_2015,
-                                          restrict.regMat = np_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-everyone_res_opposite_2015 = systemfit(np_eqns_opposite, method = "SUR", 
-                                         data = everyone_est_data_2015,
-                                         restrict.regMat = np_modReg_opposite)
-# excluding sleep and personal care
-everyone_res_r_opposite_2015 = systemfit(np_eqns_r_opposite, method = "SUR", 
-                                           data = everyone_est_data_2015,
-                                           restrict.regMat = np_modReg_opposite)
-
 ### calculate resource shares
 
-shares_everyone_bothsex_2015 = add_shares_from_lm(everyone_res_between_2015, 
-                                                    data=everyone_est_data_2015, 
-                                                    dev_type = "all",
-                                                  data_type = "nonparents")
-shares_everyone_bothsex_r_2015 = add_shares_from_lm(everyone_res_r_between_2015, 
-                                                      data=everyone_est_data_2015, 
-                                                      dev_type = "all",
-                                                    data_type = "nonparents")
 shares_everyone_ownsex_2015 = add_shares_from_lm(everyone_res_within_2015, 
                                                    data=everyone_est_data_2015, 
                                                    dev_type = "own",
@@ -965,14 +521,6 @@ shares_everyone_ownsex_2015 = add_shares_from_lm(everyone_res_within_2015,
 shares_everyone_ownsex_r_2015 = add_shares_from_lm(everyone_res_r_within_2015, 
                                                      data=everyone_est_data_2015, 
                                                      dev_type = "own",
-                                                   data_type = "nonparents")
-shares_everyone_oppsex_2015 = add_shares_from_lm(everyone_res_opposite_2015, 
-                                                   data=everyone_est_data_2015, 
-                                                   dev_type = "opp",
-                                                 data_type = "nonparents")
-shares_everyone_oppsex_r_2015 = add_shares_from_lm(everyone_res_r_opposite_2015, 
-                                                     data=everyone_est_data_2015, 
-                                                     dev_type = "opp",
                                                    data_type = "nonparents")
 
 ################################## Using 2000 ##################################
@@ -986,24 +534,6 @@ everyone_unres_within_2000 = systemfit(np_eqns_within, method = "SUR",
 everyone_unres_r_within_2000 = systemfit(np_eqns_r_within, method = "SUR", 
                                            data = everyone_est_data_2000)
 
-### No restrictions on coefficients: deviations from average of men AND women
-
-# including sleep and personal care
-everyone_unres_between_2000 = systemfit(np_eqns_between, method = "SUR", 
-                                          data = everyone_est_data_2000)
-# excluding sleep and personal care
-everyone_unres_r_between_2000 = systemfit(np_eqns_r_between, method = "SUR", 
-                                            data = everyone_est_data_2000)
-
-### No restrictions on coefficients: deviations from average of opposite sex
-
-# including sleep and personal care
-everyone_unres_opposite_2000 = systemfit(np_eqns_opposite, method = "SUR", 
-                                           data = everyone_est_data_2000)
-# excluding sleep and personal care
-everyone_unres_r_opposite_2000 = systemfit(np_eqns_opposite, method = "SUR", 
-                                             data = everyone_est_data_2000)
-
 ### Restricted coefficients, deviations from average with own sex
 
 # including sleep and personal care
@@ -1015,38 +545,8 @@ everyone_res_r_within_2000 = systemfit(np_eqns_r_within, method = "SUR",
                                          data = everyone_est_data_2000, 
                                          restrict.regMat = np_modReg_within)
 
-### Restricted coefficients, deviations from average of men AND women
-
-# including sleep and personal care
-everyone_res_between_2000 = systemfit(np_eqns_between, method = "SUR", 
-                                        data = everyone_est_data_2000,
-                                        restrict.regMat = np_modReg_between)
-# excluding sleep and personal care
-everyone_res_r_between_2000 = systemfit(np_eqns_r_between, method = "SUR", 
-                                          data = everyone_est_data_2000,
-                                          restrict.regMat = np_modReg_between)
-
-### Restricted coefficients, deviations from average of opposite sex
-
-# including sleep and personal care
-everyone_res_opposite_2000 = systemfit(np_eqns_opposite, method = "SUR", 
-                                         data = everyone_est_data_2000,
-                                         restrict.regMat = np_modReg_opposite)
-# excluding sleep and personal care
-everyone_res_r_opposite_2000 = systemfit(np_eqns_r_opposite, method = "SUR", 
-                                           data = everyone_est_data_2000,
-                                           restrict.regMat = np_modReg_opposite)
-
 ### calculate resource shares
 
-shares_everyone_bothsex_2000 = add_shares_from_lm(everyone_res_between_2000, 
-                                                    data=everyone_est_data_2000, 
-                                                    dev_type = "all",
-                                                  data_type = "nonparents")
-shares_everyone_bothsex_r_2000 = add_shares_from_lm(everyone_res_r_between_2000, 
-                                                      data=everyone_est_data_2000, 
-                                                      dev_type = "all",
-                                                    data_type = "nonparents")
 shares_everyone_ownsex_2000 = add_shares_from_lm(everyone_res_within_2000, 
                                                    data=everyone_est_data_2000, 
                                                    dev_type = "own",
@@ -1054,13 +554,5 @@ shares_everyone_ownsex_2000 = add_shares_from_lm(everyone_res_within_2000,
 shares_everyone_ownsex_r_2000 = add_shares_from_lm(everyone_res_r_within_2000, 
                                                      data=everyone_est_data_2000, 
                                                      dev_type = "own",
-                                                   data_type = "nonparents")
-shares_everyone_oppsex_2000 = add_shares_from_lm(everyone_res_opposite_2000, 
-                                                   data=everyone_est_data_2000, 
-                                                   dev_type = "opp",
-                                                 data_type = "nonparents")
-shares_everyone_oppsex_r_2000 = add_shares_from_lm(everyone_res_r_opposite_2000, 
-                                                     data=everyone_est_data_2000, 
-                                                     dev_type = "opp",
                                                    data_type = "nonparents")
 
