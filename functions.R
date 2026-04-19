@@ -103,18 +103,40 @@ pay_to_weekly = function(pay, period) {
 ############################## Parents and couples #############################
 
 # find spouse/partner pairs in data
+# handles multi-couple dwellings: each couple gets a unique serial_hh formed by
+# appending a two-digit couple index (01, 02, ...) to the original serial.
+# single-couple households are unchanged (serial_hh == serial).
+# callers must replace serial with serial_hh after joining.
 find_spouse_pairs = function(relationships_data) {
-  spouse_pairs = relationships_data |> 
-    filter(pnum_is_spouse) |> 
-    distinct(serial, pnum, relevant_person) |> 
-    # keep only pairs of spouses/partners
+  # identify unique undirected couples {min_pnum, max_pnum} per household
+  unique_couples = relationships_data |>
+    filter(pnum_is_spouse) |>
+    distinct(serial, pnum, relevant_person) |>
+    mutate(pair_lo = pmin(pnum, relevant_person),
+           pair_hi = pmax(pnum, relevant_person)) |>
+    distinct(serial, pair_lo, pair_hi) |>
     group_by(serial) |>
-    filter(n() == 2) |>
+    mutate(couple_id  = row_number(),
+           n_couples  = n()) |>
     ungroup() |>
-    # rename as spouse_pnum 
-    rename(spouse_pnum = relevant_person) |> 
+    mutate(serial_hh = if_else(n_couples > 1,
+                               as.numeric(paste0(as.character(serial), 
+                                                 "0", as.character(couple_id))),
+                               serial))
+
+  # expand to one row per person
+  spouse_pairs = bind_rows(
+    unique_couples |> mutate(pnum = pair_lo, spouse_pnum = pair_hi),
+    unique_couples |> mutate(pnum = pair_hi, spouse_pnum = pair_lo)
+  ) |>
+    select(serial, pnum, spouse_pnum, serial_hh) |>
+    # drop households where any person appears in more than one identified pair
+    # (ambiguous relationships, e.g. someone coded as spouse to two people)
+    group_by(serial) |>
+    filter(!any(duplicated(pnum))) |>
+    ungroup() |>
     arrange(serial, pnum)
-  
+
   return(spouse_pairs)
 }
 

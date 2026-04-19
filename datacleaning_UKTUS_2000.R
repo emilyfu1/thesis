@@ -286,16 +286,23 @@ q10x_mid = c(108, 325, 650, 1083, 1516, 2275, 3120, 3600, 4200, 5625, 6667)
 # parents and non-parents
 data_working_couples_2000 = data_individual_2000 |>
 
-  # keep only valid education
-  filter(!is.na(educ)) |>
+  # keep only valid education, heterosexual households
+  filter(!is.na(educ), hhtype4 != 12) |>
 
-  # show number of diaries and only keep diary month
+  # show number of diaries
   inner_join(individual_diaries_2000, by = c("serial", "pnum")) |>
   # merge with time use
   inner_join(activity_summaries_2000, by = c("serial", "pnum")) |>
+  # merge information about domestic help and kids
+  inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
+                                    has_otherdomestic_help, 
+                                    num_kids_total, kid_age_min), 
+             by = c("serial")) |>
 
   # identify couples
   inner_join(spouse_pairs_2000, by = c("serial", "pnum")) |>
+  mutate(serial = serial_hh) |>
+  select(-serial_hh) |>
 
   # dealing with all different wage/hours related variables
 
@@ -398,18 +405,12 @@ data_working_couples_2000 = data_individual_2000 |>
     total_otherdomestic_exp = wage * sum(total_otherdomestic),
     y_individual = wage * 24) |>
     # y_individual = wage * 48) |>
-  ungroup() |>
-  
-  # merge information about domestic help and kids
-  inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
-                                    has_otherdomestic_help, 
-                                    num_kids_total, kid_age_min), 
-             by = c("serial"))
+  ungroup()
 
 # parents
 data_working_parents_2000 = data_working_couples_2000 |>
   
-  # keep only hetero couples with child in household, valid education
+  # exclude complex households
   filter(hhtype3 %in% c(3, 11)) |>
   
   # keep households with under-18 kids

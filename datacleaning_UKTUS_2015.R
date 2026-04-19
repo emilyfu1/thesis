@@ -179,6 +179,7 @@ data_hh_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_household.dta")) |>
 # individual level data
 data_individual_2015 = read_dta(paste0(uktus_2015_direct, 
                                        "uktus15_individual.dta")) |>
+  
   # keep if observation has age, sex
   filter(DVAge >= 0, DMSex >= 0) |>
   mutate(male = if_else(DMSex == 1, 1, 0), # sex dummy
@@ -323,12 +324,24 @@ activity_summaries_2015 = activity_summaries_2015 |>
 spouse_pairs_2015 = find_spouse_pairs(all_relationships_2015)
 
 data_working_couples_2015 = data_individual_2015 |>
-  filter(NumSSex == 0, !is.na(educ)) |>
-  inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
-  inner_join(diarymonth_households_2015, by = c("serial", "pnum")) |>
-  inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
-  inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
   
+  # keep only valid education, heterosexual households
+  filter(NumSSex == 0, !is.na(educ)) |>
+  
+  # show number of diaries
+  inner_join(individual_diaries_2015, by = c("serial", "pnum")) |>
+  
+  # merge with time use
+  inner_join(activity_summaries_2015, by = c("serial", "pnum")) |>
+  # merge information about domestic help
+  inner_join(data_hh_2015 |> select(serial, has_childcare_help, 
+                                    has_otherdomestic_help), by = c("serial")) |>
+  
+  # identify couples
+  inner_join(spouse_pairs_2015, by = c("serial", "pnum")) |>
+  mutate(serial = serial_hh) |>
+  select(-serial_hh) |>
+
   mutate(
     # NetWkly should be weekly earnings although some look like annual/monthly?
     NetWkly = case_when(
@@ -369,11 +382,7 @@ data_working_couples_2015 = data_individual_2015 |>
     total_otherdomestic_exp = wage * sum(total_otherdomestic),
     y_individual = wage * 24) |>
     # y_individual = wage * 48) |>
-  ungroup() |>
-  
-  # merge information about domestic help
-  inner_join(data_hh_2015 |> select(serial, has_childcare_help, 
-                                    has_otherdomestic_help), by = c("serial"))
+  ungroup()
 
 # parents
 data_working_parents_2015 = data_working_couples_2015 |>
@@ -382,6 +391,7 @@ data_working_parents_2015 = data_working_couples_2015 |>
   inner_join(kids_counts_2015, by = c("serial")) |>
   inner_join(kids_age_dist_2015, by = c("serial")) |>
   
+  # exclude complex households
   filter(dhhtype %in% c(2,3)) |>
   
   # keep households with under-18 kids
