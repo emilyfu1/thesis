@@ -129,16 +129,17 @@ data_activities_2000_long = data_activities_2000_wide |>
     #                           wit1 == 1 | wit2 == 1),
     activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
                               wit1 == 1) & !private_leisure, 
-    # activity_ischildcare = activity1_is_childcare | wit1 == 1,
+    # activity_ischildcare = (activity1_is_childcare | wit1 == 1) & !private_leisure,
     
     # general: is work?
-    activity_iswork = (activity1_is_work | activity2_is_work) & !private_leisure,
+    # activity_iswork = (activity1_is_work | activity2_is_work) & !private_leisure,
+    activity_iswork = activity1_is_work & !private_leisure,
     
     # general: is domestic?
-    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic) & !private_leisure,
-    # activity_isdomestic = activity1_is_domestic,
-    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic) & !private_leisure)
-  # activity_isotherdomestic = activity1_is_otherdomestic) |>
+    # activity_isdomestic = (activity1_is_domestic | activity2_is_domestic) & !private_leisure,
+    activity_isdomestic = activity1_is_domestic & !private_leisure,
+    # activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic) & !private_leisure)
+    activity_isotherdomestic = activity1_is_otherdomestic & !private_leisure)
   
 
 # only keep information collected at the same point as the time use data
@@ -197,8 +198,7 @@ data_hh_2000 = read_dta(paste0(uktus_2000_direct,
                                      hq9a16 == 1 | hq9a16 == 2 | hq9a16 == 3, 1, 0)) |>
   
   # since children under 8 don't appear in survey, find child characteristics here
-  mutate(num_kids_total = num0_2 + num3_4 + num5_9 + num10_15 + num16_17,
-         kid_age_min = if_else(ageyngst < 18, ageyngst, NA_real_))
+  mutate(num_kids_total = num0_2 + num3_4 + num5_9 + num10_15 + num16_17)
 
 # relationships in individual data
 all_relationships_2000 = data_hh_2000 |>
@@ -247,13 +247,13 @@ data_individual_2000 = read_dta(paste0(uktus_2000_direct,
          # Category 0: is anything less than that e.g. GSCEs
          educ = case_when(
            # Category 2: degree or higher
-           hiqual4 %in% c(1, 2) ~ 2,
+           hiqual4 == 1 ~ 2,
            
            # Category 1: end-of-school / pre-university
-           hiqual4 %in% c(3, 7) ~ 1,
+           hiqual4 %in% c(2, 3) ~ 1,
            
            # Category 0: below end-of-school
-           hiqual4 %in% c(4, 5, 6, 8, 9, 10, 11, 12) ~ 0,
+           hiqual4 %in% c(4, 5, 6, 7, 8, 9, 10, 11, 12) ~ 0,
            
            # Missing / invalid
            TRUE ~ NA_real_))
@@ -296,7 +296,7 @@ data_working_couples_2000 = data_individual_2000 |>
   # merge information about domestic help and kids
   inner_join(data_hh_2000 |> select(serial, hhtype3, has_childcare_help, 
                                     has_otherdomestic_help, 
-                                    num_kids_total, kid_age_min), 
+                                    num_kids_total), 
              by = c("serial")) |>
 
   # identify couples
@@ -414,7 +414,7 @@ data_working_parents_2000 = data_working_couples_2000 |>
   filter(hhtype3 %in% c(3, 11)) |>
   
   # keep households with under-18 kids
-  filter(num_kids_total > 0 & kid_age_min < 18) |>
+  filter(num_kids_total > 0) |>
   
   group_by(serial, is_weekend) |>
   
@@ -427,10 +427,10 @@ data_working_parents_2000 = data_working_couples_2000 |>
   filter(spouse_present) |>
   
   # more child information
-  mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
-         num_under_5 = num0_2 + num3_4,
+  mutate(num_under_5 = num0_2 + num3_4,
+         child_under_5 = ifelse(num0_2 + num3_4 > 0, 1, 0),
          num_under_10 = num0_2 + num3_4 + num5_9,
-         has_young_child = ifelse(num_under_10 > 0, 1, 0))
+         child_under_10 = ifelse(num_under_10 > 0, 1, 0))
 
 # get non-parent couples (including empty nesters: hhtype4 5/8 with all kids >= 18)
 data_working_nonparents_2000 = data_working_couples_2000 |>
@@ -461,15 +461,15 @@ parents_est_data_2000 = data_working_parents_2000 |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
-    num_kids_total, kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17,
-    has_childcare_help, has_otherdomestic_help, child_under_five, num_under_5, 
-    num_under_10, has_young_child) |>
+    num_kids_total, num0_2, num3_4, num5_9, num10_15, num16_17,
+    has_childcare_help, has_otherdomestic_help, child_under_5, num_under_5, 
+    num_under_10, child_under_10) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
-    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, kid_age_min,
+    id_cols = c(serial, is_weekend, dgorpaf, num_kids_total,
                 num0_2, num3_4, num5_9, num10_15, num16_17,
-                has_childcare_help, has_otherdomestic_help, child_under_five, 
-                num_under_5, num_under_10, has_young_child),
+                has_childcare_help, has_otherdomestic_help, child_under_5, 
+                num_under_5, num_under_10, child_under_10),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
@@ -528,11 +528,11 @@ parents_est_data_2000 = data_working_parents_2000 |>
     # deviation of household from regional wealth 
     dev_gdppc = rgdppc - mean(rgdppc, na.rm = TRUE),
     
-    # deviation of youngest child age
-    dev_ageyoungest = kid_age_min - mean(kid_age_min, na.rm = TRUE),
-    
     # deviation of total num kids
-    dev_numkids = num_kids_total - mean(num_kids_total, na.rm = TRUE)) |>
+    dev_numkids = num_kids_total - mean(num_kids_total, na.rm = TRUE),
+    
+    # deviation of num kids under 5
+    dev_numunder5 = num_under_5 - mean(num_under_5, na.rm = TRUE)) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
@@ -543,8 +543,8 @@ parents_est_data_2000 = data_working_parents_2000 |>
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc,
-         Bx_dev_ageyoungest = y * dev_ageyoungest,
-         Bx_dev_numkids = y * dev_numkids)
+         Bx_dev_numkids = y * dev_numkids,
+         Bx_dev_numunder5 = y * dev_numunder5)
 
 parents_est_data_2000_weekday = parents_est_data_2000 |>
   # keep only weekday data

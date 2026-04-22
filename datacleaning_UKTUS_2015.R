@@ -51,83 +51,84 @@ data_activities_2015 = read_dta(paste0(uktus_2015_direct, "uktus15_diary_ep_long
     activity4_is_otherdomestic = What_Oth3 %in% otherdomestic_actlines,
     
     # general: is leisure?
-    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
-    #                          activity3_is_leisure | activity4_is_leisure),
-    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
-    #                            activity3_is_leisure_r | activity4_is_leisure_r),
+    activity_is_leisure = (activity1_is_leisure | activity2_is_leisure | 
+                             activity3_is_leisure | activity4_is_leisure),
+    activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r | 
+                               activity3_is_leisure_r | activity4_is_leisure_r),
     
-    activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
-    activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r),
+    # activity_is_leisure = (activity1_is_leisure | activity2_is_leisure),
+    # activity_is_leisure_r = (activity1_is_leisure_r | activity2_is_leisure_r),
     # activity_is_leisure = activity1_is_leisure,
     # activity_is_leisure_r = activity1_is_leisure_r,
     
     # general: is sleep (only)?
-    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
-    #                        activity3_is_sleep | activity4_is_sleep),
+    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep | 
+                           activity3_is_sleep | activity4_is_sleep),
     
-    activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
+    # activity_is_sleep = (activity1_is_sleep | activity2_is_sleep),
     # activity_is_sleep = activity1_is_sleep,
     
     # general: is personal care (only)?
-    # activity_is_personalcare = (activity1_is_personalcare | 
-    #                               activity2_is_personalcare | 
-    #                               activity3_is_personalcare | 
-    #                               activity4_is_personalcare),
-    
     activity_is_personalcare = (activity1_is_personalcare | 
-                                  activity2_is_personalcare),
+                                  activity2_is_personalcare | 
+                                  activity3_is_personalcare | 
+                                  activity4_is_personalcare),
+    
+    # activity_is_personalcare = (activity1_is_personalcare | 
+    #                               activity2_is_personalcare),
     # activity_is_personalcare = activity1_is_personalcare,
     
     # general: is personal care OR sleep?
-    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
-    #                               activity2_is_personalcare_sleep | 
-    #                               activity3_is_personalcare_sleep | 
-    #                               activity4_is_personalcare_sleep),
-    
     activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
-                                        activity2_is_personalcare_sleep),
+                                  activity2_is_personalcare_sleep | 
+                                  activity3_is_personalcare_sleep | 
+                                  activity4_is_personalcare_sleep),
+    
+    # activity_is_personalcare_sleep = (activity1_is_personalcare_sleep | 
+    #                                     activity2_is_personalcare_sleep),
     # activity_is_personalcare_sleep = activity1_is_personalcare_sleep,
     
     # private (no relevant household members present)
     # note that sleep doesn't have accompanying copresence information
     # so i will just classify it as private
     activity_private = ((WithSpouse == 0 & WithChild == 0 & WithOther == 0) | WithNA == 1),
+    activity_private_kids = activity_private & (WithMother == 0 | WithFather == 0),
     # spouse not present
     activity_excludesspouse = WithSpouse == 0,
     
-    
     # general: is private leisure?
     private_leisure = (activity_is_leisure & activity_private) | activity_is_sleep,
+    private_leisure_kids = (activity_is_leisure & activity_private_kids) | activity_is_sleep,
     private_leisure_r = activity_is_leisure_r & activity_private,
     
     # general: is childcare?
     # includes any activity with a household child aged 0-7 present (WithChild)
     # child aged 8-9 presence added separately below via children's own diaries
-    # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare |
-    #                           activity3_is_childcare | activity4_is_childcare)
-    #                           | WithChild == 1,
+    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare |
+                              activity3_is_childcare | activity4_is_childcare
+                              | WithChild == 1) & !private_leisure,
     
-    activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
-                              WithChild == 1) & !private_leisure, 
-    # activity_ischildcare = activity1_is_childcare | WithChild == 1,
+    # activity_ischildcare = (activity1_is_childcare | activity2_is_childcare | 
+    #                           WithChild == 1) & !private_leisure, 
+    # activity_ischildcare = (activity1_is_childcare | WithChild == 1) & !private_leisure,
     
     # general: is work?
-    # activity_iswork = (activity1_is_work | activity2_is_work | 
-    #                      activity3_is_work | activity4_is_work),
+    activity_iswork = (activity1_is_work | activity2_is_work | 
+                         activity3_is_work | activity4_is_work)  & !private_leisure,
     
-    activity_iswork = (activity1_is_work | activity2_is_work) & !private_leisure,
-    # activity_iswork = activity1_is_work,
+    # activity_iswork = (activity1_is_work | activity2_is_work) & !private_leisure,
+    # activity_iswork = activity1_is_work & !private_leisure,
     
     # general: is domestic?
-    # activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
-    #                          activity3_is_domestic | activity4_is_domestic),
-    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic) & !private_leisure ,
-    # activity_isdomestic = activity1_is_domestic,
-    # activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
-    #                          activity3_is_otherdomestic | activity4_is_otherdomestic),
-    activity_isotherdomestic = (activity1_is_otherdomestic | 
-                                  activity2_is_otherdomestic) & !private_leisure,
-    # activity_isotherdomestic = activity1_is_otherdomestic,
+    activity_isdomestic = (activity1_is_domestic | activity2_is_domestic | 
+                             activity3_is_domestic | activity4_is_domestic)  & !private_leisure,
+    # activity_isdomestic = (activity1_is_domestic | activity2_is_domestic) & !private_leisure,
+    # activity_isdomestic = activity1_is_domestic & !private_leisure,
+    activity_isotherdomestic = (activity1_is_otherdomestic | activity2_is_otherdomestic | 
+                             activity3_is_otherdomestic | activity4_is_otherdomestic)  & !private_leisure,
+    # activity_isotherdomestic = (activity1_is_otherdomestic | 
+    #                               activity2_is_otherdomestic) & !private_leisure,
+    # activity_isotherdomestic = activity1_is_otherdomestic & !private_leisure,
     
     # make weekend identifier
     is_weekend = if_else(ddayw != 1, 1, 0))
@@ -191,14 +192,14 @@ data_individual_2015 = read_dta(paste0(uktus_2015_direct,
          # Category 0: is anything less than that e.g. GSCEs
          educ = case_when(
            # Category 2: degree or higher
-           HiQual %in% c(1, 2, 7, 8) ~ 2,
+           HiQual %in% c(1, 7, 8) ~ 2,
            
            # Category 1: end-of-school / pre-university
-           HiQual %in% c(3, 4, 5, 6, 9, 10, 11, 12, 13, 
+           HiQual %in% c(2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15,
                          16, 17, 18, 19, 24, 32) ~ 1,
            
            # Category 0: below end-of-school
-           HiQual %in% c(14, 15, 20, 21, 22, 23, 25, 26, 
+           HiQual %in% c(20, 21, 22, 23, 25, 26, 
                          27, 28, 29, 30, 31, 34) ~ 0,
            
            # Missing / invalid
@@ -258,11 +259,11 @@ individual_sex_2015 = data_individual_2015 |>
 child_8_9_intervals = data_activities_2015 |>
   semi_join(kids_8_9_2015, by = c("serial", "pnum")) |>
   select(serial, pnum, ddayw, IMonth, IYear, eptime, WithMother, WithFather,
-         private_leisure) |>
+         private_leisure_kids) |>
   group_by(serial, pnum, ddayw, IMonth, IYear) |>
   mutate(end_min = cumsum(eptime), start_min = end_min - eptime) |>
   ungroup() |>
-  filter(WithMother == 1 | WithFather == 1, !private_leisure)
+  filter(WithMother == 1 | WithFather == 1, !private_leisure_kids)
 
 child_with_mother = child_8_9_intervals |>
   filter(WithMother == 1) |>
@@ -283,8 +284,8 @@ parent_non_childcare_eps = data_activities_2015 |>
          ep_id = row_number()) |>
   ungroup() |>
   filter(
-    !(whatdoing %in% childcare_actlines |
-        What_Oth1 %in% childcare_actlines), 
+    !(whatdoing %in% childcare_actlines | What_Oth1 %in% childcare_actlines | 
+        What_Oth2 %in% childcare_actlines | What_Oth3 %in% childcare_actlines), 
     WithChild == 0)
 
 # Interval overlap join: find parent episodes that overlap with a child aged 8-9
@@ -395,7 +396,7 @@ data_working_parents_2015 = data_working_couples_2015 |>
   filter(dhhtype %in% c(2,3)) |>
   
   # keep households with under-18 kids
-  filter(NumChild > 0 & kid_age_min < 18) |>
+  filter(NumChild > 0) |>
   
   group_by(serial) |>
   
@@ -408,10 +409,10 @@ data_working_parents_2015 = data_working_couples_2015 |>
   filter(spouse_present) |>
   
   # more child information
-  mutate(child_under_five = ifelse(kid_age_min <= 5, 1, 0),
-         num_under_5 = num0_2 + num3_4,
+  mutate(num_under_5 = num0_2 + num3_4,
+         child_under_5 = ifelse(num_under_5 > 0, 1, 0),
          num_under_10 = num0_2 + num3_4 + num5_9,
-         has_young_child = ifelse(num_under_10 > 0, 1, 0))
+         child_under_10 = ifelse(num_under_10 > 0, 1, 0))
 
 # get non-parent couples
 data_working_nonparents_2015 = data_working_couples_2015 |>
@@ -439,17 +440,15 @@ parents_est_data_2015 = data_working_parents_2015 |>
   select(
     serial, is_weekend, sex_tag, dgorpaf, Income, all_of(vars_to_suffix),
     # child info (household-level already, duplicated across spouses)
-    num_kids_total, num_kids_male, num_kids_female,
-    kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help, 
-    has_otherdomestic_help, child_under_five, num_under_5, 
-    num_under_10, has_young_child) |>
+    num_kids_total, num0_2, num3_4, num5_9, num10_15, num16_17, 
+    has_childcare_help, has_otherdomestic_help, child_under_5, num_under_5, 
+    num_under_10, child_under_10) |>
   pivot_wider(
     # keep all the household-level stuff: kids, region, serial
     id_cols = c(serial, is_weekend, dgorpaf, num_kids_total, Income, 
-                num_kids_male, num_kids_female,
-                kid_age_min, num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help,
-                has_otherdomestic_help, child_under_five, num_under_5, 
-                num_under_10, has_young_child),
+                num0_2, num3_4, num5_9, num10_15, num16_17, has_childcare_help,
+                has_otherdomestic_help, child_under_5, num_under_5, 
+                num_under_10, child_under_10),
     names_from = sex_tag,
     values_from = all_of(vars_to_suffix),
     names_sep = "_") |>
@@ -508,11 +507,11 @@ parents_est_data_2015 = data_working_parents_2015 |>
     # deviation of household from regional wealth 
     dev_gdppc = rgdppc - mean(rgdppc, na.rm = TRUE),
     
-    # deviation of youngest child age
-    dev_ageyoungest = kid_age_min - mean(kid_age_min, na.rm = TRUE),
-    
     # deviation of total num kids
-    dev_numkids = num_kids_total - mean(num_kids_total, na.rm = TRUE)) |>
+    dev_numkids = num_kids_total - mean(num_kids_total, na.rm = TRUE),
+    
+    # deviation of num kids under 5
+    dev_numunder5 = num_under_5 - mean(num_under_5, na.rm = TRUE)) |>
   
   # interaction terms
   mutate(Bx_dev_wage_f_only = y * dev_wage_f_only,
@@ -523,8 +522,8 @@ parents_est_data_2015 = data_working_parents_2015 |>
          Bx_dev_avgage = y * dev_avgage,
          Bx_dev_agegap = y * dev_agegap,
          Bx_dev_gdppc = y * dev_gdppc,
-         Bx_dev_ageyoungest = y * dev_ageyoungest,
-         Bx_dev_numkids = y * dev_numkids)
+         Bx_dev_numkids = y * dev_numkids,
+         Bx_dev_numunder5 = y * dev_numunder5)
   
 parents_est_data_2015_weekday = parents_est_data_2015 |>
   # keep only weekday data

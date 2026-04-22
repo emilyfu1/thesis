@@ -40,10 +40,13 @@ options(digits=4)
 
 ```{r}
 
-summary = c("wage_f", "wage_m", "DVAge_f", "DVAge_m", "educ_f", "educ_m")
+summary_parents = c("wage_f", "wage_m", "DVAge_f", "DVAge_m", "educ_f", 
+                    "educ_m", "num_kids_total", "num_under_5")
+summary_nonparents = c("wage_f", "wage_m", "DVAge_f", "DVAge_m", "educ_f", 
+                    "educ_m")
 
-nonparents_summary = t(sapply(nonparents_est_data_merged_weekday[summary], summarytable))
-parents_summary = t(sapply(parents_est_data_merged_weekday[summary], summarytable))
+nonparents_summary = t(sapply(nonparents_est_data_merged_weekday[summary_nonparents], summarytable))
+parents_summary = t(sapply(parents_est_data_merged_weekday[summary_parents], summarytable))
 
 print("UKTUS working heterosexual couples (parents), pooled sample")
 print(as.data.frame(parents_summary))
@@ -53,26 +56,60 @@ print(as.data.frame(nonparents_summary))
 
 ## Baseline results
 
+Weekdays:
 ```{r}
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of parents (excluding sleep and personal care)")
+# Parents, narrow leisure, weekday
+print("Regression results (sharing rule) of parents (excluding sleep and personal care, weekday)")
 print(make_sysfit_kable_df(parents_res_r_within_merged, p_rows_within))
 
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of parents (including sleep and personal care)")
+# Parents, broad leisure, weekday
+print("Regression results (sharing rule) of parents (including sleep and personal care, weekday)")
 print(make_sysfit_kable_df(parents_res_within_merged, p_rows_within))
-```
 
-```{r}
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of non-parents (excluding sleep and personal care)")
+# Non-parents, narrow leisure, weekday
+print("Regression results (sharing rule) of non-parents (excluding sleep and personal care, weekday)")
 print(make_sysfit_kable_df(nonparents_res_r_within_merged, np_rows_within))
 
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of non-parents (including sleep and personal care)")
+# Non-parents, broad leisure, weekday
+print("Regression results (sharing rule) of non-parents (including sleep and personal care, weekday)")
 print(make_sysfit_kable_df(nonparents_res_within_merged, np_rows_within))
 ```
 
+Weekends:
+```{r}
+# Parents, narrow leisure, weekend
+print("Regression results (sharing rule) of parents (excluding sleep and personal care, weekend)")
+print(make_sysfit_kable_df(parents_res_r_weekend, p_rows_within))
+
+# Parents, broad leisure, weekend 
+print("Regression results (sharing rule) of parents (including sleep and personal care, weekend)")
+print(make_sysfit_kable_df(parents_res_weekend, p_rows_within))
+
+# Non-parents, narrow leisure, weekend
+print("Regression results (sharing rule) of non-parents (excluding sleep and personal care, weekend)")
+print(make_sysfit_kable_df(nonparents_res_r_weekend, np_rows_within))
+
+# Non-parents, broad leisure, weekend
+print("Regression results (sharing rule) of non-parents (including sleep and personal care, weekend)")
+print(make_sysfit_kable_df(nonparents_res_weekend, np_rows_within))
+
+```
+Separating sharing rules by year:
+```{r}
+# Parents, narrow leisure, weekday
+print("2000 sharing rule, parents (excluding sleep and personal care, weekday)")
+print(make_sysfit_kable_df(parents_res_r_within_2000, p_rows_within))
+print("2015 sharing rule, parents (excluding sleep and personal care, weekday)")
+print(make_sysfit_kable_df(parents_res_r_within_2015, p_rows_within))
+
+# Parents, broad leisure, weekday
+print("2000 sharing rule, parents (including sleep and personal care, weekday)")
+print(make_sysfit_kable_df(parents_res_within_2000, p_rows_within))
+print("2015 sharing rule, parents (including sleep and personal care, weekday)")
+print(make_sysfit_kable_df(parents_res_within_2015, p_rows_within))
+```
+
+Equality of parents and non-parents:
 ```{r}
 print(t.test(shares_nonparents_ownsex_merged$data$shareown_etahat_f))
 
@@ -93,12 +130,10 @@ print(t.test(shares_parents_ownsex_r_merged$data$shareown_etahat_f,
 
 ```{r fig.width=10, fig.height=8}
 
-narrowleisure_shares_p = plot_share_densities(parents_est_data_merged_shares |> filter(is_weekend == 1), 
-                                            dev_type = "own",
+narrowleisure_shares_p = plot_share_densities(parents_est_data_merged_shares |> filter(is_weekend == 0), 
                                             restrict_leisure = TRUE)
 
-broadleisure_shares_p = plot_share_densities(parents_est_data_merged_shares |> filter(is_weekend == 1), 
-                                           dev_type = "own",
+broadleisure_shares_p = plot_share_densities(parents_est_data_merged_shares |> filter(is_weekend == 0), 
                                            restrict_leisure = FALSE)
 
 combined_plot_p =
@@ -110,11 +145,10 @@ combined_plot_p =
       plot.title = element_text(face = "bold", size = 14),
       plot.subtitle = element_text(size = 11)))
 
-narrowleisure_shares_np = plot_share_densities(nonparents_est_data_merged_shares, 
-                                            dev_type = "own")
+narrowleisure_shares_np = plot_share_densities(nonparents_est_data_merged_shares |> filter(is_weekend == 0),
+                                               restrict_leisure = TRUE)
 
-broadleisure_shares_np = plot_share_densities(nonparents_est_data_merged_shares, 
-                                           dev_type = "own",
+broadleisure_shares_np = plot_share_densities(nonparents_est_data_merged_shares |> filter(is_weekend == 0), 
                                            restrict_leisure = FALSE)
 
 combined_plot_np =
@@ -131,38 +165,94 @@ combined_plot_baseline = wrap_elements(combined_plot_p) | wrap_elements(combined
 print(combined_plot_baseline)
 
 ```
-
+Marginal impacts tables
 ```{r}
-marginal_impacts_parents = marginal_impacts(shares_parents_ownsex_merged, 
+marginal_impacts_parents_weekday = marginal_impacts(shares_parents_ownsex_merged, 
                                            parents_est_data_merged, p_rows_within)
 
-marginal_impacts_nonparents = marginal_impacts(shares_nonparents_ownsex_merged, 
+marginal_impacts_nonparents_weekday = marginal_impacts(shares_nonparents_ownsex_merged, 
                                            nonparents_est_data_merged, np_rows_within, 
                                            data_type = "nonparents")
 
-marginal_impacts_parents_r = marginal_impacts(shares_parents_ownsex_r_merged, 
+marginal_impacts_parents_r_weekday = marginal_impacts(shares_parents_ownsex_r_merged, 
                                            parents_est_data_merged, p_rows_within)
 
-marginal_impacts_nonparents_r = marginal_impacts(shares_nonparents_ownsex_r_merged, 
+marginal_impacts_nonparents_r_weekday = marginal_impacts(shares_nonparents_ownsex_r_merged, 
                                            nonparents_est_data_merged, np_rows_within, 
                                            data_type = "nonparents")
 
 
-print("Interpretation of regression coefficients (excluding personal care and sleep, parents)")
-print(marginal_impacts_parents_r)
+print("Interpretation of regression coefficients (excluding personal care and sleep, parents, weekday)")
+print(marginal_impacts_parents_r_weekday)
 
-print("Interpretation of regression coefficients (including personal care and sleep, parents)")
-print(marginal_impacts_parents)
+print("Interpretation of regression coefficients (including personal care and sleep, parents, weekday)")
+print(marginal_impacts_parents_weekday)
 
-print("Interpretation of regression coefficients (excluding personal care and sleep, non-parents)")
-print(marginal_impacts_nonparents_r)
+print("Interpretation of regression coefficients (excluding personal care and sleep, non-parents, weekday)")
+print(marginal_impacts_nonparents_r_weekday)
 
-print("Interpretation of regression coefficients (including personal care and sleep, non-parents)")
-print(marginal_impacts_nonparents)
-
-
+print("Interpretation of regression coefficients (including personal care and sleep, non-parents, weekday)")
+print(marginal_impacts_nonparents_weekday)
 ```
-## Comparing narrow and broad leisure definitions:
+Weekday vs weekend:
+```{r}
+marginal_impacts_parents_weekend = marginal_impacts(shares_parents_weekend, 
+                                           parents_est_data_merged, p_rows_within)
+
+marginal_impacts_nonparents_weekend = marginal_impacts(shares_nonparents_weekend, 
+                                           nonparents_est_data_merged, np_rows_within, 
+                                           data_type = "nonparents")
+
+marginal_impacts_parents_r_weekend = marginal_impacts(shares_parents_r_weekend, 
+                                           parents_est_data_merged, p_rows_within)
+
+marginal_impacts_nonparents_r_weekend = marginal_impacts(shares_nonparents_r_weekend, 
+                                           nonparents_est_data_merged, np_rows_within, 
+                                           data_type = "nonparents")
+
+
+print("Interpretation of regression coefficients (excluding personal care and sleep, parents, weekend)")
+print(marginal_impacts_parents_r_weekend)
+
+print("Interpretation of regression coefficients (including personal care and sleep, parents, weekend)")
+print(marginal_impacts_parents_weekend)
+
+print("Interpretation of regression coefficients (excluding personal care and sleep, non-parents, weekend)")
+print(marginal_impacts_nonparents_r_weekend)
+
+print("Interpretation of regression coefficients (including personal care and sleep, non-parents, weekend)")
+print(marginal_impacts_nonparents_weekend)
+```
+
+More comparing sharing rules:
+```{r}
+marginal_impacts_counterfactual_2000 = marginal_impacts(counterfactual_2000sharing_alldata, 
+                                           parents_est_data_merged, p_rows_within)
+
+marginal_impacts_counterfactual_2015 = marginal_impacts(counterfactual_2015sharing_alldata, 
+                                           parents_est_data_merged, np_rows_within)
+
+
+marginal_impacts_counterfactual_r_2000 = marginal_impacts(counterfactual_2000sharing_alldata_r, 
+                                           parents_est_data_merged, p_rows_within)
+
+marginal_impacts_counterfactual_r_2015 = marginal_impacts(counterfactual_2015sharing_alldata_r, 
+                                           parents_est_data_merged, np_rows_within)
+
+print("Interpretation of regression coefficients (combined sample, 2000 sharing rule, including personal care and sleep, weekday)")
+print(marginal_impacts_counterfactual_2000)
+
+print("Interpretation of regression coefficients (combined sample, 2015 sharing rule, including personal care and sleep, weekday)")
+print(marginal_impacts_counterfactual_2015)
+
+print("Interpretation of regression coefficients (combined sample, 2000 sharing rule, excluding personal care and sleep, weekday)")
+print(marginal_impacts_counterfactual_r_2000)
+
+print("Interpretation of regression coefficients (combined sample, 2015 sharing rule, excluding personal care and sleep, weekday)")
+print(marginal_impacts_counterfactual_r_2015)
+```
+
+Comparing narrow and broad leisure definitions:
 ```{r}
 compare_shares = parents_est_data_merged_shares |>
   mutate(
@@ -187,25 +277,20 @@ print(compare_shares |>
   count(q_narrow, q_broad))
 ```
 
-## Comparing estimates across both UKTUS survey years:
-
+Comparing estimates across both UKTUS survey years:
 ```{r fig.width=10, fig.height=8}
 
-narrowleisure_shares_2000 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2000", is_weekend == 1), 
-                                            dev_type = "own",
-                                            restrict_leisure = TRUE)
+narrowleisure_shares_2000 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2000", is_weekend == 0), 
+                                                 restrict_leisure = TRUE)
 
-broadleisure_shares_2000 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2000", is_weekend == 1), 
-                                           dev_type = "own",
-                                           restrict_leisure = FALSE)
+broadleisure_shares_2000 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2000", is_weekend == 0), 
+                                               restrict_leisure = FALSE)
 
-narrowleisure_shares_2015 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2015", is_weekend == 1), 
-                                            dev_type = "own",
-                                            restrict_leisure = TRUE)
+narrowleisure_shares_2015 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2015", is_weekend == 0), 
+                                                 restrict_leisure = TRUE)
 
-broadleisure_shares_2015 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2015", is_weekend == 1),  
-                                           dev_type = "own",
-                                           restrict_leisure = FALSE)
+broadleisure_shares_2015 = plot_share_densities(parents_est_data_merged_shares |> filter(sample == "2015", is_weekend == 0),  
+                                                restrict_leisure = FALSE)
 
 combined_plot_2000 =
   narrowleisure_shares_2000 + broadleisure_shares_2000 +
@@ -229,23 +314,20 @@ combined_plot_years = wrap_elements(combined_plot_2000) | wrap_elements(combined
 
 print(combined_plot_years)
 ```
+
 ```{r fig.width=10, fig.height=8}
 
-narrowleisure_shares_2000 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2000"), 
-                                            dev_type = "own",
-                                            restrict_leisure = TRUE)
+narrowleisure_shares_2000 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2000", is_weekend == 0), 
+                                                 restrict_leisure = TRUE)
 
-broadleisure_shares_2000 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2000"),
-                                           dev_type = "own",
-                                           restrict_leisure = FALSE)
+broadleisure_shares_2000 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2000", is_weekend == 0),
+                                                restrict_leisure = FALSE)
 
-narrowleisure_shares_2015 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2015"),
-                                            dev_type = "own",
-                                            restrict_leisure = TRUE)
+narrowleisure_shares_2015 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2015", is_weekend == 0),
+                                                 restrict_leisure = TRUE)
 
-broadleisure_shares_2015 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2015"),
-                                           dev_type = "own",
-                                           restrict_leisure = FALSE)
+broadleisure_shares_2015 = plot_share_densities(nonparents_est_data_merged_shares |> filter(sample == "2015", is_weekend == 0),
+                                                restrict_leisure = FALSE)
 
 combined_plot_2000 =
   narrowleisure_shares_2000 + broadleisure_shares_2000 +
@@ -270,6 +352,38 @@ combined_plot_years = wrap_elements(combined_plot_2000) | wrap_elements(combined
 print(combined_plot_years)
 ```
 
+Comparing female resource share
+```{r fig.width=10, fig.height=5}
+plot_data_fshare = bind_rows(
+    shares_parents_ownsex_merged$data       |> mutate(source = "Weekday (broad leisure definition)"),
+    shares_parents_ownsex_r_merged$data     |> mutate(source = "Weekday"),
+    shares_parents_r_weekend$data           |> mutate(source = "Weekend"),
+    counterfactual_2000sharing_alldata_r$data |> mutate(source = "2000 sharing rule"),
+    counterfactual_2015sharing_alldata_r$data |> mutate(source = "2015 sharing rule")
+  )
+
+  ggplot(plot_data_fshare, aes(x = shareown_etahat_f, colour = source)) +                                                             
+    geom_density(bw = "nrd0", linewidth = 1, na.rm = TRUE, key_glyph = "point") +                                                     
+    scale_colour_manual(                                                                                                              
+      values = c(
+        "Weekday (broad leisure definition)" = "#920000",                                                                             
+        "Weekday"                            = "#490092",                                                                             
+        "Weekend"                            = "#ff6db6",
+        "2000 sharing rule"                  = "orange",                                                                              
+        "2015 sharing rule"                  = "#22cf22"
+      ),                                                                                                                              
+      breaks = c("Weekday", "Weekday (broad leisure definition)",
+                 "Weekend", "2000 sharing rule", "2015 sharing rule")                                                                 
+    ) +           
+    guides(colour = guide_legend(
+      override.aes = list(shape = 15, size = 4)  # 15 = filled square; 16 = filled circle                                             
+    )) +
+    labs(x = "Estimated female resource share", y = "Density", colour = NULL) +                                                       
+    xlim(0, 1) +                                                                                                                      
+    theme_minimal() +
+    theme(legend.position = "right", plot.title = element_text(face = "bold")) 
+```
+
 ## Kind of testing assumptions:
 
 - "If private leisure C-D SAP holds then the proportion of household budget spent on overall private leisure (the sum of expenditure on female private leisure and expenditure on male private leisure) should not vary with the distribution of bargaining power"
@@ -289,193 +403,7 @@ cor.test(parents_est_data_merged_shares$share_budget_leisure_r,
 
 ## How private leisure responds to childcare need (constraints?)
 
-```{r}
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$has_childcare_help)
-cor.test(parents_est_data_merged$num_kids_total, parents_est_data_merged$has_childcare_help)
-
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$has_otherdomestic_help)
-cor.test(parents_est_data_merged$num_kids_total, parents_est_data_merged$has_otherdomestic_help)
-
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$num_kids_total)
-
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$agegap_m)
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$avgage)
-cor.test(parents_est_data_merged$num_kids_total, parents_est_data_merged$agegap_m)
-cor.test(parents_est_data_merged$num_kids_total, parents_est_data_merged$avgage)
-
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$educ_f)
-cor.test(parents_est_data_merged$kid_age_min, parents_est_data_merged$educ_m)
-cor.test(parents_est_data_merged$num_kids_total, parents_est_data_merged$educ_f)
-cor.test(parents_est_data_merged$num_kids_total, parents_est_data_merged$educ_m)
-```
-
-- could be good to add a section about what preference parameter restriction on child human capital production youd need to identify the effect, and whether it can be tested with time use data only
-- Individual private leisure expenditure responds to the individual budget generated by the sharing rule. Resource shares are based on household characteristics that don't usually change from day to day. Now, I want to see how this maps into state-dependent adjustments in leisure and childcare. Children of all ages mechanically spend more time outside the home during weekdays since most schools and childcare services are closed on weekends. This means that weekends shift the feasible time use set as children require more time from their parents. This extra childcare requirement must come out of somebody’s time through lower private leisure or lower market work. I have one weekday and one weekend activity diary for each member of each household, so I can see who is absorbing this extra childcare need. I propose using variation in time use generated through weekdays and weekends to see how households with different resource shares absorb short-run increases in childcare need.
-- The weekend/weekday contrast shows how a fixed household bargaining arrangement responds to a tighter childcare constraint
-- Earlier in this document, I wrote about the following relationships between leisure and childcare:
-- Through one channel: If mothers already have low weekday private leisure, they may be at (or near) a constraint where further childcare would imply very high marginal disutility. The mother’s marginal utility loss from reducing $l_f$ further is very steep so the father’s leisure drops more when $\bar{h}$ rises. 
-- Through another channel: If, say, female bargaining power is relatively high in some household, then when $\bar{h}$ rises the model predicts that fathers will absorb more of the childcare adjustment because the household places more weight on mother’s utility
-- Through another channel: The male and female preference parameters for a child's human capital and how productive they are in providing childcare may differ
-- The issue with these regressions is that my data cannot fully separate these channels, but it can test whether weekend adjustment is stronger in households with higher estimated female resource shares. What I can say is that households with different estimated female resource shares allocate childcare differently
-- The estimated resource shares determine how household resources are allocated across members, but they do not by themselves identify whether lower individual expenditure on the private assignable good is driven by bargaining power, parent-specific preferences for child human capital, parent-specific productivity in childcare, or gendered expectations determining preference parameters.
-- See the mean estimated female resource shares among households with above/below-median male/female wages, above/below-median male/female educational attainment, above/below-median number of children, above/below-median childcare time
-
-```{r}
-tmp = reg_stacked |> 
-  # filter(total_sleep < 7) |> 
-  select(serial, sample, pnum, is_weekend, male, num0_2, num3_4, num_kids_total,
-         has_young_child, kid_age_min, total_childcare, total_private_leisure, 
-         private_leisure_exp, total_work, total_sleep, total_otherdomestic, 
-         has_childcare_help, has_otherdomestic_help)
-  
-tmp1 = tmp |> 
-  filter(is_weekend == 1)
-tmp2 = tmp |> 
-  filter(is_weekend == 0)
-```
-
-On the weekend
-```{r}
-cor.test(tmp1$total_private_leisure, tmp1$total_childcare)
-cor.test(tmp1$total_private_leisure, tmp1$num_kids_total)
-cor.test(tmp1$total_private_leisure, tmp1$kid_age_min)
-cor.test(tmp1$total_private_leisure, tmp1$has_childcare_help)
-cor.test(tmp1$total_private_leisure, tmp1$has_otherdomestic_help)
-
-cor.test(tmp1$total_sleep, tmp1$total_childcare)
-cor.test(tmp1$total_sleep, tmp1$num_kids_total)
-cor.test(tmp1$total_sleep, tmp1$kid_age_min)
-cor.test(tmp1$total_sleep, tmp1$has_childcare_help)
-cor.test(tmp1$total_sleep, tmp1$has_otherdomestic_help)
-
-cor.test(tmp1$total_childcare, tmp1$num_kids_total)
-cor.test(tmp1$total_childcare, tmp1$kid_age_min)
-cor.test(tmp1$total_childcare, tmp1$has_childcare_help)
-cor.test(tmp1$total_childcare, tmp1$has_otherdomestic_help)
-
-cor.test(tmp1$total_work, tmp1$total_childcare)
-cor.test(tmp1$total_work, tmp1$num_kids_total)
-cor.test(tmp1$total_work, tmp1$kid_age_min)
-cor.test(tmp1$total_work, tmp1$has_childcare_help)
-cor.test(tmp1$total_work, tmp1$has_otherdomestic_help)
-
-cor.test(tmp1$total_otherdomestic, tmp1$total_childcare)
-cor.test(tmp1$total_otherdomestic, tmp1$num_kids_total)
-cor.test(tmp1$total_otherdomestic, tmp1$kid_age_min)
-cor.test(tmp1$total_otherdomestic, tmp1$has_childcare_help)
-cor.test(tmp1$total_otherdomestic, tmp1$has_otherdomestic_help)
-```
-On the weekday
-```{r}
-cor.test(tmp2$total_private_leisure, tmp2$total_childcare)
-cor.test(tmp2$total_private_leisure, tmp2$num_kids_total)
-cor.test(tmp2$total_private_leisure, tmp2$kid_age_min)
-cor.test(tmp2$total_private_leisure, tmp2$has_childcare_help)
-cor.test(tmp2$total_private_leisure, tmp2$has_otherdomestic_help)
-cor.test(tmp2$total_sleep, tmp2$total_childcare)
-cor.test(tmp2$total_sleep, tmp2$num_kids_total)
-cor.test(tmp2$total_sleep, tmp2$kid_age_min)
-cor.test(tmp2$total_sleep, tmp2$has_childcare_help)
-cor.test(tmp2$total_sleep, tmp2$has_otherdomestic_help)
-
-cor.test(tmp2$total_childcare, tmp2$num_kids_total)
-cor.test(tmp2$total_childcare, tmp2$kid_age_min)
-cor.test(tmp2$total_childcare, tmp2$has_childcare_help)
-cor.test(tmp2$total_childcare, tmp2$has_otherdomestic_help)
-
-cor.test(tmp2$total_work, tmp2$total_childcare)
-cor.test(tmp2$total_work, tmp2$num_kids_total)
-cor.test(tmp2$total_work, tmp2$kid_age_min)
-cor.test(tmp2$total_work, tmp2$has_childcare_help)
-cor.test(tmp2$total_work, tmp2$has_otherdomestic_help)
-
-cor.test(tmp2$total_otherdomestic, tmp2$total_childcare)
-cor.test(tmp2$total_otherdomestic, tmp2$num_kids_total)
-cor.test(tmp2$total_otherdomestic, tmp2$kid_age_min)
-cor.test(tmp2$total_otherdomestic, tmp2$has_childcare_help)
-cor.test(tmp2$total_otherdomestic, tmp2$has_otherdomestic_help)
-```
-
-See if women with lower or higher relative bargaining are already providing a lot on the weekdays.
 Resource shares and child characteristics:
-```{r}
-# use parents_est_data_merged_shares find average of shareown_etahat_f at 
-# above or below-median wage_f, educ_f, total_childcare_f 
-
-wage_split = parents_est_data_merged_shares |>
-  mutate(
-    wage_f_high = wage_f > median(wage_f, na.rm = TRUE),
-    wage_m_high = wage_m > median(wage_m, na.rm = TRUE)) |>
-  group_by(wage_f_high, wage_m_high) |>
-  summarise(
-    mean_share_f = mean(shareown_etahat_f, na.rm = TRUE),
-    .groups = "drop") |>
-  mutate(
-    wage_f_high = if_else(wage_f_high, "Above-median female wage", 
-                          "Below-median female wage"),
-    wage_m_high = if_else(wage_m_high, "Above-median male wage", 
-                          "Below-median male wage")) |>
-  pivot_wider(
-    names_from = wage_m_high,
-    values_from = mean_share_f)
-
-child_split = parents_est_data_merged_shares |>
-  mutate(
-    wage_f_high = wage_f > median(wage_f, na.rm = TRUE),
-    young_child = kid_age_min < 10) |>
-  group_by(wage_f_high, young_child) |>
-  summarise(
-    mean_share_f = mean(shareown_etahat_f, na.rm = TRUE),
-    .groups = "drop") |>
-  mutate(
-    wage_f_high = if_else(wage_f_high, "Above-median female wage", 
-                          "Below-median female wage"),
-    young_child = if_else(young_child, "Child under 10 in household", 
-                          "No child under 10")) |>
-  pivot_wider(
-    names_from = young_child,
-    values_from = mean_share_f)
-
-num_split = parents_est_data_merged_shares |>
-  mutate(
-    wage_f_high = wage_f > median(wage_f, na.rm = TRUE),
-    high_kids = num_kids_total > median(num_kids_total, na.rm=TRUE)) |>
-  group_by(wage_f_high, high_kids) |>
-  summarise(
-    mean_share_f = mean(shareown_etahat_f, na.rm = TRUE),
-    .groups = "drop") |>
-  mutate(
-    wage_f_high = if_else(wage_f_high, "Above-median female wage", 
-                          "Below-median female wage"),
-    high_kids = if_else(high_kids, "Above-median number of children", 
-                        "Below-median number of children")) |>
-  pivot_wider(
-    names_from = high_kids,
-    values_from = mean_share_f)
-
-childnum_split = parents_est_data_merged_shares |>
-  mutate(
-    young_child = kid_age_min < 10,
-    high_kids = num_kids_total > median(num_kids_total, na.rm=TRUE)) |>
-  group_by(young_child, high_kids) |>
-  summarise(
-    mean_share_f = mean(shareown_etahat_f, na.rm = TRUE),
-    .groups = "drop") |>
-  mutate(
-    young_child = if_else(young_child, "Child under 10 in household", 
-                          "No child under 10"),
-    high_kids = if_else(high_kids, "Above-median number of children", 
-                        "Below-median number of children")) |>
-  pivot_wider(
-    names_from = high_kids,
-    values_from = mean_share_f)
-
-print(wage_split)
-print(child_split)
-print(num_split)
-print(childnum_split)
-```
-
 ```{r}
 # use parents_est_data_merged_shares find average of shareown_etahat_r_f at 
 # above or below-median wage_f, educ_f, total_childcare_f 
@@ -500,7 +428,7 @@ wage_split_r = parents_est_data_merged_shares |>
 child_split_r = parents_est_data_merged_shares |>
   mutate(
     wage_f_high = wage_f > median(wage_f, na.rm = TRUE),
-    young_child = kid_age_min < 10) |>
+    young_child = num_under_5 > 0) |>
   group_by(wage_f_high, young_child) |>
   summarise(
     mean_share_f = mean(shareown_etahat_r_f, na.rm = TRUE),
@@ -508,8 +436,8 @@ child_split_r = parents_est_data_merged_shares |>
   mutate(
     wage_f_high = if_else(wage_f_high, "Above-median female wage", 
                           "Below-median female wage"),
-    young_child = if_else(young_child, "Child under 10 in household", 
-                          "No child under 10")) |>
+    young_child = if_else(young_child, "Child under 5 in household", 
+                          "No child under 5")) |>
   pivot_wider(
     names_from = young_child,
     values_from = mean_share_f)
@@ -531,56 +459,12 @@ num_split_r = parents_est_data_merged_shares |>
     names_from = high_kids,
     values_from = mean_share_f)
 
-childnum_split_r = parents_est_data_merged_shares |>
-  mutate(
-    young_child = kid_age_min < 10,
-    high_kids = num_kids_total > median(num_kids_total, na.rm=TRUE)) |>
-  group_by(young_child, high_kids) |>
-  summarise(
-    mean_share_f = mean(shareown_etahat_r_f, na.rm = TRUE),
-    .groups = "drop") |>
-  mutate(
-    young_child = if_else(young_child, "Child under 10 in household", 
-                          "No child under 10"),
-    high_kids = if_else(high_kids, "Above-median number of children", 
-                        "Below-median number of children")) |>
-  pivot_wider(
-    names_from = high_kids,
-    values_from = mean_share_f)
-
 print(wage_split_r)
 print(child_split_r)
 print(num_split_r)
-print(childnum_split_r)
 ```
 
 Table of time use data:
-```{r}
-# compute mean time use within each quartile
-table_quartiles = timeuse_long |>
-  group_by(share_quartile, day, sex, activity) |>
-  summarise(
-    mean_hours = mean(hours, na.rm = TRUE),
-    sd_hours = sd(hours, na.rm = TRUE),
-    n = n(),
-    .groups = "drop") |>
-  mutate(
-    mean_hours = round(mean_hours, 2),
-    sd_hours = round(sd_hours, 2)) |>
-  select(day, sex, activity, share_quartile, mean_hours) |>
-  pivot_wider(
-    names_from = share_quartile,
-    values_from = mean_hours) |>
-  arrange(day, sex, activity) |>
-  filter(activity %in% c(
-    "Childcare",
-    "Private leisure",
-    "Private leisure (excluding sleep and personal care)",
-    "Market work",
-    "Domestic work excluding childcare"))
-
-print(table_quartiles)
-```
 
 ```{r}
 # compute mean time use within each quartile restricted leisure shares
@@ -609,95 +493,112 @@ table_quartiles_r = timeuse_long |>
 print(table_quartiles_r)
 ```
 
+Non-parent regressions
 ```{r}
-men_weekday = reg_stacked |> filter(is_weekend == 0, male == 1)
-men_weekend = reg_stacked |> filter(is_weekend == 1, male == 1)
-women_weekday = reg_stacked |> filter(is_weekend == 0, male == 0)
-women_weekend = reg_stacked |> filter(is_weekend == 1, male == 0)
+etable(feols(total_work ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked_nonparents,
+      cluster = "serial"))
 
-summary(men_weekday$total_childcare)
-print(sd(men_weekday$total_childcare))
-summary(women_weekday$total_childcare)
-print(sd(women_weekday$total_childcare))
+etable(feols(total_private_leisure ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked_nonparents,
+      cluster = "serial"))
 
-summary(men_weekend$total_childcare)
-print(sd(men_weekend$total_childcare))
-summary(women_weekend$total_childcare)
-print(sd(women_weekend$total_childcare))
+etable(feols(total_private_leisure_r ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked_nonparents,
+      cluster = "serial"))
 
-summary(men_weekday$total_private_leisure)
-print(sd(men_weekday$total_private_leisure))
-summary(women_weekday$total_private_leisure)
-print(sd(women_weekday$total_private_leisure))
-
-summary(men_weekend$total_private_leisure)
-print(sd(men_weekend$total_private_leisure))
-summary(women_weekend$total_private_leisure)
-print(sd(women_weekend$total_private_leisure))
-
-summary(men_weekday$total_work)
-print(sd(men_weekday$total_work))
-summary(women_weekday$total_work)
-print(sd(women_weekday$total_work))
-
-summary(men_weekend$total_work)
-print(sd(men_weekend$total_work))
-summary(women_weekend$total_work)
-print(sd(women_weekend$total_work))
+etable(feols(total_otherdomestic ~ is_weekend * male
+      | sample + dgorpaf,
+      data = reg_stacked_nonparents,
+      cluster = "serial"))
 ```
 
+
 ```{r}
-etable(feols(total_work ~ is_weekend * male * shareown_etahat_r_f
+etable(feols(total_work ~ is_weekend * male
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_childcare ~ is_weekend * male * shareown_etahat_r_f
+etable(feols(total_childcare ~ is_weekend * male
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_private_leisure ~ is_weekend * male * shareown_etahat_r_f
+etable(feols(total_private_leisure ~ is_weekend * male
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_private_leisure_r ~ is_weekend * male * shareown_etahat_r_f
+etable(feols(total_private_leisure_r ~ is_weekend * male
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_otherdomestic ~ is_weekend * male * shareown_etahat_r_f
+etable(feols(total_otherdomestic ~ is_weekend * male
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 ```
 
 ```{r}
-
-etable(feols(total_private_leisure ~ is_weekend * male * shareown_etahat_r_f
+etable(feols(total_work ~ is_weekend * male * child_under_5
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_private_leisure ~ is_weekend * male * shareown_etahat_r_f + has_childcare_help + has_otherdomestic_help
+etable(feols(total_childcare ~ is_weekend * male * child_under_5
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_private_leisure ~ is_weekend * male * shareown_etahat_r_f + has_childcare_help + has_otherdomestic_help + num_kids_total + kid_age_min
+etable(feols(total_private_leisure ~ is_weekend * male * child_under_5
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
-etable(feols(total_private_leisure ~ is_weekend * male * shareown_etahat_r_f + avgage + educ +
-               agegap_m + num_kids_total + kid_age_min + has_childcare_help + has_otherdomestic_help
+etable(feols(total_private_leisure_r ~ is_weekend * male * child_under_5
       | sample + dgorpaf,
       data = reg_stacked,
       cluster = "serial"))
 
+etable(feols(total_otherdomestic ~ is_weekend * male * child_under_5
+      | sample + dgorpaf,
+      data = reg_stacked,
+      cluster = "serial"))
 ```
+Difference between male and female weekend adjustment = difference in difference
+Compare difference in difference from:
+- 25th percentile female wage ratio to 75th percentile female wage ratio
+- female gaining one education level over male (educ_gap_f == 0 to educ_gap_f == 1)
+- 25th percentile average couple age to 75th percentile average couple age
+- no age gap to age gap of 10 years
+- poorest region to richest region? go from poorest in 2015 to richest in 2015
+- no child under 5 to one child under 5
+- no children to 2 children
 
+Also compare difference in difference from:
+- 25th percentile female resource share to 75th percentile female resource share
+
+```{r}
+parent_wageratio_25 = quantile(reg_stacked$wage_ratio_f, 0.25)
+parent_wageratio_75 = quantile(reg_stacked$wage_ratio_f, 0.75)
+
+nonparent_wageratio_25 = quantile(reg_stacked_nonparents$wage_ratio_f, 0.25)
+nonparent_wageratio_75 = quantile(reg_stacked_nonparents$wage_ratio_f, 0.75)
+
+parent_avgage_25 = quantile(reg_stacked$avgage, 0.25)
+parent_avgage_75 = quantile(reg_stacked$avgage, 0.75)
+
+nonparent_avgage_25 = quantile(reg_stacked$avgage, 0.25)
+nonparent_avgage_75 = quantile(reg_stacked$avgage, 0.75)
+
+poorest_region = min(regionalwealth_2014$rgdppc)
+richest_region = max(regionalwealth_2014$rgdppc)
+```
 
 
 # side quests
@@ -785,64 +686,12 @@ summary(counterfactual_2015sharing_alldata_r$data$shareown_etahat_f)
 
 ```
 
-Sharing rules for each year separately:
-```{r}
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of parents (including sleep and personal care, 2000)")
-print(make_sysfit_kable_df(parents_res_within_2000, p_rows_within))
 
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of parents (including sleep and personal care, 2015)")
-print(make_sysfit_kable_df(parents_res_within_2015, p_rows_within))
-```
-```{r}
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of parents (excluding sleep and personal care, 2000)")
-print(make_sysfit_kable_df(parents_res_r_within_2000, p_rows_within))
 
-# deviations of characteristics compared to own sex
-print("Regression results (sharing rule) of parents (excluding sleep and personal care, 2015)")
-print(make_sysfit_kable_df(parents_res_r_within_2015, p_rows_within))
-```
-
-```{r}
-marginal_impacts_counterfactual_2000 = marginal_impacts(counterfactual_2000sharing_alldata, 
-                                           parents_est_data_merged, p_rows_within)
-
-marginal_impacts_counterfactual_2015 = marginal_impacts(counterfactual_2015sharing_alldata, 
-                                           parents_est_data_merged, np_rows_within)
-
-print("Interpretation of regression coefficients (combined sample, 2000 sharing rule, broad leisure)")
-print(marginal_impacts_counterfactual_2000)
-
-print("Interpretation of regression coefficients (combined sample, 2015 sharing rule, broad leisure)")
-print(marginal_impacts_counterfactual_2015)
-```
-```{r}
-marginal_impacts_counterfactual_2000 = marginal_impacts(counterfactual_2000sharing_alldata_r, 
-                                           parents_est_data_merged, p_rows_within)
-
-marginal_impacts_counterfactual_2015 = marginal_impacts(counterfactual_2015sharing_alldata_r, 
-                                           parents_est_data_merged, np_rows_within)
-
-print("Interpretation of regression coefficients (combined sample, 2000 sharing rule, narrow leisure)")
-print(marginal_impacts_counterfactual_2000)
-
-print("Interpretation of regression coefficients (combined sample, 2015 sharing rule, narrow leisure)")
-print(marginal_impacts_counterfactual_2015)
-```
 
 ## papers
 
-Lewbel and Pendakur (2008) and Bargain and Donni (2012) rely on the ‘SAT’ assumption (similarity across household types), that preferences for the assignable good are stable across household compositions, allowing for identification of the preference parameter from singles data
 
-[Lise and Seitz (2011)](https://www.jstor.org/stable/23015857): restricting the bargaining process so that men and women with equal earnings potential share resources equally
-
-[Browning, Chiappori and Lewbel (2013)](https://academic.oup.com/restud/article-abstract/80/4/1267/1584142): BCL
-
-\[Dunbar, Lewbel, and Pendakur (2013)\]\[https://www.sfu.ca/\~pendakur/CollectiveChildren30-with-appendices.pdf\]: Identifies how total household resources are divided up among household members, by observing how each family member’s expenditures on a single private good like clothing varies with income and family size. DLP permits identification of resource shares of both adults and children, where children are treated as having their own utility functions and welfare. This is in contrast to most of the empirical collective household literature, where expenditures on children are modelled just as public goods in the adults’ utility functions. Identification assumes that resource shares do not vary with total expenditure. DLP and LPW use the SAP assumption (similarity across people) that women and men in the same household composition have the same preference parameter for the assignable good.
-
-[Lechene, Pendakur, and Wolf (2022)](https://www.journals.uchicago.edu/doi/10.1086/717892): LPW shows that, building on the identification result of DLP, it is possible to estimate resource shares by linear regression
 
 \[Blundell et al (2019)\]\[https://www.sfu.ca/\~pendakur/papers/BKLP16_longtitle.pdf\]
 

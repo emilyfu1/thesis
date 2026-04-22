@@ -216,24 +216,6 @@ np_rows_within = c("y" = "Budget",
                 "Bx_dev_agegap" = "Budget * dev. age gap",
                 "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
 
-np_rows_between = c("y" = "Budget",
-                 "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
-                 "Bx_dev_wage_m_all" = "Budget * dev. all hourly pay",
-                 "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
-                 "Bx_dev_educ_m_all" = "Budget * dev. all qualification",
-                 "Bx_dev_avgage" = "Budget * dev. average age",
-                 "Bx_dev_agegap" = "Budget * dev. age gap",
-                 "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
-
-np_rows_opposite = c("y" = "Budget",
-                 "Bx_dev_wage_f_opp" = "Budget * dev. opp.sex hourly pay",
-                 "Bx_dev_wage_m_opp" = "Budget * dev. opp.sex hourly pay",
-                 "Bx_dev_educ_f_opp" = "Budget * dev. opp.sex qualification",
-                 "Bx_dev_educ_m_opp" = "Budget * dev. opp.sex qualification",
-                 "Bx_dev_avgage" = "Budget * dev. average age",
-                 "Bx_dev_agegap" = "Budget * dev. age gap",
-                 "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.")
-
 ################################################################################
 ############################### PARENT TABLE STUFF #############################
 ################################################################################
@@ -246,30 +228,8 @@ p_rows_within = c("y" = "Budget",
                   "Bx_dev_avgage" = "Budget * dev. average age",
                   "Bx_dev_agegap" = "Budget * dev. age gap",
                   "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.",
-                  "Bx_dev_ageyoungest" = "Budget * dev. youngest child age",
-                  "Bx_dev_numkids" = "Budget * dev. num. kids")
-
-p_rows_between = c("y" = "Budget",
-                  "Bx_dev_wage_f_all" = "Budget * dev. all hourly pay",
-                  "Bx_dev_wage_m_all" = "Budget * dev. all hourly pay",
-                  "Bx_dev_educ_f_all" = "Budget * dev. all qualification",
-                  "Bx_dev_educ_m_all" = "Budget * dev. all qualification",
-                  "Bx_dev_avgage" = "Budget * dev. average age",
-                  "Bx_dev_agegap" = "Budget * dev. age gap",
-                  "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c",
-                  "Bx_dev_ageyoungest" = "Budget * dev. youngest child age",
-                  "Bx_dev_numkids" = "Budget * dev. num. kids")
-
-p_rows_opposite = c("y" = "Budget",
-                    "Bx_dev_wage_f_opp" = "Budget * dev. opp.sex hourly pay",
-                    "Bx_dev_wage_m_opp" = "Budget * dev. opp.sex hourly pay",
-                    "Bx_dev_educ_f_opp" = "Budget * dev. opp.sex qualification",
-                    "Bx_dev_educ_m_opp" = "Budget * dev. opp.sex qualification",
-                    "Bx_dev_avgage" = "Budget * dev. average age",
-                    "Bx_dev_agegap" = "Budget * dev. age gap",
-                    "Bx_dev_gdppc" = "Budget * dev. regional wealth p.c.",
-                    "Bx_dev_ageyoungest" = "Budget * dev. youngest child age",
-                    "Bx_dev_numkids" = "Budget * dev. num. kids")
+                  "Bx_dev_numkids" = "Budget * dev. num. kids",
+                  "Bx_dev_numunder5" = "Budget * dev. num. kids under 5")
 
 ################################################################################
 ############################ Regressions non-parents ###########################
@@ -312,24 +272,24 @@ np_eqns_r_within = list(male = np_eq_m_r_within, female = np_eq_f_r_within)
 # men
 p_eq_m_within = private_leisure_exp_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
-  Bx_dev_ageyoungest + Bx_dev_numkids
+  Bx_dev_numkids + Bx_dev_numunder5
 
 # women
 p_eq_f_within = private_leisure_exp_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
-  Bx_dev_ageyoungest + Bx_dev_numkids
+  Bx_dev_numkids + Bx_dev_numunder5
 
 # leisure excluding sleep and personal care
 
 # men
 p_eq_m_r_within = private_leisure_exp_r_m ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
-  Bx_dev_ageyoungest + Bx_dev_numkids
+  Bx_dev_numkids + Bx_dev_numunder5
 
 # women
 p_eq_f_r_within = private_leisure_exp_r_f ~ 0 + y + Bx_dev_wage_f_only + Bx_dev_wage_m_only + 
   Bx_dev_educ_f_only + Bx_dev_educ_m_only + Bx_dev_avgage + Bx_dev_agegap + Bx_dev_gdppc + 
-  Bx_dev_ageyoungest + Bx_dev_numkids
+  Bx_dev_numkids + Bx_dev_numunder5
 
 # list of regressions
 p_eqns_within = list(male = p_eq_m_within, female = p_eq_f_within)
@@ -337,7 +297,7 @@ p_eqns_r_within = list(male = p_eq_m_r_within, female = p_eq_f_r_within)
 
 ######################## MATRIX OF RESTRICTIONS FOR SUR ########################
 
-parents_addition = c("Bx_dev_ageyoungest", "Bx_dev_numkids")
+parents_addition = c("Bx_dev_numkids", "Bx_dev_numunder5")
 
 np_regs_within = c("Bx_dev_wage_f_only", "Bx_dev_wage_m_only",
                 "Bx_dev_educ_f_only", "Bx_dev_educ_m_only",
@@ -350,7 +310,7 @@ np_theta_names_single = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
 
 p_theta_names_single = c("theta_wf", "theta_wm", "theta_ef", "theta_em",
                           "theta_age", "theta_agegap", "theta_regwealth",
-                         "theta_ageyoungest", "theta_numkids")
+                         "theta_numkids", "theta_numunder5")
 
 # restricted coefficients nonparents
 np_modReg_within = make_regMat(regressors = np_regs_within,
